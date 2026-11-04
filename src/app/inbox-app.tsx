@@ -71,9 +71,9 @@ export default function InboxApp({ email, name, signOutAction }: { email: string
         const d = await r.json().catch(() => ({}));
         await load();
         setSyncedAt(Date.now());
-        if (loud || d.fetched > 0) setToast({ text: d.fetched > 0 ? `${d.fetched} new mail${d.fetched > 1 ? "s" : ""}` : "You're up to date" });
+        if (loud || d.fetched > 0) setToast({ text: d.fetched > 0 ? `${d.fetched} new mail${d.fetched > 1 ? "s" : ""}` : "No new mail" });
       } catch {
-        if (loud) setToast({ text: "Couldn't reach Gmail. Try again" });
+        if (loud) setToast({ text: "Couldn't reach Gmail" });
       }
       syncing$.current = false;
       setSyncing(false);
@@ -110,11 +110,11 @@ export default function InboxApp({ email, name, signOutAction }: { email: string
   function patch(id: string, p: Patch, quiet = false) {
     const before = mails?.find((m) => m.id === id);
     setMails((l) => l?.map((m) => (m.id === id ? apply(m, p) : m)) ?? null);
-    fetch("/api/emails", { method: "PATCH", body: JSON.stringify({ id, ...p }) }).then((r) => !r.ok && setToast({ text: "Couldn't save. Check your connection" }));
+    fetch("/api/emails", { method: "PATCH", body: JSON.stringify({ id, ...p }) }).then((r) => !r.ok && setToast({ text: "Couldn't save that change" }));
     if (quiet || !before) return;
     const undo = () => patch(id, { read: p.read !== undefined ? !before.unread : undefined, is_done: p.is_done !== undefined ? before.is_done : undefined, priority: p.priority ? before.priority : undefined }, true);
     const text =
-      p.priority ? `Moved to ${pileLabel(p.priority)}. DELT will remember this sender` : p.is_done !== undefined ? (p.is_done ? "Marked done" : "Not done") : p.read ? "Marked read" : "Marked unread";
+      p.priority ? `Moved to ${pileLabel(p.priority)}` : p.is_done !== undefined ? (p.is_done ? "Marked done" : "Not done") : p.read ? "Marked read" : "Marked unread";
     setToast({ text, undo });
   }
   async function markAllRead(ids: string[]) {
@@ -122,7 +122,7 @@ export default function InboxApp({ email, name, signOutAction }: { email: string
     setMails((l) => l?.map((m) => (set.has(m.id) ? { ...m, unread: false } : m)) ?? null);
     setToast({ text: `${ids.length} marked read` });
     const r = await fetch("/api/emails/bulk", { method: "POST", body: JSON.stringify({ ids, read: true }) });
-    if (!r.ok) setToast({ text: "Couldn't update Gmail. Try again" });
+    if (!r.ok) setToast({ text: "Couldn't update Gmail" });
   }
 
   // ---------- derived ----------
@@ -217,8 +217,8 @@ export default function InboxApp({ email, name, signOutAction }: { email: string
             <Skeleton />
           ) : shown.length === 0 ? (
             <Empty
-              title={query ? "No mail matches that search" : unreadOnly ? "All read here" : "Nothing in this pile"}
-              hint={query ? "Try a sender's name or a word from the subject." : "Switch to All to see every mail."}
+              title={query ? "No results" : unreadOnly ? "No unread mail" : "No mail here"}
+              hint={query ? "Try a sender or a word from the subject." : ""}
             />
           ) : (
             days.map((d) => (
@@ -237,7 +237,7 @@ export default function InboxApp({ email, name, signOutAction }: { email: string
               </section>
             ))
           )}
-          <p className="foot muted">Showing the last 60 days · swipe right to mark read, left to mark done</p>
+          <p className="foot muted">Last 60 days</p>
         </main>
       )}
 
@@ -246,12 +246,12 @@ export default function InboxApp({ email, name, signOutAction }: { email: string
         <main className="page" key="deadlines">
           <div className="pagehead">
             <h1>Deadlines</h1>
-            <p className="muted">Found in your mail automatically. Tap one to read the mail.</p>
+            <p className="muted">Due dates found in your mail.</p>
           </div>
           {mails === null ? (
             <Skeleton />
           ) : BUCKETS.every((b) => buckets[b].length === 0) ? (
-            <Empty title="No deadlines in your mail" hint="When a mail mentions a due date, it shows up here." />
+            <Empty title="No deadlines" hint="" />
           ) : (
             BUCKETS.filter((b) => buckets[b].length > 0).map((b) => (
               <section key={b} className={`day bucket b-${b.replace(" ", "")}`}>
@@ -464,7 +464,7 @@ function Empty({ title, hint }: { title: string; hint: string }) {
   return (
     <div className="empty">
       <b>{title}</b>
-      <span className="muted">{hint}</span>
+      {hint && <span className="muted">{hint}</span>}
     </div>
   );
 }

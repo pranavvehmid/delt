@@ -149,8 +149,8 @@ export default function Appearance() {
                     <b>{l === "minimal" ? "Minimal" : "Glyph"}</b>
                     <small>
                       {l === "minimal"
-                        ? "Clean list, one font, quiet"
-                        : "Bold dot-matrix cards"}
+                        ? "Black and white"
+                        : "Purple and gold"}
                     </small>
                   </button>
                 ))}
@@ -206,7 +206,6 @@ export default function Appearance() {
                 ]}
               />
 
-              <p className="ap-note muted">Saved on this device.</p>
             </section>
           </>,
           document.body, // outside the blurred top bar, which would trap a fixed panel

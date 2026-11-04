@@ -27,7 +27,7 @@ Eligibility: if a mail targets other years, batches or programmes than the stude
 
 Fields:
 - category: exam, registration, interview, deadline (fees or other dated actions), hackathon, competition, announcement, decision, academic, account, scholarship, placement, achievement, club_event, newsletter, promotion or other.
-- summary: one line, max 22 words, plain words, leading with what to do and when (dates, prize, team size, venue). No greetings.
+- summary: one line, max 22 words, like a quick note a student would jot down: what to do and when (dates, prize, team size, venue). No greetings, no exclamation marks, no em dashes, no hype words ("don't miss", "exciting", "unlock").
 - deadline: the last moment to act (register, submit, pay, or the exam/interview time) as ISO 8601 with +05:30 offset, or null. Resolve relative dates against the received date. Times without a zone are IST. If only a date is given, use 23:59.
 - reason: max 8 words.
 - Follow the student's past corrections for similar senders and topics.

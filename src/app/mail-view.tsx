@@ -52,9 +52,9 @@ export default function MailView({
         const d = await r.json().catch(() => ({}));
         if (!alive) return;
         if (r.ok) setMsg(d);
-        else setError(r.status === 401 ? "Your sign-in expired. Reload DELT and sign in again." : d.error ?? "Gmail didn't send this mail.");
+        else setError(r.status === 401 ? "You've been signed out. Reload and sign in again." : d.error ?? "Gmail didn't return this mail.");
       })
-      .catch(() => alive && setError("No connection. Check your internet and try again."));
+      .catch(() => alive && setError("You're offline."));
     return () => {
       alive = false;
     };
@@ -136,13 +136,13 @@ export default function MailView({
 
           {row?.summary && (
             <p className="mv-sum">
-              <span className="muted lbl">In short</span>
+              <span className="muted lbl">Summary</span>
               {row.summary}
             </p>
           )}
 
           {msg?.unsubscribe && (
-            <a className="mv-unsub muted" href={msg.unsubscribe} target="_blank" rel="noreferrer noopener">Unsubscribe from this sender ↗</a>
+            <a className="mv-unsub muted" href={msg.unsubscribe} target="_blank" rel="noreferrer noopener">Unsubscribe ↗</a>
           )}
           {msg && msg.attachments.length > 0 && (
             <div className="mv-att">
@@ -157,7 +157,7 @@ export default function MailView({
           <div className="mv-body">
             {error ? (
               <div className="mv-err">
-                <b>Couldn&apos;t open the full mail</b>
+                <b>Couldn&apos;t load this mail</b>
                 <span className="muted">{error}</span>
                 <div>
                   <button className="pillbtn" onClick={() => setTries((t) => t + 1)}>Try again</button>

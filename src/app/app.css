@@ -580,3 +580,11 @@ svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width:
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
 }
+
+/* sign-in in Minimal: the big mark, and pile dots as ink (red only for Urgent) */
+:root:not([data-look="glyph"]) .signin .logo { font-size: 64px; letter-spacing: -0.055em; }
+:root:not([data-look="glyph"]) .signin .logo i { width: 13px; height: 13px; }
+:root:not([data-look="glyph"]) .signin .p-priority .tagdot { background: rgb(var(--ink) / 0.72); }
+:root:not([data-look="glyph"]) .signin .p-later .tagdot { background: rgb(var(--ink) / 0.48); }
+:root:not([data-look="glyph"]) .signin .p-noise .tagdot { background: rgb(var(--ink) / 0.3); }
+:root:not([data-look="glyph"]) .signin .p-very_important .tagdot { background: var(--accent); }

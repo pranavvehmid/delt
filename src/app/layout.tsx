@@ -12,8 +12,8 @@ const mono = Space_Mono({ variable: "--font-mono", subsets: ["latin"], weight: [
 
 export const metadata: Metadata = {
   title: "DELT",
-  description: "DELT sorts your VIT inbox: exams, registrations and hackathons first, everything else later.",
-  appleWebApp: { capable: true, title: "DELT", statusBarStyle: "black-translucent" },
+  description: "Sorts your VIT mail so exams, registrations, fees and deadlines stay at the top.",
+  appleWebApp: { capable: true, title: "DELT", statusBarStyle: "default" },
   icons: { apple: "/icons/192" },
 };
 

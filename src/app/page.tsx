@@ -12,12 +12,12 @@ export default async function Home() {
             <span>DELT</span>
             <i />
           </span>
-          <h1>Your VIT inbox, sorted. Nothing important missed.</h1>
+          <h1>Your college mail, sorted by what needs you first.</h1>
           <ul>
-            <li className="p-very_important"><i className="tagdot" /> Exams, registrations, fees and deadlines first</li>
-            <li className="p-priority"><i className="tagdot" /> Hackathons, contests and notices next</li>
-            <li className="p-later"><i className="tagdot" /> Events and achievements when you have time</li>
-            <li className="p-noise"><i className="tagdot" /> Promotions kept out of the way</li>
+            <li className="p-very_important"><i className="tagdot" /> Urgent: exams, registrations, fees</li>
+            <li className="p-priority"><i className="tagdot" /> Priority: hackathons, notices</li>
+            <li className="p-later"><i className="tagdot" /> Later: events, club mail</li>
+            <li className="p-noise"><i className="tagdot" /> Noise: promotions</li>
           </ul>
           <form
             action={async () => {
@@ -25,9 +25,9 @@ export default async function Home() {
               await signIn("google");
             }}
           >
-            <button className="cta">Sign in with your VIT account</button>
+            <button className="cta">Sign in with Google</button>
           </form>
-          <p className="fine">Free. Reads and labels your mail, never deletes it. Only @vitstudent.ac.in accounts.</p>
+          <p className="fine">For @vitstudent.ac.in accounts. DELT reads and labels your mail. It can&apos;t delete anything.</p>
         </div>
       </main>
     );

@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="night">#17112B</color>
-    <color name="gold">#F5C842</color>
+    <!-- Splash, status bar and navigation bar: the Minimal look's paper colour. -->
+    <color name="night">#FAFAF9</color>
+    <!-- Launcher icon background. -->
+    <color name="gold">#FAFAF9</color>
 </resources>
