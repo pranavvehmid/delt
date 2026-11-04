@@ -3,28 +3,49 @@
 </p>
 
 <p align="center">
-  <b>Your VIT inbox, sorted.</b> Exams, registrations and hackathons first. Everything else, later.<br>
-  <a href="https://delt-mu.vercel.app"><b>Open DELT →</b></a> &nbsp;·&nbsp;
-  <a href="https://github.com/pranavvehmid/delt/releases/latest/download/DELT.apk"><b>Download the Android app (APK) →</b></a>
+  <a href="https://github.com/pranavvehmid/delt/releases/latest/download/DELT.apk">
+    <img src="assets/download.svg" alt="Download DELT.apk for Android" width="100%">
+  </a>
 </p>
 
----
+<p align="center">
+  <a href="https://delt-mu.vercel.app"><img alt="Open the web app" src="https://img.shields.io/badge/open-delt--mu.vercel.app-f5c842?style=for-the-badge&labelColor=17112b"></a>
+  <a href="https://github.com/pranavvehmid/delt/releases/latest"><img alt="Latest Android release" src="https://img.shields.io/github/v/release/pranavvehmid/delt?style=for-the-badge&label=android&color=b9a2ff&labelColor=17112b"></a>
+  <a href="#tests"><img alt="118 tests passing" src="https://img.shields.io/badge/tests-118%20passing-5ee6b0?style=for-the-badge&labelColor=17112b"></a>
+  <img alt="Free" src="https://img.shields.io/badge/cost-%E2%82%B90-fff3d1?style=for-the-badge&labelColor=17112b">
+</p>
+
+<p align="center">
+  <b>Your VIT inbox, sorted.</b> Exams, registrations and hackathons first. Everything else, later.
+</p>
+
+<p align="center">
+  <img src="assets/stats.svg" alt="118 tests passing · 14 repos studied · 3000 random mails, 0 crashes · ₹0 to run" width="100%">
+</p>
 
 ## What it does
+
+<p align="center">
+  <img src="assets/sorting.svg" alt="Mail drops from your VIT inbox into four piles: Urgent, Priority, Later, Noise" width="100%">
+</p>
 
 DELT signs in with your **VIT Google account**, reads your college mail, and sorts every message into one of four piles:
 
 | Pile | What lands here |
 |---|---|
-| 🔴 **Urgent** | exams, quizzes, CBTs, course & mock registration, FFCS, interviews, fee payments, anything with a deadline that applies to you |
+| 🟡 **Urgent** | exams, quizzes, CBTs, course & mock registration, FFCS, interviews, fee payments, anything with a deadline that applies to you |
 | 🟠 **Priority** | official notices and decisions: timetable changes, holidays, hostel & mess, transport, results |
-| 🟢 **Later** | achievements, guest lectures, webinars, club events, study-abroad programmes, scholarships to check |
+| 🟣 **Later** | achievements, guest lectures, webinars, club events, study-abroad programmes, scholarships to check |
 | ⚪ **Noise** | promotions, merch sales, admissions for other programmes |
 
 It knows you're a first year from the register number in your VIT name (`26BCE…`), so mail meant for seniors drops to Later on its own.
 Move a mail by hand once and DELT remembers that sender.
 
 ## Five tabs, one job each
+
+<p align="center">
+  <img src="assets/tabs.svg" alt="Today, New, Chances, Deadlines, Inbox" width="100%">
+</p>
 
 | Tab | Job |
 |---|---|
@@ -42,9 +63,9 @@ Tap any mail for a summary, or **Read full mail** to see the original inside DEL
 2. Open it. If Android asks, allow installing apps from your browser.
 3. Sign in with your `@vitstudent.ac.in` account.
 
-The app is a [Trusted Web Activity](https://developer.chrome.com/docs/android/trusted-web-activity/): it opens DELT full-screen in Chrome, so Google sign-in works and updates arrive without reinstalling.
+The app is a [Trusted Web Activity](https://developer.chrome.com/docs/android/trusted-web-activity/): it opens DELT full-screen in Chrome, so Google sign-in works and updates arrive without reinstalling. A fresh APK is built and published by GitHub Actions whenever the Android app changes.
 
-On iPhone, open the site in Safari and use **Share → Add to Home Screen**.
+On iPhone, open [the site](https://delt-mu.vercel.app) in Safari and use **Share → Add to Home Screen**.
 
 ## Privacy
 
@@ -79,4 +100,8 @@ Create the tables by running [`supabase/schema.sql`](supabase/schema.sql) in the
 
 See [docs/RESEARCH.md](docs/RESEARCH.md): 14 open-source mail sorters, what each does well, and which ideas DELT borrows.
 
-<sub>Next.js · Supabase · Gmail API · Vercel · Android TWA. Design borrowed from Nothing's Glyph look, in purple and gold.</sub>
+<p align="center">
+  <img src="assets/footer.svg" alt="Made for VITians" width="100%">
+</p>
+
+<p align="center"><sub>Next.js · Supabase · Gmail API · Vercel · Android TWA · art drawn by <code>tools/make_banner.mjs</code> and <code>tools/make_assets.mjs</code></sub></p>
