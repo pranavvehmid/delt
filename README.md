@@ -103,10 +103,17 @@ Create the tables by running [`supabase/schema.sql`](supabase/schema.sql) in the
 
 `scripts/eval.ts` compares the rules against Gemini and your own corrections on your inbox. It only reads.
 
+## Contributing
+
+Open tasks are in [Issues](https://github.com/pranavvehmid/delt/issues). Ones marked [good first issue](https://github.com/pranavvehmid/delt/labels/good%20first%20issue) are small. If you're a VIT student, the most useful thing is [trying it on your own inbox](https://github.com/pranavvehmid/delt/issues/1) and reporting what goes wrong.
+
+Setup steps and rules for pull requests are in [CONTRIBUTING.md](CONTRIBUTING.md).
+
 ## More
 
 - [docs/DESIGN.md](docs/DESIGN.md): what the app is for, how sorting works, why it looks the way it does
 - [docs/RESEARCH.md](docs/RESEARCH.md): 14 open-source mail apps and what DELT took from each
+- [LICENSE](LICENSE): MIT
 
 <p align="center">
   <img src="assets/footer.svg" alt="DELT, for VIT students. Free and open source." width="100%">
