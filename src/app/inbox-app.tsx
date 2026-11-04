@@ -10,7 +10,7 @@ import {
 } from "@/lib/inbox";
 import { calendarLink } from "@/lib/insights";
 import MailView from "./mail-view";
-import ThemePicker from "./theme-picker";
+import Appearance from "./appearance";
 
 type Route = { tab: "inbox" | "deadlines"; mailId: string | null };
 const SYNC_EVERY = 5 * 60_000;
@@ -149,7 +149,7 @@ export default function InboxApp({ email, name, signOutAction }: { email: string
           <span>{syncing ? "Checking…" : syncedAt ? `Updated ${ago(syncedAt, now)}` : "Sync"}</span>
         </button>
         <div className="appbar-r">
-          <ThemePicker />
+          <Appearance />
           <div className="acct">
             <button className="avatar me" onClick={() => setMenu((m) => !m)} aria-label="Account" aria-expanded={menu}>
               {initials(name)}
@@ -199,7 +199,7 @@ export default function InboxApp({ email, name, signOutAction }: { email: string
             </label>
             {unreadShown.length > 0 && (
               <button className="link" onClick={() => markAllRead(unreadShown)}>
-                Mark {unreadShown.length} read
+                Mark all read
               </button>
             )}
           </div>
@@ -399,6 +399,7 @@ function MailRow({ m, now, onOpen, onRead, onDone }: { m: EmailRow; now: number;
           </span>
           <span className="row-text">
             <span className="line1">
+              <i className={`tagdot pdot p-${m.priority}`} title={pileLabel(m.priority)} aria-hidden="true" />
               <span className="from ell">{sender}</span>
               <span className="time">{shortTime(m.received_at, now)}</span>
             </span>

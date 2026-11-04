@@ -54,7 +54,7 @@ export async function syncUser(email: string): Promise<SyncResult> {
   result.fetched = ids.length;
 
   const { data: known } = ids.length
-    ? await db.from("emails").select("id").in("id", ids)
+    ? await db.from("emails").select("id").eq("user_email", email).in("id", ids)
     : { data: [] as { id: string }[] };
   const knownIds = new Set((known ?? []).map((r) => r.id));
   const todo = ids.filter((id) => !knownIds.has(id));
@@ -143,7 +143,7 @@ export async function syncUser(email: string): Promise<SyncResult> {
           sorted_by: byAI ? "ai" : "rules",
           unread: msg.unread,
           gmail_labeled: false,
-        });
+        }, { onConflict: "user_email,id" }); // one row per student per mail
         if (insertError) result.errors.push(`${msg.id}: ${insertError.message}`);
         else result.sorted++;
       }),
@@ -193,7 +193,7 @@ export async function syncUser(email: string): Promise<SyncResult> {
           unlabeled.slice(i, i + PARALLEL).map(async (row) => {
             try {
               await setPriorityLabel(token, row.id, row.priority as Priority, labelIds);
-              await db.from("emails").update({ gmail_labeled: true }).eq("id", row.id);
+              await db.from("emails").update({ gmail_labeled: true }).eq("id", row.id).eq("user_email", email);
               result.labeled++;
             } catch (e) {
               result.errors.push(`Label ${row.id}: ${(e as Error).message}`);

@@ -86,7 +86,8 @@ async function main() {
             sorted_by: x.ai ? "ai" : "rules",
             ...(x.old !== x.c.priority ? { gmail_labeled: false } : {}),
           })
-          .eq("id", x.id);
+          .eq("id", x.id)
+          .eq("user_email", user.email);
       }
       console.log(`Saved ${items.length} mails.`);
     }

@@ -40,6 +40,19 @@ alter table emails add column if not exists sorted_by text not null default 'rul
 -- Mirrors Gmail's UNREAD label; refreshed on every sync. Drives the NEW deck.
 alter table emails add column if not exists unread boolean not null default false;
 
+-- One row per student per mail. Gmail message ids are per mailbox, so two
+-- students can receive mail with the same id; the key must include the owner.
+do $$
+begin
+  if exists (
+    select 1 from pg_constraint
+    where conrelid = 'emails'::regclass and contype = 'p' and array_length(conkey, 1) = 1
+  ) then
+    alter table emails drop constraint emails_pkey;
+    alter table emails add constraint emails_pkey primary key (user_email, id);
+  end if;
+end $$;
+
 -- Lock both tables. The app only talks to them from the server with the
 -- service-role key, so the public (anon) key can read nothing.
 alter table users  enable row level security;

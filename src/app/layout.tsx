@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Doto, Space_Grotesk, Space_Mono } from "next/font/google";
 import "./app.css";
+import { PREPAINT } from "@/lib/prefs";
 
 // Fonts for the Glyph look (Doto dot-matrix + Space Grotesk). Calm uses the phone's system font.
 const dot = Doto({ variable: "--font-dot", subsets: ["latin"], axes: ["ROND"] });
@@ -15,7 +16,10 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#17112B",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
+    { media: "(prefers-color-scheme: dark)", color: "#0f0e13" },
+  ],
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
@@ -25,10 +29,10 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${dot.variable} ${grotesk.variable} ${mono.variable} antialiased`}>
-        {/* Apply the saved look (calm or glyph) and light/dark before first paint. */}
+        {/* Apply saved appearance (look, theme, accent, size, spacing) before first paint. */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `var r=document.documentElement;r.dataset.look="calm";try{var t=localStorage.getItem("delt-theme"),k=localStorage.getItem("delt-look");if(t)r.dataset.theme=t;if(k)r.dataset.look=k}catch(e){}`,
+            __html: PREPAINT,
           }}
         />
         {children}

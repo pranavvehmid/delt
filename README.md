@@ -11,7 +11,7 @@
 <p align="center">
   <a href="https://delt-mu.vercel.app"><img alt="Open the web app" src="https://img.shields.io/badge/open-delt--mu.vercel.app-f5c842?style=for-the-badge&labelColor=17112b"></a>
   <a href="https://github.com/pranavvehmid/delt/releases/latest"><img alt="Latest Android release" src="https://img.shields.io/github/v/release/pranavvehmid/delt?style=for-the-badge&label=android&color=b9a2ff&labelColor=17112b"></a>
-  <a href="#tests"><img alt="124 tests passing" src="https://img.shields.io/badge/tests-124%20passing-5ee6b0?style=for-the-badge&labelColor=17112b"></a>
+  <a href="#tests"><img alt="150 tests passing" src="https://img.shields.io/badge/tests-150%20passing-5ee6b0?style=for-the-badge&labelColor=17112b"></a>
   <img alt="Free" src="https://img.shields.io/badge/cost-%E2%82%B90-fff3d1?style=for-the-badge&labelColor=17112b">
 </p>
 
@@ -20,7 +20,7 @@
 </p>
 
 <p align="center">
-  <img src="assets/stats.svg" alt="124 tests passing · 14 repos studied · 3000 random mails, 0 crashes · ₹0 to run" width="100%">
+  <img src="assets/stats.svg" alt="150 tests passing · 14 repos studied · 3000 random mails, 0 crashes · ₹0 to run" width="100%">
 </p>
 
 ## What it does
@@ -57,7 +57,15 @@ On a phone, **swipe right** to mark read or unread and **swipe left** to mark do
 
 DELT checks for new mail when you open it, every 5 minutes while it's open, and once a day at 7 AM.
 
-Pick a look from the ◐ button: **Calm** (a clean Gmail-style list, the default) or **Glyph** (chunky dot-matrix cards), each in night or day.
+**Make it yours** with the ◐ button:
+
+| Option | Choices |
+|---|---|
+| Look | **Minimal**: one font, a colour dot per pile, almost no numbers (default) · **Glyph**: bold dot-matrix cards |
+| Theme | Light · Dark · Auto (follows your phone) |
+| Accent | Default · Purple · Blue · Green · Red · Gold |
+| Text | Normal · Large |
+| Spacing | Comfortable · Compact (hides the summary line) |
 
 How it all works, and why: [docs/DESIGN.md](docs/DESIGN.md).
 
@@ -75,7 +83,7 @@ On iPhone, open [the site](https://delt-mu.vercel.app) in Safari and use **Share
 
 - Reads and labels mail; **never deletes** anything.
 - Stores only a short preview and the summary of each mail, never full bodies.
-- Only VIT accounts can sign in, and each person only ever sees their own mail.
+- Any `@vitstudent.ac.in` student can sign in. Each student only ever sees and changes their own mail (every database query is tied to the signed-in account, and tests check this).
 - Mail the rules aren't sure about is checked by Google Gemini's free tier, which Google may use to improve its models. Leave `GEMINI_API_KEY` empty to sort with rules only.
 
 ## Run your own copy
@@ -91,13 +99,16 @@ Create the tables by running [`supabase/schema.sql`](supabase/schema.sql) in the
 
 ## Tests
 
-`npm test` runs 124 checks in about 3 seconds:
+`npm test` runs 150 checks in about 3 seconds:
 
 - **80+ real VIT mails** and the pile a first year expects: exams, FFCS, scholarships, seniors-only, achievements, the `- reg` trap
 - **Dates** in every format VIT uses (`15/11/2026`, `15th Nov`, `Nov 15`, `tomorrow 6 PM`), year rollover, impossible days like 31 Feb
 - **Parsing**: HTML mail, nested multiparts, group senders, ₹ and Tamil text
 - **Stress**: 3,000 random mails never crash; 1,000 typical mails sort in under a second
-- **Inbox logic**: filters never hide mail under All, day groups follow IST, deadline buckets merge reminders and skip noise
+- **Inbox logic**: filters never hide mail under All, day groups follow IST, deadline buckets merge reminders and skip noise; 3,000 random mails checked for search, filters and deadlines
+- **Every student**: other batches and branches, seniors, staff with no register number; batch-only mail goes to Later only for the wrong batch
+- **Safety**: every API route checks sign-in, and every mail query is limited to the signed-in student
+- **Appearance**: every combination of look, theme, accent, text and spacing is applied the same way before the page paints
 
 `scripts/eval.ts` compares the free rules with AI and hand-sorted answers on your own inbox (read-only).
 

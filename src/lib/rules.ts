@@ -52,6 +52,7 @@ const P = {
     /\bmaster ?class(es)?\b/, /\btalk\b/, /\binaugura/, /\binvitation\b/, /\bscreening\b/, /\bsummer school\b/, /\bwinter school\b/,
     /\bimmersion\b/, /\bstudy abroad\b/, /\bsemester abroad\b/, /\b(2\+2|3\+1|4\+1)\b/, /\bexchange program/, /\bblood donation\b/,
     /\binformation session\b/, /\borientation session\b/, /\bexhibition\b/, /\bsymposium\b/, /\bconference\b/,
+    /\bsummit\b/, /\bconfluence\b/, /\bconclave\b/,
   ],
   newsletter: [/\bnewsletter\b/, /\bdigest\b/, /\bmagazine\b/, /\bgratitude\b/, /\bthank you for (attending|participating)\b/],
   promotion: [/\b\d+ ?% off\b/, /\bdiscount\b/, /\bsale\b/, /\bmerch(andise)?\b/, /\bexclusive( [a-z]+)? offers?\b/, /\boffers? for (the )?vit\b/, /\bcoupon\b/, /\bbuy now\b/, /\bfree trial\b/, /\bsponsored\b/, /\blimited[- ]time\b/],
@@ -225,8 +226,9 @@ export function classifyByRules(
   if (inText("attendance") && fromVit) return out("very_important", "academic", "Attendance warning", 0.8);
 
   const isHack = inSubject("hackathon") || (inText("hackathon") && !inSubject("club_event"));
-  const isComp = inSubject("competition") || (inText("competition") && inText("registration"));
   const isEvent = inSubject("club_event");
+  // A contest mentioned only inside an event invitation does not make the mail a contest.
+  const isComp = inSubject("competition") || (inText("competition") && inText("registration") && !isEvent);
 
   // Hackathons and competitions: very important when you can still register.
   if (isHack || isComp) {
