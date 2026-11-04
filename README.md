@@ -28,11 +28,11 @@ Move a mail by hand once and DELT remembers that sender.
 
 | Tab | Job |
 |---|---|
-| **Today** | morning brief: your top 3, today's mail count (received · read · unread), deadlines DELT found that need a yes/no |
+| **Today** | your day as a 4-step checklist: sort what's new → answer deadline questions → do what's due → skim notices. Plus today's mail count and how much of the week you've cleared |
 | **New** | unread mail as a swipe deck: → got it, ← not for me (marks read in Gmail too) |
-| **Board** | Urgent · Chances (hackathons, contests) · Notices, with a category spotlight |
-| **Deadlines** | add your own, track ones found in mail, see the week day by day |
-| **Inbox** | every mail grouped by day; mark read/unread, change priority or category |
+| **Chances** | hackathons and contests still open, ranked by the interests you pick, with Track and Add to Calendar |
+| **Deadlines** | add your own, track ones found in mail, see the week day by day, send any to Google Calendar |
+| **Inbox** | every mail by day with read/unread counts; fix priority or category; **Senders** view to mark all read, keep as Later, or mute |
 
 Tap any mail for a summary, or **Read full mail** to see the original inside DELT. It's fetched live from Gmail and never stored.
 
