@@ -6,6 +6,7 @@ import { CATEGORIES } from "@/lib/types";
 import SwipeDeck from "./swipe-deck";
 import { calendarLink, clearRate, INTERESTS, interestScore, senderStats } from "@/lib/insights";
 import MailReader from "./mail-reader";
+import ThemePicker from "./theme-picker";
 
 // ======================= look-up tables =======================
 
@@ -287,15 +288,6 @@ export default function Dashboard({ email, name, signOutAction }: { email: strin
     setReaderId(e.id);
     if (e.unread) update(e.id, { read: true }, true);
   }
-  function toggleTheme() {
-    const root = document.documentElement;
-    const next = root.dataset.theme === "light" ? "dark" : "light";
-    root.dataset.theme = next;
-    try {
-      localStorage.setItem("delt-theme", next);
-    } catch {}
-  }
-
   // ---------- grouping ----------
   const g = useMemo(() => {
     const raw = emails ?? [];
@@ -539,9 +531,7 @@ export default function Dashboard({ email, name, signOutAction }: { email: strin
           <button className="btn icon" onClick={sync} disabled={syncing} aria-label="Check for new mail" title="Refresh">
             <span className={syncing ? "spinning" : ""}>↻</span>
           </button>
-          <button className="btn icon" onClick={toggleTheme} aria-label="Switch light or dark" title="Theme">
-            ◐
-          </button>
+          <ThemePicker />
         </div>
       </header>
 

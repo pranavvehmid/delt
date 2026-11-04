@@ -193,3 +193,5 @@ select.pick option { background: #fff; color: #1b1238; }
   .srow2 { grid-template-columns: 38px minmax(0, 1fr); }
   .sacts { grid-column: 2; justify-content: flex-start; }
 }
+
+@media (max-width: 480px) { .page-title { font-size: 24px; } }

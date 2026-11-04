@@ -55,6 +55,8 @@ Move a mail by hand once and DELT remembers that sender.
 | **Deadlines** | add your own, track ones found in mail, see the week day by day, send any to Google Calendar |
 | **Inbox** | every mail by day with read/unread counts; fix priority or category; **Senders** view to mark all read, keep as Later, or mute |
 
+Pick a look from the ◐ button: **Calm** (minimal and smooth, the default) or **Glyph** (bold dot-matrix), each in night or day.
+
 Tap any mail for a summary, or **Read full mail** to see the original inside DELT. It's fetched live from Gmail and never stored.
 
 ## Install on Android
@@ -104,4 +106,4 @@ See [docs/RESEARCH.md](docs/RESEARCH.md): 14 open-source mail sorters, what each
   <img src="assets/footer.svg" alt="Made for VITians" width="100%">
 </p>
 
-<p align="center"><sub>Next.js · Supabase · Gmail API · Vercel · Android TWA · art drawn by <code>tools/make_banner.mjs</code> and <code>tools/make_assets.mjs</code></sub></p>
+<p align="center"><sub>Next.js · Supabase · Gmail API · Vercel · Android TWA · art drawn by <code>tools/make_art.mjs</code></sub></p>

@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Doto, Space_Grotesk, Space_Mono } from "next/font/google";
 import "./globals.css";
 import "./shell.css";
+import "./calm.css";
 
 // Same type system as the vit-timetable page: Doto (Nothing-style dot matrix)
 // for headings and numbers, Space Grotesk for text, Space Mono for labels.
@@ -27,10 +28,10 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${dot.variable} ${grotesk.variable} ${mono.variable} antialiased`}>
-        {/* Apply the saved light/dark choice before first paint. */}
+        {/* Apply the saved look (calm or glyph) and light/dark before first paint. */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `try{var t=localStorage.getItem("delt-theme");if(t)document.documentElement.dataset.theme=t}catch(e){}`,
+            __html: `var r=document.documentElement;r.dataset.look="calm";try{var t=localStorage.getItem("delt-theme"),k=localStorage.getItem("delt-look");if(t)r.dataset.theme=t;if(k)r.dataset.look=k}catch(e){}`,
           }}
         />
         {children}
