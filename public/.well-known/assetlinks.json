@@ -1,0 +1,10 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "in.delt.mail",
+      "sha256_cert_fingerprints": ["0E:F2:05:59:E9:FC:70:64:C1:96:71:77:98:FE:B4:59:87:F7:F1:77:97:A6:80:D7:37:E8:21:7E:EB:03:0F:78"]
+    }
+  }
+]

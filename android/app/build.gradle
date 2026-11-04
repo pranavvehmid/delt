@@ -1,0 +1,54 @@
+// DELT for Android: a Trusted Web Activity that opens https://delt-mu.vercel.app
+// full-screen in the phone's Chrome engine (so Google sign-in works).
+// Built by .github/workflows/android.yml; signing details come from GitHub secrets.
+
+plugins {
+    id "com.android.application"
+}
+
+def siteHost = "delt-mu.vercel.app"
+
+android {
+    namespace "in.delt.mail"
+    compileSdk 34
+
+    defaultConfig {
+        applicationId "in.delt.mail"
+        minSdk 26
+        targetSdk 34
+        versionCode (System.getenv("VERSION_CODE") ?: "1").toInteger()
+        versionName System.getenv("VERSION_NAME") ?: "1.0"
+        manifestPlaceholders = [host: siteHost, startUrl: "https://${siteHost}/#/today"]
+        resValue "string", "asset_statements",
+            "[{ \\\"relation\\\": [\\\"delegate_permission/common.handle_all_urls\\\"], \\\"target\\\": {\\\"namespace\\\": \\\"web\\\", \\\"site\\\": \\\"https://${siteHost}\\\"}}]"
+    }
+
+    signingConfigs {
+        release {
+            def ks = System.getenv("KEYSTORE_FILE")
+            if (ks) {
+                storeFile file(ks)
+                storeType "pkcs12"
+                storePassword System.getenv("KEYSTORE_PASSWORD")
+                keyAlias System.getenv("KEY_ALIAS") ?: "delt"
+                keyPassword System.getenv("KEYSTORE_PASSWORD")
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            signingConfig signingConfigs.release
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
+
+dependencies {
+    implementation "com.google.androidbrowserhelper:androidbrowserhelper:2.5.0"
+}
