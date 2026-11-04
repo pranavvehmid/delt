@@ -37,13 +37,3 @@ export type EmailRow = {
   deadline_choice: "tracked" | "skipped" | null;
 };
 
-export type DeadlineRow = {
-  id: string;
-  user_email: string;
-  title: string;
-  due_at: string;
-  email_id: string | null;
-  note: string | null;
-  done: boolean;
-  created_at: string;
-};

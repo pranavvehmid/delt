@@ -104,8 +104,8 @@ const F = {
   R: ["11110","10001","10001","11110","10100","10010","10001"], S: ["01111","10000","10000","01110","00001","00001","11110"],
   T: ["11111","00100","00100","00100","00100","00100","00100"], U: ["10001","10001","10001","10001","10001","10001","01110"],
   V: ["10001","10001","10001","10001","10001","01010","00100"], W: ["10001","10001","10001","10101","10101","11011","10001"],
-  Y: ["10001","10001","01010","00100","00100","00100","00100"], "0": ["01110","10001","10011","10101","11001","10001","01110"],
-  "1": ["00100","01100","00100","00100","00100","00100","01110"], "3": ["11110","00001","00001","01110","00001","00001","11110"],
+  X: ["10001","10001","01010","00100","01010","10001","10001"], Y: ["10001","10001","01010","00100","00100","00100","00100"], "0": ["01110","10001","10011","10101","11001","10001","01110"],
+  "1": ["00100","01100","00100","00100","00100","00100","01110"], "2": ["01110","10001","00001","00010","00100","01000","11111"], "3": ["11110","00001","00001","01110","00001","00001","11110"],
   "4": ["00010","00110","01010","10010","11111","00010","00010"], "8": ["01110","10001","10001","01110","10001","10001","01110"],
   " ": ["00000","00000","00000","00000","00000","00000","00000"], ".": ["00000","00000","00000","00000","00000","00000","00100"],
 };
@@ -171,8 +171,8 @@ mkdirSync("assets", { recursive: true });
   .stamp${i} { opacity: 0; animation: stamp${i} ${cyc}s ease infinite; }
   @keyframes stamp${i} { 0%, ${f1(a + 12)}% { opacity: 0; transform: scale(1.6); } ${f1(a + 17)}%, ${f1(a + 26)}% { opacity: 1; transform: scale(1); } ${f1(a + 30)}%, 100% { opacity: 0; } }`;
       const stamp = c.dir > 0
-        ? `<g class="stamp${i} fb"><rect x="18" y="20" width="86" height="30" rx="8" fill="#fff" stroke="#1b8a4a" stroke-width="3" transform="rotate(-12 61 35)"/><text x="61" y="41" text-anchor="middle" class="t" font-size="15" fill="#1b8a4a" transform="rotate(-12 61 35)">GOT IT</text></g>`
-        : `<g class="stamp${i} fb"><rect x="70" y="20" width="118" height="30" rx="8" fill="#fff" stroke="${RED}" stroke-width="3" transform="rotate(12 129 35)"/><text x="129" y="41" text-anchor="middle" class="t" font-size="14" fill="${RED}" transform="rotate(12 129 35)">NOT FOR ME</text></g>`;
+        ? `<g class="stamp${i} fb"><rect x="18" y="20" width="86" height="30" rx="8" fill="#fff" stroke="#1b8a4a" stroke-width="3" transform="rotate(-12 61 35)"/><text x="61" y="41" text-anchor="middle" class="t" font-size="15" fill="#1b8a4a" transform="rotate(-12 61 35)">READ ✓</text></g>`
+        : `<g class="stamp${i} fb"><rect x="70" y="20" width="118" height="30" rx="8" fill="#fff" stroke="#1b8a4a" stroke-width="3" transform="rotate(12 129 35)"/><text x="129" y="41" text-anchor="middle" class="t" font-size="14" fill="#1b8a4a" transform="rotate(12 129 35)">DONE ✓</text></g>`;
       return `<g class="card${i}" style="transform-origin: 98px 220px">
         <rect x="5" y="5" width="196" height="200" rx="18" fill="${INK}"/>
         <rect width="196" height="200" rx="18" fill="${c.fill}" stroke="${INK}" stroke-width="3"/>
@@ -199,7 +199,7 @@ mkdirSync("assets", { recursive: true });
   const chips = [
     [84, "11", "unread"],
     [232, "3", "deadlines"],
-    [404, "4", "chances"],
+    [404, "5", "urgent"],
   ]
     .map(([x, n, l], i) => {
       const w = 40 + l.length * 9.5 + n.length * 14;
@@ -211,10 +211,10 @@ mkdirSync("assets", { recursive: true });
     })
     .join("");
 
-  const tabBar = ["Today", "New", "Chances", "Due", "Inbox"]
+  const tabBar = ["Inbox", "Deadlines"]
     .map((t, i) => {
-      const on = i === 1;
-      return `<g transform="translate(${24 + i * 46} 0)">${on ? `<rect x="-18" y="-13" width="36" height="21" rx="10" fill="${GOLD}" stroke="${INK}" stroke-width="2" filter="url(#glowS)"/>` : ""}<circle cx="0" cy="-3" r="4" fill="${on ? ON : "#8f86b0"}"/><text x="0" y="21" text-anchor="middle" class="b" font-size="9" fill="${on ? TXT : "#8f86b0"}">${t}</text></g>`;
+      const on = i === 0;
+      return `<g transform="translate(${62 + i * 112} 0)">${on ? `<rect x="-18" y="-13" width="36" height="21" rx="10" fill="${GOLD}" stroke="${INK}" stroke-width="2" filter="url(#glowS)"/>` : ""}<circle cx="0" cy="-3" r="4" fill="${on ? ON : "#8f86b0"}"/><text x="0" y="21" text-anchor="middle" class="b" font-size="9" fill="${on ? TXT : "#8f86b0"}">${t}</text></g>`;
     })
     .join("");
 
@@ -241,14 +241,14 @@ ${backdrop(W, H, 22)}
   <rect x="868" y="36" width="276" height="440" rx="42" fill="${LILAC}" opacity=".28" filter="url(#blurBig)"/>
   ${block(870, 34, 270, 440, 40, BG, 12)}
   <rect x="966" y="48" width="78" height="9" rx="4.5" fill="${INK}"/>
-  <text x="892" y="92" class="t" font-size="22" fill="${TXT}">NEW</text>
+  <text x="892" y="92" class="t" font-size="22" fill="${TXT}">INBOX</text>
   <g class="m" font-size="11" fill="${MUTED}">
-    <text x="950" y="91" class="n0">11 unread · swipe</text><text x="950" y="91" class="n1">10 unread · swipe</text><text x="950" y="91" class="n2">9 unread · swipe</text>
+    <text x="978" y="91" class="n0">11 unread</text><text x="978" y="91" class="n1">10 unread</text><text x="978" y="91" class="n2">9 unread</text>
   </g>
   <g transform="translate(906 110)">${deck}</g>
   <g transform="translate(906 344)">
-    <rect x="0" y="0" width="94" height="34" rx="12" fill="${CARD}" stroke="${INK}" stroke-width="2.5"/><text x="47" y="22" text-anchor="middle" class="b" font-size="12" fill="${TXT}">✕ Not for me</text>
-    <rect x="108" y="0" width="90" height="34" rx="12" fill="${GOLD}" stroke="${INK}" stroke-width="2.5"/><text x="153" y="22" text-anchor="middle" class="b" font-size="12" fill="${ON}">✓ Got it</text>
+    <rect x="0" y="0" width="94" height="34" rx="12" fill="${CARD}" stroke="${INK}" stroke-width="2.5"/><text x="47" y="22" text-anchor="middle" class="b" font-size="12" fill="${TXT}">← Done</text>
+    <rect x="108" y="0" width="90" height="34" rx="12" fill="${GOLD}" stroke="${INK}" stroke-width="2.5"/><text x="153" y="22" text-anchor="middle" class="b" font-size="12" fill="${ON}">Read →</text>
   </g>
   <g transform="translate(888 424)"><rect x="0" y="-22" width="236" height="46" rx="23" fill="${CARD}" stroke="${INK}" stroke-width="2.5"/>${tabBar}</g>
 </g>
@@ -407,40 +407,39 @@ ${sparkle(1120, 150, 0.5, GOLD, 0.2)}${sparkle(300, 200, 0.32, LILAC, 1)}`;
 }
 
 // =====================================================================
-// 4. FIVE TABS: each card plays a mini animation of its job; a spotlight moves along
+// 4. HOW IT WORKS: three cards (inbox, mail, deadlines), each animating its job
 // =====================================================================
 {
   const W = 1200, H = 360;
   clipN = 0;
   const cyc = 10;
+  const PILE_DOTS = ["#ff6369", GOLD, LILAC, "#8e8c99"];
   const minis = [
-    // Today: three ticks appear in turn
-    `<g transform="translate(24 120)">${[0, 1, 2].map((k) => `<g transform="translate(0 ${k * 20})"><rect width="14" height="14" rx="4" fill="none" stroke="currentColor" stroke-width="2"/><path d="M3 7 l3 3 6-7" stroke="currentColor" stroke-width="2.6" fill="none" class="tick" style="animation-delay:${k * 0.6}s"/><rect x="22" y="4" width="${[110, 90, 120][k]}" height="6" rx="3" fill="currentColor" opacity=".35"/></g>`).join("")}</g>`,
-    // New: a mini card swipes right, again and again
-    `<g transform="translate(40 116)"><rect x="6" y="6" width="120" height="58" rx="10" fill="currentColor" opacity=".25"/><g class="mswipe"><rect width="120" height="58" rx="10" fill="${LILAC}" stroke="${INK}" stroke-width="2.5"/><rect x="10" y="12" width="70" height="7" rx="3.5" fill="${ON}"/><rect x="10" y="26" width="90" height="6" rx="3" fill="${ON}" opacity=".4"/><rect x="10" y="38" width="60" height="6" rx="3" fill="${ON}" opacity=".4"/></g></g>`,
-    // Chances: a big star twinkles with sparks rising
-    `<g transform="translate(60 112)"><path d="M36 4l9 19 21 3-15 14 4 21-19-10-19 10 4-21L6 26l21-3z" fill="${GOLD}" stroke="${INK}" stroke-width="2.5" class="fb tw" style="animation-duration:1.8s" filter="url(#glowS)"/>${[0, 1, 2, 3].map((k) => `<circle cx="${10 + k * 22}" cy="70" r="2.6" fill="${GOLD}" class="rise" style="--h:-70px;animation-duration:${2 + k * 0.4}s;animation-delay:-${k * 0.5}s"/>`).join("")}</g>`,
+    // Inbox: rows slide in, each with its pile colour
+    `<g transform="translate(24 116)">${[0, 1, 2, 3].map((k) => `<g class="row" style="animation-delay:${k * 0.35}s"><circle cx="8" cy="${k * 22 + 8}" r="7" fill="${PILE_DOTS[k]}" stroke="${INK}" stroke-width="1.5"/><rect x="24" y="${k * 22 + 2}" width="${[200, 150, 180, 120][k]}" height="7" rx="3.5" fill="currentColor" opacity=".55"/><rect x="24" y="${k * 22 + 11}" width="${[140, 110, 90, 150][k]}" height="5" rx="2.5" fill="currentColor" opacity=".25"/></g>`).join("")}</g>`,
+    // Full mail: text lines write themselves, pile chips below
+    `<g transform="translate(24 116)">${[0, 1, 2, 3].map((k) => `<rect y="${k * 14}" width="${[260, 230, 250, 140][k]}" height="6" rx="3" fill="currentColor" opacity=".45" class="type" style="animation-delay:${k * 0.4}s"/>`).join("")}${["Urgent", "Priority", "Later"].map((p, k) => `<g transform="translate(${k * 78} 68)"><rect width="70" height="22" rx="11" fill="${k === 0 ? "#ff6369" : "none"}" stroke="currentColor" stroke-width="1.5" class="${k === 0 ? "pick" : ""}"/><text x="35" y="15" text-anchor="middle" class="b" font-size="11">${p}</text></g>`).join("")}</g>`,
     // Deadlines: a clock with spinning hands
-    `<g transform="translate(70 145)"><circle r="34" fill="none" stroke="currentColor" stroke-width="3"/>${Array.from({ length: 12 }, (_, k) => `<circle cx="${f1(Math.cos((k / 12) * 6.283) * 27)}" cy="${f1(Math.sin((k / 12) * 6.283) * 27)}" r="1.8" fill="currentColor"/>`).join("")}<line y2="-22" stroke="${RED}" stroke-width="3.5" stroke-linecap="round" class="hand1"/><line y2="-14" stroke="currentColor" stroke-width="4" stroke-linecap="round" class="hand2"/><circle r="4" fill="currentColor"/></g>`,
-    // Inbox: rows slide in, one by one
-    `<g transform="translate(24 116)">${[0, 1, 2, 3].map((k) => `<g class="row" style="animation-delay:${k * 0.35}s"><circle cx="6" cy="${k * 17 + 6}" r="5" fill="${k < 2 ? GOLD : "currentColor"}" opacity="${k < 2 ? 1 : 0.4}"/><rect x="18" y="${k * 17 + 2}" width="${[130, 100, 120, 90][k]}" height="7" rx="3.5" fill="currentColor" opacity=".45"/></g>`).join("")}</g>`,
+    `<g transform="translate(70 152)"><circle r="34" fill="none" stroke="currentColor" stroke-width="3"/>${Array.from({ length: 12 }, (_, k) => `<circle cx="${f1(Math.cos((k / 12) * 6.283) * 27)}" cy="${f1(Math.sin((k / 12) * 6.283) * 27)}" r="1.8" fill="currentColor"/>`).join("")}<line y2="-22" stroke="${RED}" stroke-width="3.5" stroke-linecap="round" class="hand1"/><line y2="-14" stroke="currentColor" stroke-width="4" stroke-linecap="round" class="hand2"/><circle r="4" fill="currentColor"/></g>
+     <g transform="translate(130 128)">${["Today", "Tomorrow", "This week"].map((d, k) => `<g class="row" style="animation-delay:${k * 0.4}s"><text y="${k * 22 + 10}" class="m" font-size="12" fill="${k === 0 ? RED : "currentColor"}">${d}</text></g>`).join("")}</g>`,
   ];
   const tabs = [
-    { name: "TODAY", line: "4-step checklist", sub: "top · due · notices" },
-    { name: "NEW", line: "swipe unread mail", sub: "→ got it  ← not for me" },
-    { name: "CHANCES", line: "hackathons for you", sub: "ranked by interests" },
-    { name: "DEADLINES", line: "yours + from mail", sub: "→ Google Calendar" },
-    { name: "INBOX", line: "every mail by day", sub: "senders · bulk clean" },
+    { name: "INBOX", line: "every mail in one list", sub: "colour tag = pile · swipe to act" },
+    { name: "MAIL", line: "tap to read it all", sub: "full mail · move pile · calendar" },
+    { name: "DEADLINES", line: "found in your mail", sub: "overdue · today · this week" },
   ];
+  const N = tabs.length, CW = 360;
   let css = HOP_CSS + `
   .tick { stroke-dasharray: 16; animation: tick 2.4s ease-in-out infinite; } @keyframes tick { 0%, 15% { stroke-dashoffset: 16; } 35%, 85% { stroke-dashoffset: 0; } 100% { stroke-dashoffset: 16; } }
   .mswipe { animation: mswipe 2.6s cubic-bezier(.5,0,.3,1) infinite; } @keyframes mswipe { 0%, 30% { transform: translate(0,0) rotate(0); opacity: 1; } 60% { transform: translate(120px, 6px) rotate(14deg); opacity: 0; } 61% { transform: translate(0, 10px); opacity: 0; } 85%, 100% { transform: translate(0,0); opacity: 1; } }
   .hand1 { animation: spin 3s linear infinite; } .hand2 { animation: spin 18s linear infinite; }
+  .type { transform-box: fill-box; transform-origin: left; animation: type 3s ease-out infinite; } @keyframes type { 0% { transform: scaleX(0); } 30%, 85% { transform: scaleX(1); } 100% { transform: scaleX(0); } }
+  .pick { animation: pick 3s ease-in-out infinite; } @keyframes pick { 0%, 40% { opacity: 0; } 55%, 100% { opacity: 1; } }
   .row { animation: row 3s cubic-bezier(.3,1.3,.6,1) infinite; } @keyframes row { 0% { transform: translateX(-30px); opacity: 0; } 20%, 80% { transform: none; opacity: 1; } 100% { opacity: 0; } }`;
   const cards = tabs
     .map((t, i) => {
-      const x = 34 + i * 230;
-      const s = (i / 5) * 100, e = ((i + 1) / 5) * 100;
+      const x = 34 + i * (CW + 26);
+      const s = (i / N) * 100, e = ((i + 1) / N) * 100;
       css += `
   .lit${i} { animation: lit${i} ${cyc}s ease-in-out infinite; } @keyframes lit${i} { 0%, ${f1(s)}% { fill: ${CARD}; } ${f1(s + 3)}%, ${f1(e - 2)}% { fill: ${GOLD}; } ${f1(e)}%, 100% { fill: ${CARD}; } }
   .col${i} { animation: col${i} ${cyc}s ease-in-out infinite; color: ${TXT}; } @keyframes col${i} { 0%, ${f1(s)}% { color: ${TXT}; } ${f1(s + 3)}%, ${f1(e - 2)}% { color: ${ON}; } ${f1(e)}%, 100% { color: ${TXT}; } }
@@ -448,14 +447,14 @@ ${sparkle(1120, 150, 0.5, GOLD, 0.2)}${sparkle(300, 200, 0.32, LILAC, 1)}`;
   .halo${i} { opacity: 0; animation: halo${i} ${cyc}s ease-in-out infinite; } @keyframes halo${i} { 0%, ${f1(s)}% { opacity: 0; } ${f1(s + 3)}%, ${f1(e - 2)}% { opacity: .8; } ${f1(e)}%, 100% { opacity: 0; } }`;
       return `
   <g transform="translate(${x} 100)">
-    <rect x="-8" y="-8" width="226" height="236" rx="30" fill="${GOLD}" class="halo${i}" filter="url(#blurBig)"/>
-    ${Array.from({ length: 5 }, (_, k) => `<rect x="${10 - k * 2}" y="${10 - k * 2}" width="210" height="220" rx="24" fill="${INK}" opacity="${f1(0.55 + k * 0.1)}"/>`).join("")}
+    <rect x="-8" y="-8" width="${CW + 16}" height="236" rx="30" fill="${GOLD}" class="halo${i}" filter="url(#blurBig)"/>
+    ${Array.from({ length: 5 }, (_, k) => `<rect x="${10 - k * 2}" y="${10 - k * 2}" width="${CW}" height="220" rx="24" fill="${INK}" opacity="${f1(0.55 + k * 0.1)}"/>`).join("")}
     <g class="lift${i}">
-      <rect width="210" height="220" rx="24" class="lit${i}" stroke="${INK}" stroke-width="3.5"/>
-      ${sweepOver(0, 0, 210, 220, 24, 5, i * 0.7)}
+      <rect width="${CW}" height="220" rx="24" class="lit${i}" stroke="${INK}" stroke-width="3.5"/>
+      ${sweepOver(0, 0, CW, 220, 24, 5, i * 0.7)}
       <g class="col${i}" fill="currentColor">
-        <text x="24" y="52" class="t" font-size="${t.name.length > 7 ? 19 : 27}">${t.name}</text>
-        <text x="186" y="40" text-anchor="end" class="t" font-size="20" opacity=".3">${i + 1}</text>
+        <text x="24" y="52" class="t" font-size="27">${t.name}</text>
+        <text x="${CW - 24}" y="40" text-anchor="end" class="t" font-size="20" opacity=".3">${i + 1}</text>
         <text x="24" y="80" class="b" font-size="14">${t.line}</text>
         <text x="24" y="100" class="m" font-size="11" opacity=".8">${t.sub}</text>
         ${minis[i]}
@@ -466,9 +465,9 @@ ${sparkle(1120, 150, 0.5, GOLD, 0.2)}${sparkle(300, 200, 0.32, LILAC, 1)}`;
     .join("");
   const body = `
 ${backdrop(W, H, 16)}
-${dotText("FIVE TABS. ONE JOB EACH.", 34, 30, 2.5, 6, TXT, { wave: 3.6 })}
+${dotText("ONE INBOX. EVERY MAIL.", 34, 30, 2.5, 6, TXT, { wave: 3.6 })}
 ${cards}`;
-  writeFileSync("assets/tabs.svg", svg(W, H, "DELT's five tabs: Today, New, Chances, Deadlines, Inbox", body, css));
+  writeFileSync("assets/tabs.svg", svg(W, H, "One inbox with every mail, the full mail on tap, and deadlines from mail", body, css));
 }
 
 // =====================================================================
@@ -478,7 +477,7 @@ ${cards}`;
   const W = 1200, H = 200;
   clipN = 0;
   const stats = [
-    { big: "118", label: "TESTS PASSING", fill: GOLD, bars: [0.4, 0.7, 0.9, 1] },
+    { big: "124", label: "TESTS PASSING", fill: GOLD, bars: [0.4, 0.7, 0.9, 1] },
     { big: "14", label: "REPOS STUDIED", fill: LILAC, bars: [0.6, 0.3, 0.8, 0.5] },
     { big: "3000", label: "RANDOM MAILS · 0 CRASHES", fill: CREAM, bars: [0.9, 0.95, 1, 0.98] },
     { big: "0", label: "RUPEES TO RUN", fill: MIST, bars: [0.05, 0.05, 0.05, 0.05] },
@@ -501,7 +500,7 @@ ${cards}`;
   </g></g>`;
     })
     .join("");
-  writeFileSync("assets/stats.svg", svg(W, H, "118 tests passing · 14 repos studied · 3000 random mails, 0 crashes · 0 rupees to run", `${backdrop(W, H, 12)}${cells}`, css));
+  writeFileSync("assets/stats.svg", svg(W, H, "124 tests passing · 14 repos studied · 3000 random mails, 0 crashes · 0 rupees to run", `${backdrop(W, H, 12)}${cells}`, css));
 }
 
 // =====================================================================

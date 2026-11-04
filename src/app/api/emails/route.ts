@@ -38,25 +38,23 @@ const Patch = z.object({
   category: z.enum(CATEGORIES).optional(),
   is_done: z.boolean().optional(),
   read: z.boolean().optional(),
-  deadline_choice: z.enum(["tracked", "skipped"]).nullable().optional(),
 });
 
 // PATCH: move a mail or recategorise it (teaches the sorter), mark it done,
-// read or unread (mirrored in Gmail), or record the "track this deadline?" answer.
+// read or unread (mirrored in Gmail).
 export async function PATCH(req: NextRequest) {
   const email = await currentUser();
   if (!email) return NextResponse.json({ error: "Not signed in" }, { status: 401 });
 
   const parsed = Patch.safeParse(await req.json());
   if (!parsed.success) return NextResponse.json({ error: "Bad request" }, { status: 400 });
-  const { id, priority, category, is_done, read, deadline_choice } = parsed.data;
+  const { id, priority, category, is_done, read } = parsed.data;
 
   const update: Record<string, unknown> = {};
   if (priority) Object.assign(update, { priority, user_corrected: true });
   if (category) Object.assign(update, { category, user_corrected: true });
   if (is_done !== undefined) update.is_done = is_done;
   if (read !== undefined) update.unread = !read;
-  if (deadline_choice !== undefined) update.deadline_choice = deadline_choice;
 
   const { error } = await db.from("emails").update(update).eq("id", id).eq("user_email", email);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });

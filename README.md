@@ -11,7 +11,7 @@
 <p align="center">
   <a href="https://delt-mu.vercel.app"><img alt="Open the web app" src="https://img.shields.io/badge/open-delt--mu.vercel.app-f5c842?style=for-the-badge&labelColor=17112b"></a>
   <a href="https://github.com/pranavvehmid/delt/releases/latest"><img alt="Latest Android release" src="https://img.shields.io/github/v/release/pranavvehmid/delt?style=for-the-badge&label=android&color=b9a2ff&labelColor=17112b"></a>
-  <a href="#tests"><img alt="118 tests passing" src="https://img.shields.io/badge/tests-118%20passing-5ee6b0?style=for-the-badge&labelColor=17112b"></a>
+  <a href="#tests"><img alt="124 tests passing" src="https://img.shields.io/badge/tests-124%20passing-5ee6b0?style=for-the-badge&labelColor=17112b"></a>
   <img alt="Free" src="https://img.shields.io/badge/cost-%E2%82%B90-fff3d1?style=for-the-badge&labelColor=17112b">
 </p>
 
@@ -20,7 +20,7 @@
 </p>
 
 <p align="center">
-  <img src="assets/stats.svg" alt="118 tests passing · 14 repos studied · 3000 random mails, 0 crashes · ₹0 to run" width="100%">
+  <img src="assets/stats.svg" alt="124 tests passing · 14 repos studied · 3000 random mails, 0 crashes · ₹0 to run" width="100%">
 </p>
 
 ## What it does
@@ -41,23 +41,25 @@ DELT signs in with your **VIT Google account**, reads your college mail, and sor
 It knows you're a first year from the register number in your VIT name (`26BCE…`), so mail meant for seniors drops to Later on its own.
 Move a mail by hand once and DELT remembers that sender.
 
-## Five tabs, one job each
+## One inbox. Every mail.
 
 <p align="center">
-  <img src="assets/tabs.svg" alt="Today, New, Chances, Deadlines, Inbox" width="100%">
+  <img src="assets/tabs.svg" alt="Inbox, full mail, deadlines" width="100%">
 </p>
 
-| Tab | Job |
+| Screen | What you do there |
 |---|---|
-| **Today** | your day as a 4-step checklist: sort what's new → answer deadline questions → do what's due → skim notices. Plus today's mail count and how much of the week you've cleared |
-| **New** | unread mail as a swipe deck: → got it, ← not for me (marks read in Gmail too) |
-| **Chances** | hackathons and contests still open, ranked by the interests you pick, with Track and Add to Calendar |
-| **Deadlines** | add your own, track ones found in mail, see the week day by day, send any to Google Calendar |
-| **Inbox** | every mail by day with read/unread counts; fix priority or category; **Senders** view to mark all read, keep as Later, or mute |
+| **Inbox** | every mail in one list, newest first, grouped by day. Each has a colour tag for its pile. Tap the chips (All · Urgent · Priority · Later · Noise) to filter, or **Unread only**. Nothing ever leaves this list |
+| **Mail** | tap any mail to read the **whole original** inside DELT. Move it to another pile (DELT remembers that sender), add its deadline to Google Calendar, mark unread or done |
+| **Deadlines** | dates found in your mail, sorted: Overdue · Today · Tomorrow · This week · Later · Done |
 
-Pick a look from the ◐ button: **Calm** (minimal and smooth, the default) or **Glyph** (bold dot-matrix), each in night or day.
+On a phone, **swipe right** to mark read or unread and **swipe left** to mark done. Every action has **Undo**.
 
-Tap any mail for a summary, or **Read full mail** to see the original inside DELT. It's fetched live from Gmail and never stored.
+DELT checks for new mail when you open it, every 5 minutes while it's open, and once a day at 7 AM.
+
+Pick a look from the ◐ button: **Calm** (a clean Gmail-style list, the default) or **Glyph** (chunky dot-matrix cards), each in night or day.
+
+How it all works, and why: [docs/DESIGN.md](docs/DESIGN.md).
 
 ## Install on Android
 
@@ -89,12 +91,13 @@ Create the tables by running [`supabase/schema.sql`](supabase/schema.sql) in the
 
 ## Tests
 
-`npm test` runs 118 checks in about 3 seconds:
+`npm test` runs 124 checks in about 3 seconds:
 
 - **80+ real VIT mails** and the pile a first year expects: exams, FFCS, scholarships, seniors-only, achievements, the `- reg` trap
 - **Dates** in every format VIT uses (`15/11/2026`, `15th Nov`, `Nov 15`, `tomorrow 6 PM`), year rollover, impossible days like 31 Feb
 - **Parsing**: HTML mail, nested multiparts, group senders, ₹ and Tamil text
 - **Stress**: 3,000 random mails never crash; 1,000 typical mails sort in under a second
+- **Inbox logic**: filters never hide mail under All, day groups follow IST, deadline buckets merge reminders and skip noise
 
 `scripts/eval.ts` compares the free rules with AI and hand-sorted answers on your own inbox (read-only).
 

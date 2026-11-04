@@ -1,57 +1,34 @@
-import type { CSSProperties } from "react";
 import { auth, signIn, signOut } from "@/auth";
-import Dashboard from "./dashboard";
-
-const SPARK = "M29 0c1.6 15 6.4 22.4 29 29-22.6 7-27.4 14.4-29 29-1.6-14.6-6.4-22-29-29C22.6 22.4 27.4 15 29 0z";
+import InboxApp from "./inbox-app";
 
 export default async function Home() {
   const session = await auth();
 
   if (!session?.user?.email) {
     return (
-      <main className="wrap" style={{ minHeight: "100vh", display: "grid", placeItems: "center" }}>
-        <section className="top" style={{ gridTemplateColumns: "1fr", maxWidth: 720, width: "100%" }}>
-          <header className="block hero">
-            <div className="eyebrow">VIT VELLORE · FOR EVERY VITIAN</div>
-            <h1 className="dot" aria-label="DELT">
-              {"DELT".split("").map((ch, i) => (
-                <span key={i} className="ltr" style={{ ["--n"]: i } as CSSProperties} aria-hidden="true">
-                  {ch}
-                </span>
-              ))}
-              <i />
-            </h1>
-            <div className="tagline">DON&apos;T JUST READ MAIL. DELT WITH IT.</div>
-            <div className="chips">
-              {["Exams first", "Registrations", "Hackathons", "Free forever"].map((c, i) => (
-                <span key={c} className="chip" style={{ ["--n"]: i } as CSSProperties}>
-                  {c}
-                </span>
-              ))}
-            </div>
-            <svg className="spark" style={{ right: 28, top: 20 }} width="54" height="54" viewBox="0 0 58 58" aria-hidden="true">
-              <path d={SPARK} fill="var(--on)" />
-            </svg>
-            <svg className="spark b" style={{ right: 98, top: 74 }} width="26" height="26" viewBox="0 0 58 58" aria-hidden="true">
-              <path d={SPARK} fill="var(--on)" />
-            </svg>
-          </header>
-          <div className="block next" style={{ alignItems: "flex-start" }}>
-            <span className="lbl" style={{ width: "100%" }}>
-              <span>SIGN IN</span>
-              <span>VIT GOOGLE ACCOUNT</span>
-            </span>
-            <span className="what">Your inbox, sorted into Urgent, Chances, Notices and Later. Reads and labels mail, never deletes.</span>
-            <form
-              action={async () => {
-                "use server";
-                await signIn("google");
-              }}
-            >
-              <button className="btn gold">→ Sign in with VIT</button>
-            </form>
-          </div>
-        </section>
+      <main className="signin">
+        <div className="signin-card">
+          <span className="logo">
+            <span>DELT</span>
+            <i />
+          </span>
+          <h1>Your VIT inbox, sorted. Nothing important missed.</h1>
+          <ul>
+            <li className="p-very_important"><i className="tagdot" /> Exams, registrations, fees and deadlines first</li>
+            <li className="p-priority"><i className="tagdot" /> Hackathons, contests and notices next</li>
+            <li className="p-later"><i className="tagdot" /> Events and achievements when you have time</li>
+            <li className="p-noise"><i className="tagdot" /> Promotions kept out of the way</li>
+          </ul>
+          <form
+            action={async () => {
+              "use server";
+              await signIn("google");
+            }}
+          >
+            <button className="cta">Sign in with your VIT account</button>
+          </form>
+          <p className="fine">Free. Reads and labels your mail, never deletes it. Only @vitstudent.ac.in accounts.</p>
+        </div>
       </main>
     );
   }
@@ -61,7 +38,7 @@ export default async function Home() {
   const name = first.charAt(0).toUpperCase() + first.slice(1).toLowerCase();
 
   return (
-    <Dashboard
+    <InboxApp
       email={session.user.email}
       name={name}
       signOutAction={async () => {

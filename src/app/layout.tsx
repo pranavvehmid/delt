@@ -1,11 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import { Doto, Space_Grotesk, Space_Mono } from "next/font/google";
-import "./globals.css";
-import "./shell.css";
-import "./calm.css";
+import "./app.css";
 
-// Same type system as the vit-timetable page: Doto (Nothing-style dot matrix)
-// for headings and numbers, Space Grotesk for text, Space Mono for labels.
+// Fonts for the Glyph look (Doto dot-matrix + Space Grotesk). Calm uses the phone's system font.
 const dot = Doto({ variable: "--font-dot", subsets: ["latin"], axes: ["ROND"] });
 const grotesk = Space_Grotesk({ variable: "--font-grotesk", subsets: ["latin"], weight: ["500", "700"] });
 const mono = Space_Mono({ variable: "--font-mono", subsets: ["latin"], weight: ["400", "700"] });

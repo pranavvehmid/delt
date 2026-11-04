@@ -49,7 +49,7 @@ alter table emails enable row level security;
 -- server key access explicitly.
 grant select, insert, update, delete on users, emails to service_role;
 
--- Your own deadlines, plus ones you chose to track from a mail.
+-- Unused since v2 (deadlines now come only from mail). Kept so old installs stay valid.
 create table if not exists deadlines (
   id          uuid primary key default gen_random_uuid(),
   user_email  text not null references users(email) on delete cascade,

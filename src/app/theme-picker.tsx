@@ -2,16 +2,16 @@
 
 import { useEffect, useRef, useState } from "react";
 
-// Two looks (Calm is minimal and smooth, Glyph is the chunky dot-matrix one),
+// Two looks with different layouts (Calm: clean Gmail-style list; Glyph: chunky cards),
 // each in dark or light. Saved per device in localStorage.
 export type Look = "calm" | "glyph";
 export type Mode = "dark" | "light";
 
 const THEMES: { look: Look; mode: Mode; name: string; hint: string; swatch: [string, string, string] }[] = [
-  { look: "calm", mode: "dark", name: "Calm night", hint: "minimal · soft", swatch: ["#120e20", "#1c1631", "#e9c45b"] },
-  { look: "calm", mode: "light", name: "Calm day", hint: "minimal · soft", swatch: ["#f7f5f0", "#ffffff", "#c99a1c"] },
-  { look: "glyph", mode: "dark", name: "Glyph night", hint: "bold · dotted", swatch: ["#17112b", "#261c45", "#f5c842"] },
-  { look: "glyph", mode: "light", name: "Glyph ivory", hint: "bold · dotted", swatch: ["#fff8e8", "#ffffff", "#f5c842"] },
+  { look: "calm", mode: "dark", name: "Calm night", hint: "clean list · dark", swatch: ["#0f0e13", "#24222b", "#a48cff"] },
+  { look: "calm", mode: "light", name: "Calm day", hint: "clean list · light", swatch: ["#ffffff", "#e9e7ef", "#5b3fd6"] },
+  { look: "glyph", mode: "dark", name: "Glyph night", hint: "chunky · dot-matrix", swatch: ["#17112b", "#261c45", "#f5c842"] },
+  { look: "glyph", mode: "light", name: "Glyph ivory", hint: "chunky · dot-matrix", swatch: ["#fff8e8", "#ffffff", "#f5c842"] },
 ];
 
 export function applyTheme(look: Look, mode: Mode) {
@@ -53,7 +53,7 @@ export default function ThemePicker() {
 
   return (
     <div className="themepick" ref={box}>
-      <button className="btn icon" onClick={() => setOpen((o) => !o)} aria-label="Choose theme" aria-expanded={open} title="Theme">
+      <button className="iconbtn" onClick={() => setOpen((o) => !o)} aria-label="Choose theme" aria-expanded={open} title="Theme">
         ◐
       </button>
       <div className={`themes ${open ? "open" : ""}`} role="menu" aria-hidden={!open}>
