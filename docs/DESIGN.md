@@ -75,9 +75,13 @@ Deadlines ─ from mail only: Overdue · Today · Tomorrow · This week · Later
 **Sync:** on open, every 5 min while visible, on return to the app, and on ↻. The daily 7 AM cron covers days you don't open the app (the free Vercel plan allows one cron a day).
 
 **Looks (◐ → Appearance):**
-- **Minimal** (default): white or near-black, the phone's own font, full-width rows with thin dividers, one small colour dot per pile, no avatars, no tag pills. The only numbers are the unread badge on Inbox and the due badge on Deadlines. Built from the "Calm day" design the student picked.
+- **Minimal** (default): Swiss / International Typographic Style, after researching minimalist design rules (one typeface at light/regular/medium, never bold; 8px grid; whitespace instead of cards and dividers; one accent; square corners; flat navigation).
+  - **Importance is ink.** Urgent prints at 100% with a red mark, Priority 72%, Later 48%, Noise 30%. You read priority by how dark a line is, not by labels.
+  - **No tab bar.** "Inbox" and "Deadlines" are a typographic masthead; the current one is solid, the other faint.
+  - Rows sit on a two-column grid (time | mail). Deadlines show big light day numbers. Filters and pile choices are underlined words.
+  - Typeface: IBM Plex Sans. Accent: Swiss red #C8102E (the DELT dot). Only numbers: the two masthead counts.
 - **Glyph**: the chunky Nothing-style skin with dot-matrix headings, ink borders, hard shadows, avatars and counts.
-- Theme Light / Dark / Auto, Accent (6), Text Normal / Large, Spacing Comfortable / Compact. Saved per device (`delt-prefs`) and applied before first paint by `PREPAINT` in `src/lib/prefs.ts`.
+- Theme Light / Dark / Extra dark (pure black, Nothing OS style) / Auto, Accent (6), Text Normal / Large, Spacing Comfortable / Compact. Saved per device (`delt-prefs`) and applied before first paint by `PREPAINT` in `src/lib/prefs.ts`.
 
 **Many students, one app:** sign-in is open to any `@vitstudent.ac.in` account (Google "Internal" app in VIT's student organisation). Each mail row is keyed by **(student, Gmail id)**, because Gmail ids are per mailbox and two students can share one. Every API query is filtered by the signed-in student; `tests/safety.test.ts` fails if a route forgets.
 

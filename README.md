@@ -11,7 +11,7 @@
 <p align="center">
   <a href="https://delt-mu.vercel.app"><img alt="Open the web app" src="https://img.shields.io/badge/open-delt--mu.vercel.app-f5c842?style=for-the-badge&labelColor=17112b"></a>
   <a href="https://github.com/pranavvehmid/delt/releases/latest"><img alt="Latest Android release" src="https://img.shields.io/github/v/release/pranavvehmid/delt?style=for-the-badge&label=android&color=b9a2ff&labelColor=17112b"></a>
-  <a href="#tests"><img alt="150 tests passing" src="https://img.shields.io/badge/tests-150%20passing-5ee6b0?style=for-the-badge&labelColor=17112b"></a>
+  <a href="#tests"><img alt="151 tests passing" src="https://img.shields.io/badge/tests-151%20passing-5ee6b0?style=for-the-badge&labelColor=17112b"></a>
   <img alt="Free" src="https://img.shields.io/badge/cost-%E2%82%B90-fff3d1?style=for-the-badge&labelColor=17112b">
 </p>
 
@@ -20,7 +20,7 @@
 </p>
 
 <p align="center">
-  <img src="assets/stats.svg" alt="150 tests passing · 14 repos studied · 3000 random mails, 0 crashes · ₹0 to run" width="100%">
+  <img src="assets/stats.svg" alt="151 tests passing · 14 repos studied · 3000 random mails, 0 crashes · ₹0 to run" width="100%">
 </p>
 
 ## What it does
@@ -61,8 +61,8 @@ DELT checks for new mail when you open it, every 5 minutes while it's open, and 
 
 | Option | Choices |
 |---|---|
-| Look | **Minimal**: one font, a colour dot per pile, almost no numbers (default) · **Glyph**: bold dot-matrix cards |
-| Theme | Light · Dark · Auto (follows your phone) |
+| Look | **Minimal** (default): Swiss-style. One typeface, no boxes, and importance shown as ink: urgent mail is darkest with a red mark, noise is faint · **Glyph**: bold dot-matrix cards in purple and gold |
+| Theme | Light · Dark · Extra dark (pure black, like Nothing OS) · Auto (follows your phone) |
 | Accent | Default · Purple · Blue · Green · Red · Gold |
 | Text | Normal · Large |
 | Spacing | Comfortable · Compact (hides the summary line) |
@@ -99,7 +99,7 @@ Create the tables by running [`supabase/schema.sql`](supabase/schema.sql) in the
 
 ## Tests
 
-`npm test` runs 150 checks in about 3 seconds:
+`npm test` runs 151 checks in about 3 seconds:
 
 - **80+ real VIT mails** and the pile a first year expects: exams, FFCS, scholarships, seniors-only, achievements, the `- reg` trap
 - **Dates** in every format VIT uses (`15/11/2026`, `15th Nov`, `Nov 15`, `tomorrow 6 PM`), year rollover, impossible days like 31 Feb

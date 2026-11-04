@@ -27,6 +27,13 @@ test("old theme keys upgrade: calm -> minimal, glyph stays, light/dark kept", ()
   assert.equal(parsePrefs('{"look":"minimal"}', { look: "glyph" }).look, "minimal");
 });
 
+test("Extra dark is a dark theme with a pure-black tone", () => {
+  assert.equal(parsePrefs(JSON.stringify({ mode: "black" })).mode, "black");
+  const d = toDataset({ ...DEFAULTS, mode: "black" }, false);
+  assert.deepEqual([d.theme, d.tone], ["dark", "black"]);
+  assert.equal(toDataset({ ...DEFAULTS, mode: "dark" }, false).tone, "normal");
+});
+
 test("auto follows the phone", () => {
   assert.equal(resolveMode("auto", true), "dark");
   assert.equal(resolveMode("auto", false), "light");
@@ -59,7 +66,7 @@ test("the before-paint script agrees with parsePrefs for every combination", () 
               assert.deepEqual(runPrepaint({ "delt-prefs": raw }, dark), toDataset(parsePrefs(raw), dark));
               n++;
             }
-  assert.equal(n, 2 * 3 * 6 * 2 * 2 * 2);
+  assert.equal(n, 2 * 4 * 6 * 2 * 2 * 2);
 });
 
 test("the before-paint script handles empty, broken and legacy storage", () => {

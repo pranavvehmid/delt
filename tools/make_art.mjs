@@ -477,7 +477,7 @@ ${cards}`;
   const W = 1200, H = 200;
   clipN = 0;
   const stats = [
-    { big: "150", label: "TESTS PASSING", fill: GOLD, bars: [0.4, 0.7, 0.9, 1] },
+    { big: "151", label: "TESTS PASSING", fill: GOLD, bars: [0.4, 0.7, 0.9, 1] },
     { big: "14", label: "REPOS STUDIED", fill: LILAC, bars: [0.6, 0.3, 0.8, 0.5] },
     { big: "3000", label: "RANDOM MAILS · 0 CRASHES", fill: CREAM, bars: [0.9, 0.95, 1, 0.98] },
     { big: "0", label: "RUPEES TO RUN", fill: MIST, bars: [0.05, 0.05, 0.05, 0.05] },
@@ -500,7 +500,7 @@ ${cards}`;
   </g></g>`;
     })
     .join("");
-  writeFileSync("assets/stats.svg", svg(W, H, "150 tests passing · 14 repos studied · 3000 random mails, 0 crashes · 0 rupees to run", `${backdrop(W, H, 12)}${cells}`, css));
+  writeFileSync("assets/stats.svg", svg(W, H, "151 tests passing · 14 repos studied · 3000 random mails, 0 crashes · 0 rupees to run", `${backdrop(W, H, 12)}${cells}`, css));
 }
 
 // =====================================================================

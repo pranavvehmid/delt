@@ -10,7 +10,7 @@ const ACCENTS: { key: Prefs["accent"]; label: string; color: string }[] = [
   {
     key: "auto",
     label: "Default",
-    color: "conic-gradient(#5b3fd6 0 50%, #f5c842 0)",
+    color: "conic-gradient(#c8102e 0 50%, #f5c842 0)",
   },
   { key: "purple", label: "Purple", color: "#6a4be0" },
   { key: "blue", label: "Blue", color: "#1a73e8" },
@@ -162,6 +162,7 @@ export default function Appearance() {
                 items={[
                   ["light", "Light"],
                   ["dark", "Dark"],
+                  ["black", "Extra dark"],
                   ["auto", "Auto"],
                 ]}
               />

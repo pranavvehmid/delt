@@ -3,7 +3,7 @@
 
 export type Prefs = {
   look: "minimal" | "glyph";
-  mode: "light" | "dark" | "auto";
+  mode: "light" | "dark" | "black" | "auto";
   accent: "auto" | "purple" | "blue" | "green" | "red" | "gold";
   size: "normal" | "large";
   density: "comfortable" | "compact";
@@ -11,7 +11,7 @@ export type Prefs = {
 
 export const OPTIONS = {
   look: ["minimal", "glyph"],
-  mode: ["light", "dark", "auto"],
+  mode: ["light", "dark", "black", "auto"],
   accent: ["auto", "purple", "blue", "green", "red", "gold"],
   size: ["normal", "large"],
   density: ["comfortable", "compact"],
@@ -40,11 +40,13 @@ export function parsePrefs(raw: string | null, legacy: { look?: string | null; t
 }
 
 /** "auto" follows the phone. */
-export const resolveMode = (mode: Prefs["mode"], systemDark: boolean): "light" | "dark" => (mode === "auto" ? (systemDark ? "dark" : "light") : mode);
+/** "auto" follows the phone; "black" (Extra dark) is dark with a pure-black tone. */
+export const resolveMode = (mode: Prefs["mode"], systemDark: boolean): "light" | "dark" =>
+  mode === "auto" ? (systemDark ? "dark" : "light") : mode === "black" ? "dark" : mode;
 
 /** The attributes set on <html>. */
 export function toDataset(p: Prefs, systemDark: boolean) {
-  return { look: p.look, theme: resolveMode(p.mode, systemDark), accent: p.accent, size: p.size, density: p.density };
+  return { look: p.look, theme: resolveMode(p.mode, systemDark), tone: p.mode === "black" ? "black" : "normal", accent: p.accent, size: p.size, density: p.density };
 }
 
 /**
@@ -57,9 +59,9 @@ var r=document.documentElement,p={},raw=null;
 function ok(v,l,d){return typeof v==="string"&&l.indexOf(v)>=0?v:d}
 try{raw=localStorage.getItem("delt-prefs");var v=raw?JSON.parse(raw):null;if(v&&typeof v==="object"&&!Array.isArray(v))p=v;
 if(!raw){var lk=localStorage.getItem("delt-look"),lt=localStorage.getItem("delt-theme");if(lk)p={look:lk==="glyph"?"glyph":"minimal"};if(lt==="dark"||lt==="light")p.mode=lt}}catch(e){}
-var m=ok(p.mode,["light","dark","auto"],"light");
+var m=ok(p.mode,["light","dark","black","auto"],"light"),tone=m==="black"?"black":"normal";if(m==="black")m="dark";
 if(m==="auto")m=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";
-r.dataset.look=ok(p.look,["minimal","glyph"],"minimal");r.dataset.theme=m;
+r.dataset.look=ok(p.look,["minimal","glyph"],"minimal");r.dataset.theme=m;r.dataset.tone=tone;
 r.dataset.accent=ok(p.accent,["auto","purple","blue","green","red","gold"],"auto");
 r.dataset.size=ok(p.size,["normal","large"],"normal");
 r.dataset.density=ok(p.density,["comfortable","compact"],"comfortable");

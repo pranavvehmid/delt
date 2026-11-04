@@ -172,6 +172,15 @@ export default function InboxApp({ email, name, signOutAction }: { email: string
         </div>
       </header>
 
+      <nav className="mast" aria-label="Sections">
+        <button className={route.tab === "inbox" ? "on" : ""} onClick={() => goTab("inbox")} aria-current={route.tab === "inbox" ? "page" : undefined}>
+          Inbox{counts.all.unread > 0 && <sup>{counts.all.unread > 99 ? "99+" : counts.all.unread}</sup>}
+        </button>
+        <button className={route.tab === "deadlines" ? "on" : ""} onClick={() => goTab("deadlines")} aria-current={route.tab === "deadlines" ? "page" : undefined}>
+          Deadlines{dueCount > 0 && <sup>{dueCount}</sup>}
+        </button>
+      </nav>
+
       {/* ======================= INBOX ======================= */}
       {route.tab === "inbox" && (
         <main className="page" key="inbox">
@@ -388,7 +397,7 @@ function MailRow({ m, now, onOpen, onRead, onDone }: { m: EmailRow; now: number;
   const sender = cleanSender(m.from_name);
 
   return (
-    <li className={`row ${m.unread ? "unread" : ""} ${m.is_done ? "done" : ""} ${dx ? "dragging" : ""}`}>
+    <li className={`row ink-${m.priority} ${m.unread ? "unread" : ""} ${m.is_done ? "done" : ""} ${dx ? "dragging" : ""}`}>
       <div className={`swipe-bg ${dx > 0 ? "r" : "l"} ${Math.abs(dx) > LIMIT ? "armed" : ""}`} aria-hidden="true">
         <span>{dx > 0 ? (m.unread ? "Read" : "Unread") : m.is_done ? "Not done" : "Done"}</span>
       </div>
@@ -396,6 +405,9 @@ function MailRow({ m, now, onOpen, onRead, onDone }: { m: EmailRow; now: number;
         <button className="row-main" onClick={() => !moved.current && onOpen()}>
           <span className={`avatar p-${m.priority}`} aria-hidden="true">
             {initials(sender)}
+          </span>
+          <span className="when" aria-hidden="true">
+            {shortTime(m.received_at, now)}
           </span>
           <span className="row-text">
             <span className="line1">
