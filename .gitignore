@@ -47,3 +47,10 @@ next-env.d.ts
 
 !.env.example
 .claude/
+
+# Android build output
+android/.gradle/
+android/app/build/
+android/build/
+android/local.properties
+*.apk

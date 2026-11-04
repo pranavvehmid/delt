@@ -16,8 +16,8 @@ android {
         applicationId "in.delt.mail"
         minSdk 26
         targetSdk 34
-        versionCode (System.getenv("VERSION_CODE") ?: "1").toInteger()
-        versionName System.getenv("VERSION_NAME") ?: "1.0"
+        versionCode = (System.getenv("VERSION_CODE") ?: "1").toInteger()
+        versionName = System.getenv("VERSION_NAME") ?: "1.0"
         manifestPlaceholders = [host: siteHost, startUrl: "https://${siteHost}/#/today"]
         resValue "string", "asset_statements",
             "[{ \\\"relation\\\": [\\\"delegate_permission/common.handle_all_urls\\\"], \\\"target\\\": {\\\"namespace\\\": \\\"web\\\", \\\"site\\\": \\\"https://${siteHost}\\\"}}]"

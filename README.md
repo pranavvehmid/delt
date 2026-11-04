@@ -5,7 +5,7 @@
 <p align="center">
   <b>Your VIT inbox, sorted.</b> Exams, registrations and hackathons first. Everything else, later.<br>
   <a href="https://delt-mu.vercel.app"><b>Open DELT →</b></a> &nbsp;·&nbsp;
-  <a href="../../releases/latest"><b>Download the Android app (APK) →</b></a>
+  <a href="https://github.com/pranavvehmid/delt/releases/latest/download/DELT.apk"><b>Download the Android app (APK) →</b></a>
 </p>
 
 ---
@@ -38,7 +38,7 @@ Tap any mail for a summary, or **Read full mail** to see the original inside DEL
 
 ## Install on Android
 
-1. On your phone, open the [latest release](../../releases/latest) and download **DELT.apk**.
+1. On your phone, tap [**Download DELT.apk**](https://github.com/pranavvehmid/delt/releases/latest/download/DELT.apk).
 2. Open it. If Android asks, allow installing apps from your browser.
 3. Sign in with your `@vitstudent.ac.in` account.
 
