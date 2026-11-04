@@ -1,9 +1,10 @@
 import "server-only";
 import type { Priority } from "./supabase";
+import { parseUnsubscribe } from "./insights";
 
 const API = "https://gmail.googleapis.com/gmail/v1/users/me";
 
-export async function getAccessToken(refreshToken: string): Promise<string> {
+export async function getAccessToken(refreshToken: string, attempt = 0): Promise<string> {
   const res = await fetch("https://oauth2.googleapis.com/token", {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -15,6 +16,11 @@ export async function getAccessToken(refreshToken: string): Promise<string> {
     }),
   });
   if (!res.ok) {
+    // Google sometimes answers 5xx or 429 for a moment: wait and try again.
+    if ((res.status >= 500 || res.status === 429) && attempt < 3) {
+      await new Promise((r) => setTimeout(r, 800 * 2 ** attempt));
+      return getAccessToken(refreshToken, attempt + 1);
+    }
     throw new Error(`Google token refresh failed (${res.status}): ${await res.text()}`);
   }
   return (await res.json()).access_token;
@@ -58,7 +64,7 @@ export async function listMessageIds(token: string, query: string, max = 100): P
   return ids;
 }
 
-type Part = {
+export type Part = {
   mimeType?: string;
   filename?: string;
   body?: { data?: string; size?: number; attachmentId?: string };
@@ -78,11 +84,17 @@ export type ParsedMessage = {
   unread: boolean;
 };
 
-function decode(data: string) {
+/** "Name <a@b.c>" -> the name and the lowercased address. */
+export function parseFrom(from: string) {
+  const m = from.match(/^\s*"?([^"<]*?)"?\s*<([^>]+)>/);
+  return { name: m?.[1]?.trim() || from.trim(), address: (m?.[2] ?? from).trim().toLowerCase() };
+}
+
+export function decode(data: string) {
   return Buffer.from(data.replace(/-/g, "+").replace(/_/g, "/"), "base64").toString("utf8");
 }
 
-function findPart(part: Part, mime: string): string | null {
+export function findPart(part: Part, mime: string): string | null {
   if (part.mimeType === mime && part.body?.data) return decode(part.body.data);
   for (const p of part.parts ?? []) {
     const found = findPart(p, mime);
@@ -91,7 +103,7 @@ function findPart(part: Part, mime: string): string | null {
   return null;
 }
 
-function htmlToText(html: string) {
+export function htmlToText(html: string) {
   return html
     .replace(/<(style|script)[\s\S]*?<\/\1>/gi, " ")
     .replace(/<br\s*\/?>|<\/p>|<\/div>|<\/li>|<\/tr>/gi, "\n")
@@ -121,8 +133,7 @@ export async function getMessage(token: string, id: string): Promise<ParsedMessa
   const header = (name: string) =>
     msg.payload.headers?.find((h) => h.name.toLowerCase() === name)?.value ?? "";
 
-  const from = header("from");
-  const match = from.match(/^\s*"?([^"<]*?)"?\s*<([^>]+)>/);
+  const { name: fromName, address: fromAddress } = parseFrom(header("from"));
 
   const plain = findPart(msg.payload, "text/plain");
   const html = plain ? null : findPart(msg.payload, "text/html");
@@ -130,8 +141,8 @@ export async function getMessage(token: string, id: string): Promise<ParsedMessa
   return {
     id: msg.id,
     threadId: msg.threadId,
-    fromName: match?.[1]?.trim() || from,
-    fromAddress: (match?.[2] ?? from).trim().toLowerCase(),
+    fromName,
+    fromAddress,
     subject: header("subject"),
     snippet: msg.snippet,
     receivedAt: new Date(Number(msg.internalDate)),
@@ -215,6 +226,7 @@ export type FullMessage = {
   html: string | null;
   text: string | null;
   attachments: { name: string; size: number }[];
+  unsubscribe: string | null;
 };
 
 /** The whole mail for the in-app reader. Read live, never stored. */
@@ -236,6 +248,7 @@ export async function getFullMessage(token: string, id: string): Promise<FullMes
     html: findPart(msg.payload, "text/html"),
     text: findPart(msg.payload, "text/plain"),
     attachments,
+    unsubscribe: parseUnsubscribe(header("list-unsubscribe")),
   };
 }
 
@@ -245,4 +258,14 @@ export async function markUnread(token: string, messageId: string) {
     method: "POST",
     body: JSON.stringify({ addLabelIds: ["UNREAD"] }),
   });
+}
+
+/** Changes many messages in one call (Gmail allows up to 1000 ids per request). */
+export async function batchModify(token: string, ids: string[], addLabelIds: string[], removeLabelIds: string[]) {
+  for (let i = 0; i < ids.length; i += 1000) {
+    await gmail(token, "/messages/batchModify", {
+      method: "POST",
+      body: JSON.stringify({ ids: ids.slice(i, i + 1000), addLabelIds, removeLabelIds }),
+    });
+  }
 }

@@ -42,11 +42,11 @@ const P = {
     /\brelocation\b/, /\bbus (facility|service)\b/, /\btransport\b/,
   ],
   decision: [/\bhas been decided\b/, /\bis hereby\b/, /\bmandatory\b/, /\bcompulsory\b/, /\bpostponed\b/, /\brescheduled\b/, /\bwith immediate effect\b/],
-  academic: [/\bassignment\b/, /\bdigital assignment\b/, /\bsyllabus\b/, /\bproctor\b/, /\bfaculty advisor\b/, /\bvtop\b/, /\bworkbook\b/, /\bcourse (page|material|enrol)/, /\bwelcome to [a-z]{4}\d{3}/, /\b[a-z]{4}\d{3}[a-z]?\b/],
+  academic: [/\bassignment\b/, /\bdigital assignment\b/, /\bsyllabus\b/, /\bproctor\b/, /\bfaculty advisor\b/, /\bvtop\b/, /\bworkbook\b/, /\bcourse (page|material|enrol)/, /\bda ?\d{1,2}\b/, /\bwelcome to [a-z]{3,6}\d{3}/, /\b[a-z]{4,6}\d{3}[a-z]?\b/],
   account: [/\bsecurity alert\b/, /\b2-step verification\b/, /\bpassword (reset|expir)/, /\bsign-?in attempt\b/, /\baccount (access|suspended|locked)\b/],
   scholarship: [/\bscholarships?\b/, /\bfellowships?\b/, /\bstipend\b/, /\bfinancial (aid|assistance)\b/, /\bmerit[- ]cum[- ]means\b/],
   placement: [/\bplacements?\b/, /\binternships?\b/, /\brecruitment\b/, /\bhiring\b/, /\bpre[- ]placement\b/, /\bppo\b/, /\bjob (opening|offer)\b/],
-  achievement: [/\bcongratulat/, /\bcongrats\b/, /\bachievements?\b/, /\bfelicitat/, /\bproud(ly)? (to )?(announce|share)/, /\bsecur(ed|ing) (first|second|third|\d)/, /\bbagged\b/, /\bwinners? (of|are|list)\b/],
+  achievement: [/\bcongratulat/, /\bcongrats\b/, /\bachievements?\b/, /\bfelicitat/, /\bproud(ly)? (to )?(announce|share)/, /\bsecur(ed|ing) (first|second|third|\d)/, /\bbagged\b/, /\bwinners? (of|are|list|announced|declared)\b/, /\bresults? (are )?(announced|declared|out)\b/],
   club_event: [
     /\bclubs? (and|&) chapters\b/, /\bclub\b/, /\bchapter\b/, /\bworkshop\b/, /\bwebinar\b/, /\bseminar\b/, /\bguest lecture\b/,
     /\bmaster ?class(es)?\b/, /\btalk\b/, /\binaugura/, /\binvitation\b/, /\bscreening\b/, /\bsummer school\b/, /\bwinter school\b/,
@@ -54,10 +54,11 @@ const P = {
     /\binformation session\b/, /\borientation session\b/, /\bexhibition\b/, /\bsymposium\b/, /\bconference\b/,
   ],
   newsletter: [/\bnewsletter\b/, /\bdigest\b/, /\bmagazine\b/, /\bgratitude\b/, /\bthank you for (attending|participating)\b/],
-  promotion: [/\b\d+ ?% off\b/, /\bdiscount\b/, /\bsale\b/, /\bmerch(andise)?\b/, /\bexclusive offers?\b/, /\bcoupon\b/, /\bbuy now\b/, /\bfree trial\b/, /\bsponsored\b/, /\blimited[- ]time\b/],
+  promotion: [/\b\d+ ?% off\b/, /\bdiscount\b/, /\bsale\b/, /\bmerch(andise)?\b/, /\bexclusive( [a-z]+)? offers?\b/, /\boffers? for (the )?vit\b/, /\bcoupon\b/, /\bbuy now\b/, /\bfree trial\b/, /\bsponsored\b/, /\blimited[- ]time\b/],
 };
 
-const SENIOR = /\b(final|pre-?final|2nd|second|3rd|third|4th|fourth)[- ]years?\b|\b(m\.?tech|mba|mca|m\.?sc|ph\.?d|research scholars?|pg students|integrated m\.?tech)\b/;
+const PROGRAMME = /\bsummer school\b|\bwinter school\b|\bimmersion\b|\bnational university of\b|\buniversity of [a-z]+\b|\b(certificate|specialised|specialized) courses?\b|\bcourses? under\b|\b(programme|program) 20\d\d\b|\bai programme\b|\b[a-z]+ programme$/;
+const SENIOR =/\b(final|pre-?final|2nd|second|3rd|third|4th|fourth)[- ]years?\b|\b(m\.?tech|mba|mca|m\.?sc|ph\.?d|research scholars?|pg students|integrated m\.?tech)\b/;
 const FOR_FIRST_YEARS = /\b(first|1st)[- ]years?\b|\bfreshers?\b|\bfreshman\b|\ball (the )?(students|years)\b|\bopen to all\b|\bug[- ]freshers\b/;
 
 /** True when the mail is clearly aimed at other years or programmes. */
@@ -81,7 +82,8 @@ const MONTH_RE = "(jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|june?|ju
 const DATE_PATTERNS: { re: RegExp; parse: (m: RegExpExecArray) => [number, number, number | null] }[] = [
   { re: /\b(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{2,4})\b/g, parse: (m) => [+m[1], +m[2], +m[3]] },
   { re: new RegExp(`\\b(\\d{1,2})(?:st|nd|rd|th)?,?\\s+${MONTH_RE},?\\s*(\\d{4})?`, "g"), parse: (m) => [+m[1], MONTHS.indexOf(m[2].slice(0, 3)) + 1, m[3] ? +m[3] : null] },
-  { re: new RegExp(`\\b${MONTH_RE}\\s+(\\d{1,2})(?:st|nd|rd|th)?,?\\s*(\\d{4})?`, "g"), parse: (m) => [+m[2], MONTHS.indexOf(m[1].slice(0, 3)) + 1, m[3] ? +m[3] : null] },
+  // "November 15, 2026". The day must not run into more digits, so "November 2026" is not "November 20".
+  { re: new RegExp(`\\b${MONTH_RE}\\s+(\\d{1,2})(?!\\d)(?:st|nd|rd|th)?,?\\s*(\\d{4})?`, "g"), parse: (m) => [+m[2], MONTHS.indexOf(m[1].slice(0, 3)) + 1, m[3] ? +m[3] : null] },
 ];
 
 function istISO(y: number, mo: number, d: number, h = 23, mi = 59) {
@@ -109,6 +111,8 @@ function findDates(text: string, received: Date): FoundDate[] {
       if (mo < 1 || mo > 12 || d < 1 || d > 31) continue;
       let y = yRaw ?? received.getFullYear();
       if (y < 100) y += 2000;
+      // Real calendar days only: JavaScript would quietly turn "31 Feb" into 3 March.
+      if (d > new Date(Date.UTC(y, mo, 0)).getUTCDate()) continue;
       const time = findTime(text.slice(m.index, m.index + 60)) ?? [23, 59];
       let iso = istISO(y, mo, d, time[0], time[1]);
       if (!yRaw && Date.parse(iso) < received.getTime() - 30 * 86400_000) iso = istISO(y + 1, mo, d, time[0], time[1]);
@@ -165,9 +169,12 @@ function firstSentence(body: string) {
 
 export type RuleResult = Classification & { confidence: number };
 
-export function classifyByRules(msg: ParsedMessage, corrections: Correction[] = [], profile: StudentProfile = {
-  regNo: null, batch: null, branchCode: null, branch: null, year: 1,
-}): RuleResult {
+export function classifyByRules(
+  msg: ParsedMessage,
+  corrections: Correction[] = [],
+  profile: StudentProfile = { regNo: null, batch: null, branchCode: null, branch: null, year: 1 },
+  now: number = Date.now(),
+): RuleResult {
   const subject = msg.subject.toLowerCase();
   const body = msg.body.slice(0, 6000).toLowerCase();
   const text = `${subject}\n${body}`;
@@ -178,7 +185,7 @@ export function classifyByRules(msg: ParsedMessage, corrections: Correction[] = 
 
   const actionable = inSubject("exam") || inSubject("registration") || inSubject("interview") || inText("fee");
   const deadline = findDeadline(text, msg.receivedAt, actionable);
-  const upcoming = !!deadline && Date.parse(deadline) > Date.now();
+  const upcoming = !!deadline && Date.parse(deadline) > now;
 
   const lead = firstSentence(msg.body);
   const summary = (lead ? `${lead}` : msg.subject || msg.snippet).slice(0, 220);
@@ -194,7 +201,8 @@ export function classifyByRules(msg: ParsedMessage, corrections: Correction[] = 
   if (inSubject("account") && (fromGoogle || fromVit)) return out("priority", "account", "Account security notice", 0.9);
 
   // 3. Promotions and sales.
-  if (inSubject("promotion") && !actionable) return out("noise", "promotion", "Promotion or sale", 0.9);
+  // An outside sender pushing a sale is noise even if it says "enroll by".
+  if (inSubject("promotion") && (!actionable || !fromVit)) return out("noise", "promotion", "Promotion or sale", 0.9);
 
   // 4. Not meant for you (other batches, seniors, PG).
   const notYours = notForYou(text, subject, profile);
@@ -209,6 +217,10 @@ export function classifyByRules(msg: ParsedMessage, corrections: Correction[] = 
   // 7. Things you must act on.
   if (inSubject("exam")) return out("very_important", "exam", "Exam, quiz or test", 0.85);
   if (inSubject("interview")) return out("very_important", "interview", "Interview or selection round", 0.85);
+  // Paid programmes and certificate courses from other institutions: optional, so "later".
+  if (PROGRAMME.test(subject) && !/\bffcs\b|\bcourse registration\b|\bvtop\b/.test(subject)) {
+    return out("later", "club_event", "Optional programme", 0.75);
+  }
   if (inText("fee") && (upcoming || inSubject("fee"))) return out("very_important", "deadline", "Fee payment", 0.85);
   if (inText("attendance") && fromVit) return out("very_important", "academic", "Attendance warning", 0.8);
 
@@ -239,7 +251,11 @@ export function classifyByRules(msg: ParsedMessage, corrections: Correction[] = 
   // Official notices.
   if (inSubject("decision")) return out("priority", "decision", "Official decision", 0.75);
   if (inSubject("announcement")) return out("priority", "announcement", "Official announcement", 0.7);
-  if (inSubject("academic") && fromVit) return out("priority", "academic", "About your courses", 0.65);
+  if (inSubject("academic") && fromVit) {
+    return upcoming && /\bsubmi(t|ssion)\b|\bdue\b|\bupload\b/.test(text)
+      ? out("very_important", "academic", "Course work due", 0.75)
+      : out("priority", "academic", "About your courses", 0.65);
+  }
 
   // Everything else goes to later.
   if (isEvent) return out("later", "club_event", "Event, talk or program", 0.8);

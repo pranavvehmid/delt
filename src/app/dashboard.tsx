@@ -4,6 +4,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, typ
 import type { DeadlineRow, EmailRow, Priority } from "@/lib/supabase";
 import { CATEGORIES } from "@/lib/types";
 import SwipeDeck from "./swipe-deck";
+import { calendarLink, clearRate, INTERESTS, interestScore, senderStats } from "@/lib/insights";
 import MailReader from "./mail-reader";
 
 // ======================= look-up tables =======================
@@ -37,18 +38,17 @@ const PRIO: Record<Priority, { label: string; fill: string }> = {
 };
 const PRIO_KEYS = Object.keys(PRIO) as Priority[];
 
-type Tab = "today" | "new" | "board" | "deadlines" | "inbox";
+type Tab = "today" | "new" | "chances" | "deadlines" | "inbox";
 const TABS: { key: Tab; label: string; icon: string }[] = [
   { key: "today", label: "Today", icon: "M12 3v2m0 14v2M5 12H3m18 0h-2M6.3 6.3 4.9 4.9m14.2 14.2-1.4-1.4M6.3 17.7l-1.4 1.4M19.1 4.9l-1.4 1.4M16 12a4 4 0 1 1-8 0 4 4 0 0 1 8 0Z" },
   { key: "new", label: "New", icon: "M4 6h16v12H4zM4 7l8 6 8-6" },
-  { key: "board", label: "Board", icon: "M4 4h4v16H4zM10 4h4v10h-4zM16 4h4v13h-4z" },
+  { key: "chances", label: "Chances", icon: "M12 3l2.6 5.6 6 .7-4.5 4.1 1.2 6L12 16.4 6.7 19.4l1.2-6L3.4 9.3l6-.7z" },
   { key: "deadlines", label: "Deadlines", icon: "M12 7v5l3 2M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" },
   { key: "inbox", label: "Inbox", icon: "M3 13h5l2 3h4l2-3h5M5 5h14l2 8v6H3v-6z" },
 ];
 
 const OPPORTUNITY = new Set(["hackathon", "competition"]);
 const STALE_DAYS = 21;
-const LANE_MAX = 7;
 const IST = { timeZone: "Asia/Kolkata" } as const;
 const SPARK = "M29 0c1.6 15 6.4 22.4 29 29-22.6 7-27.4 14.4-29 29-1.6-14.6-6.4-22-29-29C22.6 22.4 27.4 15 29 0z";
 
@@ -66,7 +66,10 @@ const leftText = (iso: string, now: number) => {
   if (d > 0) return `${d}d ${h}h`;
   return h > 0 ? `${h}h ${m}m` : `${m}m`;
 };
-const soon = (iso: string | null, now: number) => !!iso && Date.parse(iso) - now < 48 * 3600_000 && Date.parse(iso) > now;
+const urgencyColor = (iso: string, now: number) => {
+  const days = (Date.parse(iso) - now) / 86400_000;
+  return days < 0 ? "#ff5a63" : days < 2 ? "#ff5a63" : days < 7 ? "var(--amber)" : "var(--muted)";
+};
 const dayShort = (iso: string) => new Date(iso).toLocaleDateString("en-IN", { day: "numeric", month: "short", ...IST });
 const dayLong = (iso: string) => new Date(iso).toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "short", ...IST });
 const timeOf = (iso: string) => new Date(iso).toLocaleTimeString("en-IN", { hour: "numeric", minute: "2-digit", ...IST });
@@ -108,12 +111,28 @@ export default function Dashboard({ email, name, signOutAction }: { email: strin
   const [now, setNow] = useState(() => Date.now());
   const [openId, setOpenId] = useState<string | null>(null);
   const [readerId, setReaderId] = useState<string | null>(null);
-  const [focusCat, setFocusCat] = useState<string | null>(null);
+  const [, setFocusCat] = useState<string | null>(null);
   const [readFilter, setReadFilter] = useState<"all" | "unread" | "read">("all");
   const [prioFilter, setPrioFilter] = useState<Priority | "all" | "done">("all");
   const [query, setQuery] = useState("");
   const [intro, setIntro] = useState(true);
   const [form, setForm] = useState({ title: "", date: "", time: "23:59" });
+  const [interests, setInterests] = useState<string[]>([]);
+  const [inboxMode, setInboxMode] = useState<"mail" | "senders">("mail");
+  useEffect(() => {
+    try {
+      setInterests(JSON.parse(localStorage.getItem("delt-interests") ?? "[]"));
+    } catch {}
+  }, []);
+  function toggleInterest(k: string) {
+    setInterests((cur) => {
+      const next = cur.includes(k) ? cur.filter((x) => x !== k) : [...cur, k];
+      try {
+        localStorage.setItem("delt-interests", JSON.stringify(next));
+      } catch {}
+      return next;
+    });
+  }
 
   // hover card
   const [pop, setPop] = useState<{ id: string; el: HTMLElement } | null>(null);
@@ -247,6 +266,21 @@ export default function Dashboard({ email, name, signOutAction }: { email: strin
     if (dl.email_id) setEmails((l) => l?.map((x) => (x.id === dl.email_id ? { ...x, deadline_choice: null } : x)) ?? null);
     await fetch(`/api/deadlines?id=${dl.id}`, { method: "DELETE" });
     setToast("Deadline removed");
+  }
+  async function bulk(ids: string[], patch: { read?: boolean; priority?: Priority; is_done?: boolean }, msg: string) {
+    if (!ids.length) return;
+    const set = new Set(ids);
+    setEmails(
+      (list) =>
+        list?.map((e) =>
+          set.has(e.id)
+            ? { ...e, ...(patch.read !== undefined ? { unread: !patch.read } : {}), ...(patch.priority ? { priority: patch.priority, user_corrected: true } : {}), ...(patch.is_done !== undefined ? { is_done: patch.is_done } : {}) }
+            : e,
+        ) ?? null,
+    );
+    setToast(msg);
+    const res = await fetch("/api/emails/bulk", { method: "POST", body: JSON.stringify({ ids, ...patch }) });
+    if (!res.ok) setToast("Couldn't update Gmail. Try again");
   }
   function openReader(e: EmailRow) {
     setPop(null);
@@ -411,26 +445,6 @@ export default function Dashboard({ email, name, signOutAction }: { email: strin
     },
   });
 
-  function mailBlock(e: EmailRow, k: number) {
-    const c = cat(e.category);
-    return (
-      <button
-        key={e.id}
-        className={`mail ${c.dotted ? "dotted" : ""} ${focusCat === e.category ? "focus" : ""} ${pop?.id === e.id ? "active" : ""}`}
-        style={{ background: c.fill, ["--k"]: k } as CSSProperties}
-        {...mailProps(e)}
-      >
-        {soon(e.deadline, now) && <span className="badge">SOON</span>}
-        {e.unread && <span className="udot" aria-label="unread" />}
-        <span className="nm">{cleanSubject(e.subject)}</span>
-        <span className="meta">
-          <span className="tag">{c.label.toUpperCase()}</span>
-          {e.deadline ? `${dayShort(e.deadline)} · ${leftText(e.deadline, now)}` : dayShort(e.received_at)}
-        </span>
-      </button>
-    );
-  }
-
   function promptCard(e: EmailRow) {
     return (
       <div key={e.id} className="prompt" style={{ background: cat(e.category).fill }}>
@@ -450,7 +464,60 @@ export default function Dashboard({ email, name, signOutAction }: { email: strin
   }
 
   const loading = emails === null;
-  const navBadge: Partial<Record<Tab, number>> = { new: g.fresh.length, deadlines: g.prompts.length + dl.overdue.length };
+  // ---------- Today checklist ----------
+  // Due in the next 3 days (or overdue): tracked deadlines plus urgent mail with a date.
+  const needsYou = useMemo(() => {
+    const horizon = now + 3 * 86400_000;
+    const tracked = deadlines
+      .filter((d) => !d.done && Date.parse(d.due_at) < horizon)
+      .map((d) => ({
+        key: `d-${d.id}`,
+        title: d.title,
+        due: d.due_at,
+        done: () => patchDeadline(d.id, { done: true }),
+        open: () => (d.email_id ? setOpenId(d.email_id) : go("deadlines")),
+      }));
+    const trackedMail = new Set(deadlines.map((d) => d.email_id).filter(Boolean));
+    const mail = [...g.urgent, ...g.chances]
+      .filter((e) => e.deadline && Date.parse(e.deadline) < horizon && !trackedMail.has(e.id))
+      .map((e) => ({
+        key: `m-${e.id}`,
+        title: cleanSubject(e.subject),
+        due: e.deadline!,
+        done: () => update(e.id, { is_done: true }),
+        open: () => setOpenId(e.id),
+      }));
+    return [...tracked, ...mail].sort((a, b) => Date.parse(a.due) - Date.parse(b.due)).slice(0, 6);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [deadlines, g.urgent, g.chances, now]);
+  const unreadNotices = g.notices.filter((e) => e.unread);
+  const stepsDone = [g.fresh.length === 0, g.prompts.length === 0, needsYou.length === 0, unreadNotices.length === 0].filter(Boolean).length;
+
+  // ---------- Chances: your interests first, then soonest to close ----------
+  const chanceList = useMemo(
+    () =>
+      g.chances
+        .map((e) => ({ e, match: interestScore(`${e.subject} ${e.summary}`, interests) }))
+        .sort(
+          (a, b) =>
+            b.match - a.match ||
+            (a.e.deadline ? Date.parse(a.e.deadline) : Infinity) - (b.e.deadline ? Date.parse(b.e.deadline) : Infinity),
+        ),
+    [g.chances, interests],
+  );
+  const senders = useMemo(() => senderStats(g.raw), [g.raw]);
+  const shownUnread = inbox.flatMap((d) => d.items).filter((e) => e.unread).map((e) => e.id);
+
+  // Opening a mail counts as reading it (mirrored in Gmail).
+  useEffect(() => {
+    if (!openId) return;
+    const m = emails?.find((e) => e.id === openId);
+    if (m?.unread) update(m.id, { read: true }, true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [openId]);
+  const weekClear = clearRate(g.raw, now);
+
+  const navBadge: Partial<Record<Tab, number>> = { new: g.fresh.length, deadlines: g.prompts.length + dl.overdue.length, chances: chanceList.filter((c) => c.match > 0 && c.e.unread).length };
   const greeting = (() => {
     const h = istHour();
     return h < 12 ? "GOOD MORNING" : h < 17 ? "GOOD AFTERNOON" : "GOOD EVENING";
@@ -460,7 +527,7 @@ export default function Dashboard({ email, name, signOutAction }: { email: strin
 
   // ======================= render =======================
   return (
-    <div className={`wrap app ${intro ? "intro" : ""} ${focusCat && tab === "board" ? "dim" : ""}`}>
+    <div className={`wrap app ${intro ? "intro" : ""}`}>
       {/* ---------- top bar (every tab) ---------- */}
       <header className="topbar">
         <a href="#/today" className="brand" aria-label="DELT home">
@@ -521,7 +588,17 @@ export default function Dashboard({ email, name, signOutAction }: { email: strin
                 <span>TODAY&apos;S MAIL</span>
                 <span>{dayLong(new Date(now).toISOString()).toUpperCase()}</span>
               </span>
-              <span className="clock dot">{loading ? "--" : g.today.total}</span>
+              <span className="mc-head">
+                <span className="clock dot">{loading ? "--" : g.today.total}</span>
+                <span className="clear" title="Share of this week's mail you've read or finished">
+                  <span className="ring" style={{ ["--pct"]: `${weekClear}%` } as CSSProperties}>
+                    <b className="dot">{weekClear}</b>
+                  </span>
+                  <span className="mono">% of this week
+                    <br />
+                    cleared</span>
+                </span>
+              </span>
               <span className="mc-split">
                 <button onClick={() => { setReadFilter("read"); setPrioFilter("all"); go("inbox"); }}>
                   <b className="dot">{g.today.total - g.today.unread}</b> read
@@ -543,51 +620,83 @@ export default function Dashboard({ email, name, signOutAction }: { email: strin
             </section>
           </div>
 
-          <div className="row-new">
-            <section>
-              <h2 className="sec dot">
-                TOP 3 <small className="sec-sub">what matters most right now</small>
-              </h2>
-              <div className="toplist">
-                {g.top.map((e, i) => (
-                  <button key={e.id} className="block topitem" style={{ ["--k"]: i } as CSSProperties} {...mailProps(e)}>
-                    <span className="rank dot">{i + 1}</span>
-                    <span className="ti">
-                      <span className="tt">{cleanSubject(e.subject)}</span>
-                      <span className="tr">
-                        <span className="tag" style={{ background: "var(--on)" }}>
-                          {cat(e.category).label.toUpperCase()}
-                        </span>
-                        {e.deadline && <span className="why">due {leftText(e.deadline, now)}</span>}
-                        {e.unread && <span className="why">unread</span>}
-                        <span className="why">{PRIO[e.priority].label.toLowerCase()}</span>
-                      </span>
-                    </span>
-                  </button>
-                ))}
-                {!loading && g.top.length === 0 && <div className="deck-empty" style={{ height: 160 }}><b className="dot">ALL CLEAR</b><span>nothing needs you ✦</span></div>}
+          {/* ---------- your day: one checklist, top to bottom ---------- */}
+          <h2 className="sec dot" style={{ marginTop: 30 }}>
+            YOUR DAY <small className="sec-sub">{stepsDone}/4 done · work down the list</small>
+          </h2>
+          <ol className="steps">
+            <li className={`step ${g.fresh.length === 0 ? "ok" : ""}`}>
+              <span className="snum dot">{g.fresh.length === 0 ? "✓" : "1"}</span>
+              <div className="sbody">
+                <b>Sort what&apos;s new</b>
+                <span className="mono">{g.fresh.length === 0 ? "Nothing unread. Nice." : `${g.fresh.length} unread mail${g.fresh.length === 1 ? "" : "s"} · about ${Math.max(1, Math.round(g.fresh.length / 6))} min`}</span>
               </div>
-            </section>
-            <section>
-              <h2 className="sec dot">
-                DEADLINES? <small className="sec-sub">DELT found these in your mail</small>
-              </h2>
-              <div className="prompts">
-                {g.prompts.slice(0, 3).map(promptCard)}
-                {!loading && g.prompts.length === 0 && (
-                  <div className="deck-empty" style={{ height: 160 }}>
-                    <b className="dot">NO QUESTIONS</b>
-                    <span>every deadline is answered ✦</span>
+              {g.fresh.length > 0 && <button className="btn gold sm" onClick={() => go("new")}>Start →</button>}
+            </li>
+
+            <li className={`step ${g.prompts.length === 0 ? "ok" : ""}`}>
+              <span className="snum dot">{g.prompts.length === 0 ? "✓" : "2"}</span>
+              <div className="sbody">
+                <b>Answer deadline questions</b>
+                <span className="mono">{g.prompts.length === 0 ? "Every deadline answered." : "DELT found these dates. Track them?"}</span>
+                {g.prompts.length > 0 && <div className="prompts" style={{ marginTop: 10 }}>{g.prompts.slice(0, 2).map(promptCard)}</div>}
+                {g.prompts.length > 2 && (
+                  <button className="btn sm" style={{ marginTop: 10 }} onClick={() => go("deadlines")}>{g.prompts.length - 2} more →</button>
+                )}
+              </div>
+            </li>
+
+            <li className={`step ${needsYou.length === 0 ? "ok" : ""}`}>
+              <span className="snum dot">{needsYou.length === 0 ? "✓" : "3"}</span>
+              <div className="sbody">
+                <b>Do what&apos;s due</b>
+                <span className="mono">{needsYou.length === 0 ? "Nothing due in the next 3 days." : "Due in the next 3 days, soonest first"}</span>
+                {needsYou.length > 0 && (
+                  <div className="duelist">
+                    {needsYou.map((x) => (
+                      <div key={x.key} className="due">
+                        <button className="check" onClick={x.done} aria-label="Mark done" />
+                        <button className="dt" onClick={x.open}>
+                          <span className="t">{x.title}</span>
+                          <span className="d mono" style={{ color: urgencyColor(x.due, now) }}>{leftText(x.due, now)} · {dayLong(x.due)}, {timeOf(x.due)}</span>
+                        </button>
+                        <a className="btn sm" href={calendarLink(x.title, x.due)} target="_blank" rel="noreferrer" title="Add to Google Calendar">📅</a>
+                      </div>
+                    ))}
                   </div>
                 )}
-                {g.prompts.length > 3 && (
-                  <button className="btn" onClick={() => go("deadlines")}>
-                    {g.prompts.length - 3} more in Deadlines →
-                  </button>
+              </div>
+            </li>
+
+            <li className={`step ${unreadNotices.length === 0 ? "ok" : ""}`}>
+              <span className="snum dot">{unreadNotices.length === 0 ? "✓" : "4"}</span>
+              <div className="sbody">
+                <b>Skim the notices</b>
+                <span className="mono">{unreadNotices.length === 0 ? "All notices read." : `${unreadNotices.length} unread · worth knowing`}</span>
+                {g.notices.length > 0 && (
+                  <div className="noticelist">
+                    {g.notices.slice(0, 4).map((e) => (
+                      <button key={e.id} className="nrow" {...mailProps(e)}>
+                        <i style={{ background: cat(e.category).fill }} />
+                        <span className="t">{cleanSubject(e.subject)}</span>
+                      </button>
+                    ))}
+                    {g.notices.length > 4 && (
+                      <button className="btn sm" onClick={() => { setPrioFilter("priority"); setReadFilter("all"); go("inbox"); }}>
+                        all {g.notices.length} →
+                      </button>
+                    )}
+                  </div>
                 )}
               </div>
-            </section>
-          </div>
+            </li>
+          </ol>
+          {stepsDone === 4 && (
+            <div className="deck-empty" style={{ height: 120, marginTop: 18 }}>
+              <b className="dot">DAY CLEAR</b>
+              <span>see what&apos;s open in Chances ✦</span>
+            </div>
+          )}
         </div>
       )}
 
@@ -617,55 +726,66 @@ export default function Dashboard({ email, name, signOutAction }: { email: strin
         </div>
       )}
 
-      {/* ======================= BOARD ======================= */}
-      {tab === "board" && (
-        <div className="view" key="board">
-          {(() => {
-            const items = [...g.urgent, ...g.chances, ...g.notices];
-            const cats = [...items.reduce((m, e) => m.set(e.category, (m.get(e.category) ?? 0) + 1), new Map<string, number>())].sort((a, b) => b[1] - a[1]);
-            return (
-              <div className="filters" aria-label="Spotlight a category">
-                <span className="seg-lbl">SPOTLIGHT</span>
-                <button className={`fchip ${focusCat === null ? "on" : ""}`} onClick={() => setFocusCat(null)}>
-                  All<span className="n">{items.length}</span>
-                </button>
-                {cats.map(([key, count]) => (
-                  <button key={key} className={`fchip ${focusCat === key ? "on" : ""}`} style={{ ["--fill"]: cat(key).fill } as CSSProperties} onClick={() => setFocusCat((f) => (f === key ? null : key))}>
-                    <i />
-                    {cat(key).label}
-                    <span className="n">{count}</span>
-                  </button>
-                ))}
-              </div>
-            );
-          })()}
-          <section className="block board" aria-label="Board">
-            <div className="board-grid">
-              {(
-                [
-                  ["URGENT", "act on these", g.urgent, true],
-                  ["CHANCES", "still open", g.chances, false],
-                  ["NOTICES", "worth knowing", g.notices, false],
-                ] as const
-              ).map(([label, sub, items, hot]) => (
-                <div key={label}>
-                  <div className={`lanehead ${hot && items.length ? "hot" : ""}`}>
-                    <b className="dot">{label}</b>
-                    <span>{loading ? "…" : `${items.length} mail${items.length === 1 ? "" : "s"} · ${sub}`}</span>
-                  </div>
-                  <div className={`lane ${hot && items.some((e) => soon(e.deadline, now)) ? "hot" : ""}`}>
-                    {items.slice(0, LANE_MAX).map((e, i) => mailBlock(e, i))}
-                    {!loading && items.length === 0 && <div className="empty">NOTHING HERE ✦</div>}
-                    {items.length > LANE_MAX && (
-                      <button className="btn more" onClick={() => { setPrioFilter(hot ? "very_important" : "priority"); setReadFilter("all"); go("inbox"); }}>
-                        +{items.length - LANE_MAX} more in Inbox
-                      </button>
-                    )}
-                  </div>
-                </div>
-              ))}
+      {/* ======================= CHANCES ======================= */}
+      {tab === "chances" && (
+        <div className="view" key="chances">
+          <div className="filters" aria-label="Your interests">
+            <span className="seg-lbl">I&apos;M INTO</span>
+            {INTERESTS.map((it) => (
+              <button
+                key={it.key}
+                className={`fchip ${interests.includes(it.key) ? "on" : ""}`}
+                aria-pressed={interests.includes(it.key)}
+                onClick={() => toggleInterest(it.key)}
+              >
+                {it.label}
+              </button>
+            ))}
+          </div>
+          <p className="hint" style={{ margin: "-6px 0 18px" }}>
+            {interests.length ? "Matches for your interests come first, then soonest to close." : "Pick what you're into and matching hackathons and contests rise to the top."}
+          </p>
+
+          {chanceList.length === 0 && !loading && (
+            <div className="deck-empty">
+              <b className="dot">NOTHING OPEN</b>
+              <span>new hackathons and contests land here</span>
             </div>
-          </section>
+          )}
+          <div className="chances">
+            {chanceList.map(({ e, match }, i) => (
+              <div key={e.id} className={`block chance ${match ? "match" : ""}`} style={{ background: cat(e.category).fill, ["--k"]: i } as CSSProperties}>
+                <div className="ch-top mono">
+                  <span className="tag">{cat(e.category).label.toUpperCase()}</span>
+                  {match > 0 && <span className="pill">FOR YOU</span>}
+                  {e.unread && <span className="udot" style={{ position: "static" }} />}
+                </div>
+                <button className="ch-title" {...mailProps(e)}>{cleanSubject(e.subject)}</button>
+                <p className="ch-sum">{e.summary}</p>
+                <div className="ch-foot">
+                  {e.deadline ? (
+                    <span className="ch-due">
+                      <b className="dot">{Math.max(0, Math.floor((Date.parse(e.deadline) - now) / 86400_000))}</b>
+                      <span className="mono">days left<br />{dayShort(e.deadline)}</span>
+                    </span>
+                  ) : (
+                    <span className="mono">open now</span>
+                  )}
+                  <span className="ch-acts">
+                    {e.deadline && (
+                      <a className="btn sm" href={calendarLink(cleanSubject(e.subject), e.deadline, e.summary)} target="_blank" rel="noreferrer" title="Add to Google Calendar">📅</a>
+                    )}
+                    {e.deadline && e.deadline_choice !== "tracked" ? (
+                      <button className="btn gold sm" onClick={() => trackDeadline(e)}>Track</button>
+                    ) : (
+                      <span className="mono">{e.deadline_choice === "tracked" ? "tracked ✓" : ""}</span>
+                    )}
+                    <button className="btn sm" onClick={() => update(e.id, { priority: "later" })} title="Not interested">✕</button>
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
@@ -755,6 +875,9 @@ export default function Dashboard({ email, name, signOutAction }: { email: strin
                           ✉
                         </button>
                       )}
+                      {!x.done && (
+                        <a className="btn sm" href={calendarLink(x.title, x.due_at)} target="_blank" rel="noreferrer" title="Add to Google Calendar">📅</a>
+                      )}
                       <button className="btn sm" onClick={() => deleteDeadline(x)} aria-label="Remove deadline">
                         ✕
                       </button>
@@ -772,24 +895,63 @@ export default function Dashboard({ email, name, signOutAction }: { email: strin
       {tab === "inbox" && (
         <div className="view" key="inbox">
           <div className="inbox-bar">
-            <input className="search" type="search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search subject, sender, summary…" />
-            <div className="seg" role="group" aria-label="Read state">
+            <div className="seg" role="group" aria-label="View">
+              <button className={inboxMode === "mail" ? "on" : ""} onClick={() => setInboxMode("mail")}>✉ Mail</button>
+              <button className={inboxMode === "senders" ? "on" : ""} onClick={() => setInboxMode("senders")}>☰ Senders</button>
+            </div>
+            {inboxMode === "mail" && <input className="search" type="search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search subject, sender, summary…" />}
+            {inboxMode === "mail" && <div className="seg" role="group" aria-label="Read state">
               {(["all", "unread", "read"] as const).map((r) => (
                 <button key={r} className={readFilter === r ? "on" : ""} onClick={() => setReadFilter(r)}>
                   {r === "all" ? "All" : r === "unread" ? `Unread ${g.unreadTotal}` : "Read"}
                 </button>
               ))}
-            </div>
-            <div className="seg" role="group" aria-label="Priority">
+            </div>}
+            {inboxMode === "mail" && <div className="seg" role="group" aria-label="Priority">
               {(["all", ...PRIO_KEYS, "done"] as const).map((p) => (
                 <button key={p} className={prioFilter === p ? "on" : ""} onClick={() => setPrioFilter(p)}>
                   {p === "all" ? "Any" : p === "done" ? "Done" : PRIO[p].label}
                 </button>
               ))}
-            </div>
+            </div>}
+            {inboxMode === "mail" && shownUnread.length > 0 && (
+              <button className="btn sm" onClick={() => bulk(shownUnread, { read: true }, `Marked ${shownUnread.length} read`)}>✓ Mark {shownUnread.length} read</button>
+            )}
           </div>
 
-          {inbox.map((day) => (
+          {inboxMode === "senders" && (
+            <section className="block senders">
+              <p className="hint" style={{ margin: "2px 4px 12px" }}>
+                Who mails you most. Moving a sender here also teaches DELT where their future mail goes.
+              </p>
+              {senders.slice(0, 40).map((s) => (
+                <div key={s.address} className="srow2">
+                  <span className="av dot">{initials(s.name)}</span>
+                  <span className="sinfo">
+                    <span className="t">{s.name}</span>
+                    <span className="d mono">
+                      {s.total} mail{s.total === 1 ? "" : "s"} · {s.unread} unread · {s.address}
+                    </span>
+                  </span>
+                  <span className="sacts">
+                    {s.unread > 0 && (
+                      <button className="btn sm" onClick={() => bulk(s.ids, { read: true }, `Marked ${s.unread} read`)} title="Mark all read">
+                        ✓ read
+                      </button>
+                    )}
+                    <button className="btn sm" onClick={() => bulk(s.ids, { priority: "later" }, `${s.name} → Later from now on`)} title="Always Later">
+                      Later
+                    </button>
+                    <button className="btn sm" onClick={() => bulk(s.ids, { priority: "noise", read: true }, `${s.name} muted`)} title="Mute: always Noise">
+                      Mute
+                    </button>
+                  </span>
+                </div>
+              ))}
+            </section>
+          )}
+
+          {inboxMode === "mail" && inbox.map((day) => (
             <section key={day.key} className="iday">
               <h2 className="iday-h">
                 <b className="dot">{day.label}</b>
@@ -828,7 +990,7 @@ export default function Dashboard({ email, name, signOutAction }: { email: strin
               </div>
             </section>
           ))}
-          {!loading && inbox.length === 0 && <div className="deck-empty"><b className="dot">NOTHING</b><span>no mail matches these filters</span></div>}
+          {inboxMode === "mail" && !loading && inbox.length === 0 && <div className="deck-empty"><b className="dot">NOTHING</b><span>no mail matches these filters</span></div>}
         </div>
       )}
 

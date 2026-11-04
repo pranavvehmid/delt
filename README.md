@@ -63,6 +63,20 @@ npm run dev
 ```
 
 Create the tables by running [`supabase/schema.sql`](supabase/schema.sql) in the Supabase SQL editor.
-Test the sorting rules with `npm test`.
+
+## Tests
+
+`npm test` runs 118 checks in about 3 seconds:
+
+- **80+ real VIT mails** and the pile a first year expects: exams, FFCS, scholarships, seniors-only, achievements, the `- reg` trap
+- **Dates** in every format VIT uses (`15/11/2026`, `15th Nov`, `Nov 15`, `tomorrow 6 PM`), year rollover, impossible days like 31 Feb
+- **Parsing**: HTML mail, nested multiparts, group senders, ₹ and Tamil text
+- **Stress**: 3,000 random mails never crash; 1,000 typical mails sort in under a second
+
+`scripts/eval.ts` compares the free rules with AI and hand-sorted answers on your own inbox (read-only).
+
+## Why it works the way it does
+
+See [docs/RESEARCH.md](docs/RESEARCH.md): 14 open-source mail sorters, what each does well, and which ideas DELT borrows.
 
 <sub>Next.js · Supabase · Gmail API · Vercel · Android TWA. Design borrowed from Nothing's Glyph look, in purple and gold.</sub>

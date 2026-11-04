@@ -77,6 +77,14 @@ export default function MailReader({ id, gmailLink, onClose }: { id: string; gma
                 <dd>{new Date(msg.date).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short", timeZone: "Asia/Kolkata" })}</dd>
               </dl>
             )}
+            {msg?.unsubscribe && (
+              <div className="reader-att">
+                <a className="btn sm" href={msg.unsubscribe} target="_blank" rel="noreferrer noopener">
+                  ⊘ Unsubscribe from this sender
+                </a>
+                <span className="hint">opens the sender&apos;s own unsubscribe page</span>
+              </div>
+            )}
             {msg && msg.attachments.length > 0 && (
               <div className="reader-att">
                 {msg.attachments.map((a, i) => (
