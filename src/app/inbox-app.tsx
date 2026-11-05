@@ -87,6 +87,20 @@ export default function InboxApp({ email, name, signOutAction, signInAction }: P
   const [syncing, setSyncing] = useState(false);
   const [syncedAt, setSyncedAt] = useState<number | null>(null);
   const [now, setNow] = useState(() => Date.now());
+  // #59: a fade on the chips' right edge while some are scrolled out of sight
+  const chipsRef = useRef<HTMLElement>(null);
+  const chipsMore = useCallback(() => {
+    const el = chipsRef.current;
+    if (el) el.dataset.more = String(el.scrollLeft + el.clientWidth < el.scrollWidth - 4);
+  }, []);
+  const chipsMount = useCallback((el: HTMLElement | null) => {
+    chipsRef.current = el;
+    chipsMore();
+  }, [chipsMore]);
+  useEffect(() => {
+    window.addEventListener("resize", chipsMore);
+    return () => window.removeEventListener("resize", chipsMore);
+  }, [chipsMore]);
   const [toast, setToast] = useState<{ text: string; undo?: () => void; alt?: { label: string; run: () => void } } | null>(null);
   const [menu, setMenu] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -610,10 +624,10 @@ export default function InboxApp({ email, name, signOutAction, signInAction }: P
         </div>
       )}
       <nav className="mast" aria-label="Sections">
-        <button className={route.tab === "inbox" ? "on" : ""} onClick={() => goTab("inbox")} aria-current={route.tab === "inbox" ? "page" : undefined}>
+        <button className={route.tab === "inbox" ? "on" : ""} onClick={() => goTab("inbox")} aria-current={route.tab === "inbox" ? "page" : undefined} title={counts.all.unread > 0 ? `${counts.all.unread} unread` : undefined}>
           Inbox{counts.all.unread > 0 && <sup><span className="sr-only">, </span>{counts.all.unread > 99 ? "99+" : counts.all.unread}<span className="sr-only"> unread</span></sup>}
         </button>
-        <button className={route.tab === "deadlines" ? "on" : ""} onClick={() => goTab("deadlines")} aria-current={route.tab === "deadlines" ? "page" : undefined}>
+        <button className={route.tab === "deadlines" ? "on" : ""} onClick={() => goTab("deadlines")} aria-current={route.tab === "deadlines" ? "page" : undefined} title={dueCount > 0 ? `${dueCount} open deadline${dueCount === 1 ? "" : "s"}` : undefined}>
           Deadlines{dueCount > 0 && <sup><span className="sr-only">, </span>{dueCount}<span className="sr-only"> open</span></sup>}
         </button>
       </nav>
@@ -627,7 +641,7 @@ export default function InboxApp({ email, name, signOutAction, signInAction }: P
             {query && <button onClick={() => setQuery("")} aria-label="Clear search">✕</button>}
           </div>
 
-          <nav className="chips" aria-label="Filter by pile">
+          <nav className="chips" aria-label="Filter by pile" ref={chipsMount} onScroll={chipsMore}>
             {(["all", ...PILES.map((p) => p.key)] as const).map((k) => (
               <button key={k} className={`fchip p-${k} ${pile === k ? "on" : ""}`} onClick={() => setPile(k)} aria-pressed={pile === k}>
                 {k !== "all" && <i className="tagdot" />}

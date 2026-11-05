@@ -1023,3 +1023,18 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 .gsi:hover { background: #f8faff; box-shadow: 0 1px 2px rgb(60 64 67 / 0.3); }
 :root[data-theme="dark"] .gsi { background: #131314; color: #e3e3e3; border-color: #8e918f; }
 .getapp { align-self: center; font-size: 13.5px; color: var(--text); text-decoration: underline; text-underline-offset: 3px; }
+
+/* #59: small visual inconsistencies */
+/* focus rings follow the control's shape: square in Minimal and Grid */
+:root:not([data-look="glyph"]) :focus-visible { border-radius: 0; }
+/* a tapped icon button doesn't keep a grey "hover" on touch screens */
+@media (hover: none) { .iconbtn:hover { background: transparent; } }
+/* the report and unsubscribe links sit apart from the pile buttons, with room to tap */
+.mv-report, .mv-unsub { display: inline-flex; align-items: center; min-height: 36px; }
+.mv-report { margin-top: 14px; }
+/* the back button says Back */
+.iconbtn.mv-back { width: auto; gap: 4px; padding: 0 12px 0 6px; border-radius: 99px; font-size: 14px; font-weight: 600; }
+/* toasts sit under the list when the reading pane is open */
+@media (min-width: 1000px) { .shell.reading ~ .toast, body:has(.shell.reading) .toast { left: 230px; } }
+/* Glyph: a fade says there are more chips to the right */
+:root[data-look="glyph"] .chips[data-more="true"] { mask-image: linear-gradient(to right, #000 calc(100% - 40px), transparent); }

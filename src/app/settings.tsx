@@ -202,7 +202,7 @@ export default function Settings({ open, onClose, onToast, section }: { open: bo
           {ai?.consent === true && (
             <small className="muted">
               Sender, subject and the start of the text go to Google&apos;s Gemini free tier, which Google may use to improve its models.{" "}
-              <a className="link" href="/privacy" target="_blank">
+              <a className="link" href="/privacy">
                 Privacy
               </a>
             </small>
@@ -272,7 +272,7 @@ export default function Settings({ open, onClose, onToast, section }: { open: bo
           <a className="set-link" href={REPO} target="_blank" rel="noreferrer">
             Source code ↗
           </a>
-          <a className="set-link" href="/privacy" target="_blank">
+          <a className="set-link" href="/privacy">
             Privacy ↗
           </a>
         </div>

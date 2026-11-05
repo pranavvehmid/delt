@@ -27,6 +27,9 @@ export const hasRemoteContent = (html: string | null) => !!html && /(src|href|ba
 
 // #32: by default nothing is fetched from the sender's servers (no tracking pixels, no IP or
 // read-time leak). "Load images" allows images only, never scripts or connections.
+/** #59: "Text: Large" also makes the mail itself bigger, not only DELT around it. */
+const large = () => typeof document !== "undefined" && document.documentElement.dataset.size === "large";
+
 function frameDoc(m: FullMessage, darkBg: string | null, remote: boolean) {
   const body = m.html ? cleanMailHtml(m.html) : `<pre>${linkify(esc(m.text ?? "(This mail has no readable text.)"))}</pre>`;
   const img = remote ? "img-src data: cid: https: http:" : "img-src data: cid:";
@@ -35,7 +38,7 @@ function frameDoc(m: FullMessage, darkBg: string | null, remote: boolean) {
 <base target="_blank">
 <style>
   html,body{margin:0;background:#fff;color:#1d1b22}
-  body{padding:18px 16px 28px;font:15.5px/1.6 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;overflow-wrap:anywhere}
+  body{padding:18px 16px 28px;font:${large() ? 17.5 : 15.5}px/1.6 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;overflow-wrap:anywhere}
   img{max-width:100%!important;height:auto!important} table{max-width:100%!important} td{word-break:break-word}
   a{color:#5b3fd6} pre{white-space:pre-wrap;font:15px/1.6 system-ui,sans-serif;margin:0}
   blockquote{margin:8px 0;padding-left:12px;border-left:3px solid #ddd;color:#555}
@@ -163,8 +166,9 @@ export default function MailView({
   return (
     <div className={`mailview ${pane ? "pane" : ""} ${row ? `p-${row.priority}` : ""}`} role="dialog" aria-modal={pane ? undefined : true} aria-labelledby="mv-title" ref={box}>
       <header className="mv-bar">
-        <button className="iconbtn" onClick={onClose} aria-label="Back to list" title="Back">
+        <button className="iconbtn mv-back" onClick={onClose} aria-label="Back to list">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" /></svg>
+          <span aria-hidden="true">Back</span>
         </button>
         {onStep && position && (
           <span className="mv-step">

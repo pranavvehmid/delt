@@ -461,3 +461,11 @@ test("the sign-in page shows a sorted example, Google's button and the Android a
   await expect(page.getByRole("link", { name: "Get the Android app" })).toHaveAttribute("href", /DELT\.apk$/);
   await expect(page.getByRole("link", { name: "Privacy" })).toBeVisible();
 });
+
+test("small details: counts say what they count and Back has a word (#59)", async ({ page }) => {
+  await mockApi(page, smallInbox());
+  await page.goto("/e2e");
+  await expect(page.getByRole("navigation", { name: "Sections" }).getByRole("button", { name: /^Inbox/ })).toHaveAttribute("title", /\d+ unread/);
+  await page.locator(".row-main").first().click();
+  await expect(page.getByRole("button", { name: "Back to list" })).toContainText("Back");
+});
