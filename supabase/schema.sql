@@ -115,3 +115,25 @@ grant select, insert, update, delete on app_state, push_subscriptions to service
 -- ---------- Nov 2026: issues #9 to #12 ----------
 -- #10: set when Google says DELT's access was removed; cleared on the next sign-in.
 alter table users add column if not exists access_revoked boolean not null default false;
+
+-- ---------- Nov 2026: #30 / #35 sync lock ----------
+alter table users add column if not exists sync_started_at timestamptz;
+alter table users add column if not exists sync_finished_at timestamptz;
+
+-- Claims the right to sync this student now. Returns true if claimed, null if:
+--  - a sync started less than p_gap_seconds ago (rate limit), or
+--  - a sync is still running (started, not finished, and less than p_lock_seconds old).
+create or replace function claim_sync(p_email text, p_gap_seconds int default 10, p_lock_seconds int default 180)
+returns boolean
+language sql
+as $$
+  update users set sync_started_at = now()
+  where email = p_email
+    and (sync_started_at is null or sync_started_at < now() - make_interval(secs => p_gap_seconds))
+    and (sync_started_at is null
+         or (sync_finished_at is not null and sync_finished_at >= sync_started_at)
+         or sync_started_at < now() - make_interval(secs => p_lock_seconds))
+  returning true;
+$$;
+revoke all on function claim_sync(text, int, int) from public, anon, authenticated;
+grant execute on function claim_sync(text, int, int) to service_role;

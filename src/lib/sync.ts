@@ -264,6 +264,21 @@ export async function syncUser(email: string): Promise<SyncResult> {
   return result;
 }
 
+/** #30 / #35: one sync per student at a time, at most one start every `gapSeconds`.
+ *  Atomic in the database (claim_sync in schema.sql), so the app, the background job and the daily
+ *  cron can't overlap. If the function isn't installed yet, syncing is allowed (and logged). */
+export async function claimSync(email: string, gapSeconds: number): Promise<boolean> {
+  const { data, error } = await db.rpc("claim_sync", { p_email: email, p_gap_seconds: gapSeconds });
+  if (error) {
+    console.warn("claim_sync unavailable, syncing without the lock:", error.message);
+    return true;
+  }
+  return data === true;
+}
+export async function finishSync(email: string) {
+  await db.from("users").update({ sync_finished_at: new Date().toISOString() }).eq("email", email);
+}
+
 /** Issue #10: remember that Google access is gone, so the app asks the student to sign in
  *  again and background sync stops trying. Cleared on the next sign-in (auth.ts). */
 export async function markRevoked(email: string) {

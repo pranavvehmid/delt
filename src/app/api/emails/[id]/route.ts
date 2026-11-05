@@ -3,6 +3,7 @@ import { auth } from "@/auth";
 import { db } from "@/lib/supabase";
 import { AccessRevoked, getAccessToken, getFullMessage } from "@/lib/gmail";
 import { markRevoked } from "@/lib/sync";
+import { limited } from "@/lib/rate-limit";
 
 // GET /api/emails/:id — the full original mail, fetched live from Gmail.
 // DELT never stores mail bodies; this reads it on demand for the signed-in owner only.
@@ -10,6 +11,8 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
   const session = await auth();
   const email = session?.user?.email?.toLowerCase();
   if (!email) return NextResponse.json({ error: "Not signed in" }, { status: 401 });
+  const tooMany = limited(email, "mail");
+  if (tooMany) return tooMany;
   const { id } = await params;
 
   // Only mail that belongs to this user.

@@ -3,6 +3,7 @@ import { z } from "zod";
 import { auth } from "@/auth";
 import { db, type Priority } from "@/lib/supabase";
 import { batchModify, ensureLabels, getAccessToken, LABEL_NAMES } from "@/lib/gmail";
+import { limited } from "@/lib/rate-limit";
 
 // POST /api/emails/bulk — act on many mails at once (sender clean-up, "mark all read").
 // Moving mail marks it as your choice, so future mail from those senders follows.
@@ -17,6 +18,8 @@ export async function POST(req: NextRequest) {
   const session = await auth();
   const email = session?.user?.email?.toLowerCase();
   if (!email) return NextResponse.json({ error: "Not signed in" }, { status: 401 });
+  const tooMany = limited(email, "bulk");
+  if (tooMany) return tooMany;
 
   const parsed = Bulk.safeParse(await req.json());
   if (!parsed.success) return NextResponse.json({ error: "Bad request" }, { status: 400 });

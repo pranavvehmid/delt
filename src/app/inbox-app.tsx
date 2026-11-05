@@ -128,25 +128,38 @@ export default function InboxApp({ email, name, signOutAction, signInAction }: P
   }, []);
   const syncing$ = useRef(false);
   const sync = useCallback(
-    async (loud = false) => {
+    async (loud = false, force = false) => {
       if (syncing$.current) return;
+      // Only one open tab checks for mail at a time (#30). A tap on ↻, or fetching the rest of a
+      // big first sync, always goes through.
+      try {
+        const last = Number(localStorage.getItem("delt-sync-at") || 0);
+        if (!loud && !force && Date.now() - last < 60_000) return;
+        localStorage.setItem("delt-sync-at", String(Date.now()));
+      } catch {}
       syncing$.current = true;
       setSyncing(true);
       try {
         const r = await fetch("/api/sync", { method: "POST" });
         const d = await r.json().catch(() => ({}));
         if (d.reauth) setReauth(true);
+        if (r.status === 429) {
+          // another check for this student is running or just ran: nothing to do
+          if (loud) setToast({ text: "Already checking for mail" });
+          return;
+        }
         if (!(await load())) throw new Error("offline");
         setSyncedAt(Date.now());
-        // A big first sync comes in batches (#28): fetch the rest straight away.
-        if (d.backlog > 0) setTimeout(() => sync(), 1500);
+        // A big first sync comes in batches (#28): fetch the rest once the 10 s gap has passed.
+        if (d.backlog > 0) setTimeout(() => sync(false, true), 11_000);
         if (!d.reauth && (loud || d.fetched > 0)) setToast({ text: d.fetched > 0 ? `${d.fetched} new mail${d.fetched > 1 ? "s" : ""}` : "No new mail" });
       } catch {
         if (!navigator.onLine) setOffline(true);
         if (loud) setToast({ text: navigator.onLine ? "Couldn't reach Gmail" : "You're offline" });
+      } finally {
+        syncing$.current = false;
+        setSyncing(false);
       }
-      syncing$.current = false;
-      setSyncing(false);
     },
     [load],
   );

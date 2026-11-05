@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { auth } from "@/auth";
 import { db } from "@/lib/supabase";
-import { syncUser } from "@/lib/sync";
+import { claimSync, finishSync, syncUser } from "@/lib/sync";
 import { AccessRevoked } from "@/lib/gmail";
 import { dueForSync } from "@/lib/schedule";
 import { markSeen, notifyStudent } from "@/lib/notify";
@@ -13,6 +13,11 @@ export async function POST() {
   const session = await auth();
   const email = session?.user?.email?.toLowerCase();
   if (!email) return NextResponse.json({ error: "Not signed in" }, { status: 401 });
+  // At most one sync per student every 10 s, and never two at once (#30): extra taps and tabs
+  // get a quick answer instead of another round of Gmail and AI calls.
+  if (!(await claimSync(email, 10))) {
+    return NextResponse.json({ busy: true, fetched: 0, backlog: 0, retryAfter: 10 }, { status: 429, headers: { "Retry-After": "10" } });
+  }
   try {
     const result = await syncUser(email);
     await markSeen(email); // they're looking at it, no need to ping their phone
@@ -21,6 +26,8 @@ export async function POST() {
     // Google access removed: the app shows "Sign in again" (issue #10).
     if (e instanceof AccessRevoked) return NextResponse.json({ error: e.message, reauth: true }, { status: 409 });
     return NextResponse.json({ error: (e as Error).message }, { status: 500 });
+  } finally {
+    await finishSync(email);
   }
 }
 
@@ -48,6 +55,11 @@ export async function GET(req: NextRequest) {
   const results: { email: string; fetched?: number; notified?: number; error?: string }[] = [];
   for (const u of queue) {
     if (Date.now() - started > BUDGET_MS) break;
+    // the student's own app may be syncing them right now: skip, they're up to date
+    if (!(await claimSync(u.email, 60))) {
+      results.push({ email: mask(u.email), error: "busy" });
+      continue;
+    }
     try {
       const r = await syncUser(u.email);
       results.push({ email: mask(u.email), fetched: r.fetched, notified: await notifyStudent(u.email) });
@@ -56,6 +68,8 @@ export async function GET(req: NextRequest) {
       // Any other failure: move on and try again next round.
       await db.from("users").update({ last_synced_at: new Date().toISOString() }).eq("email", u.email);
       results.push({ email: mask(u.email), error: (e as Error).message.slice(0, 120) });
+    } finally {
+      await finishSync(u.email);
     }
   }
   // Deadline reminders for students who weren't due for a sync this round.

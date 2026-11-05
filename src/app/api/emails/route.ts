@@ -5,6 +5,7 @@ import { db, type Priority } from "@/lib/supabase";
 import { CATEGORIES } from "@/lib/types";
 import { PAGE_SIZE, searchPattern } from "@/lib/inbox";
 import { ensureLabels, getAccessToken, markRead, markUnread, setPriorityLabel } from "@/lib/gmail";
+import { limited } from "@/lib/rate-limit";
 
 async function currentUser() {
   const session = await auth();
@@ -20,6 +21,8 @@ async function currentUser() {
 export async function GET(req: NextRequest) {
   const email = await currentUser();
   if (!email) return NextResponse.json({ error: "Not signed in" }, { status: 401 });
+  const tooMany = limited(email, "emails");
+  if (tooMany) return tooMany;
 
   const p = req.nextUrl.searchParams;
   const priority = p.get("priority");
@@ -64,6 +67,8 @@ const Patch = z.object({
 export async function PATCH(req: NextRequest) {
   const email = await currentUser();
   if (!email) return NextResponse.json({ error: "Not signed in" }, { status: 401 });
+  const tooMany = limited(email, "patch");
+  if (tooMany) return tooMany;
 
   const parsed = Patch.safeParse(await req.json());
   if (!parsed.success) return NextResponse.json({ error: "Bad request" }, { status: 400 });

@@ -3,6 +3,7 @@ import { auth, signOut } from "@/auth";
 import { db } from "@/lib/supabase";
 import { deleteStudentData, type AccountDb } from "@/lib/account";
 import { getAccessToken, removeDeltLabels, revokeGoogleToken } from "@/lib/gmail";
+import { limited } from "@/lib/rate-limit";
 
 // DELETE /api/account  { removeLabels?: boolean }
 // "Delete my data" (issue #9): the signed-in student's rows go from every table, DELT's Google
@@ -11,6 +12,8 @@ export async function DELETE(req: NextRequest) {
   const session = await auth();
   const email = session?.user?.email?.toLowerCase();
   if (!email) return NextResponse.json({ error: "Not signed in" }, { status: 401 });
+  const tooMany = limited(email, "account");
+  if (tooMany) return tooMany;
 
   const body = await req.json().catch(() => ({}));
   try {

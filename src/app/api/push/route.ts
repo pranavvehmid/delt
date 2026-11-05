@@ -3,6 +3,7 @@ import { z } from "zod";
 import { auth } from "@/auth";
 import { db } from "@/lib/supabase";
 import { pushEnabled, sendToStudent } from "@/lib/notify";
+import { limited } from "@/lib/rate-limit";
 
 // Phone notifications: save or remove this device's push subscription.
 async function currentUser() {
@@ -14,6 +15,8 @@ async function currentUser() {
 export async function GET() {
   const email = await currentUser();
   if (!email) return NextResponse.json({ error: "Not signed in" }, { status: 401 });
+  const tooMany = limited(email, "push");
+  if (tooMany) return tooMany;
   return NextResponse.json({ enabled: pushEnabled(), publicKey: process.env.VAPID_PUBLIC_KEY ?? null });
 }
 
@@ -26,6 +29,8 @@ const Sub = z.object({
 export async function POST(req: NextRequest) {
   const email = await currentUser();
   if (!email) return NextResponse.json({ error: "Not signed in" }, { status: 401 });
+  const tooMany = limited(email, "push");
+  if (tooMany) return tooMany;
   if (!pushEnabled()) return NextResponse.json({ error: "Notifications aren't set up on this server" }, { status: 503 });
   const parsed = Sub.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: "Bad request" }, { status: 400 });
@@ -40,6 +45,8 @@ export async function POST(req: NextRequest) {
 export async function DELETE(req: NextRequest) {
   const email = await currentUser();
   if (!email) return NextResponse.json({ error: "Not signed in" }, { status: 401 });
+  const tooMany = limited(email, "push");
+  if (tooMany) return tooMany;
   const endpoint = req.nextUrl.searchParams.get("endpoint");
   if (endpoint) await db.from("push_subscriptions").delete().eq("endpoint", endpoint).eq("user_email", email);
   return NextResponse.json({ ok: true });

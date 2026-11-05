@@ -4,6 +4,7 @@ import { auth } from "@/auth";
 import { db } from "@/lib/supabase";
 import { looksLikeGeminiKey, open, seal } from "@/lib/secret";
 import { SHARED_DAILY_PER_STUDENT, planAI } from "@/lib/ai-quota";
+import { limited } from "@/lib/rate-limit";
 
 // The student's AI sorting settings: use the shared free key, or add their own free Gemini key.
 async function currentUser() {
@@ -15,6 +16,8 @@ async function currentUser() {
 export async function GET() {
   const email = await currentUser();
   if (!email) return NextResponse.json({ error: "Not signed in" }, { status: 401 });
+  const tooMany = limited(email, "settings");
+  if (tooMany) return tooMany;
   const { data: user } = await db.from("users").select("gemini_key_enc, ai_day, ai_calls").eq("email", email).maybeSingle();
   const { data: state } = await db.from("app_state").select("value").eq("key", "gemini_cooldown_until").maybeSingle();
   const plan = planAI({
@@ -40,6 +43,8 @@ const Body = z.object({ key: z.string().trim().min(1).max(200) });
 export async function POST(req: NextRequest) {
   const email = await currentUser();
   if (!email) return NextResponse.json({ error: "Not signed in" }, { status: 401 });
+  const tooMany = limited(email, "ai");
+  if (tooMany) return tooMany;
   const parsed = Body.safeParse(await req.json().catch(() => null));
   if (!parsed.success || !looksLikeGeminiKey(parsed.data.key)) return NextResponse.json({ error: "That doesn't look like a Gemini API key" }, { status: 400 });
 
@@ -57,6 +62,8 @@ export async function POST(req: NextRequest) {
 export async function DELETE() {
   const email = await currentUser();
   if (!email) return NextResponse.json({ error: "Not signed in" }, { status: 401 });
+  const tooMany = limited(email, "ai");
+  if (tooMany) return tooMany;
   await db.from("users").update({ gemini_key_enc: null }).eq("email", email);
   return NextResponse.json({ ok: true });
 }
