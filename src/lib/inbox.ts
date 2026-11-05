@@ -223,3 +223,26 @@ export function senderRules(rows: { from_address: string | null; from_name: stri
   }
   return [...by.values()].sort((a, b) => a.name.localeCompare(b.name)).map(({ from, name, priority, mails }) => ({ from, name, priority, mails }));
 }
+
+// ---------- Grid look (F1-inspired) ----------
+/** A three-letter "driver code" for a sender, like VER or HAM on the timing tower.
+ *  An acronym in the name wins (COE, DSW, ACM); otherwise the first three letters. */
+export function senderCode(name: string | null): string {
+  const clean = cleanSender(name);
+  const words = clean.split(/[\s\-–:,/]+/).filter((w) => /^[A-Za-z]/.test(w));
+  // VIT is in almost every sender, so it never names one (ACM-VIT is ACM)
+  const acronym = words.find((w) => /^[A-Z]{2,4}$/.test(w) && w !== "VIT");
+  if (acronym) return acronym.slice(0, 3);
+  const main = words.find((w) => !/^(the|of|and|for|at|in|to|dr|prof|mr|ms|mrs)\.?$/i.test(w)) ?? words[0] ?? "";
+  return (main.replace(/[^A-Za-z]/g, "").slice(0, 3) || "???").toUpperCase();
+}
+
+/** The timing-tower gap: the newest mail leads, others show how far behind it they arrived. */
+export function gapText(receivedAt: string, leaderAt: string): string {
+  const d = Date.parse(leaderAt) - Date.parse(receivedAt);
+  if (d < 60_000) return "LEADER";
+  const m = Math.floor(d / 60_000), h = Math.floor(m / 60), days = Math.floor(h / 24);
+  if (days >= 1) return `+${days}D${h % 24 ? ` ${h % 24}H` : ""}`;
+  if (h >= 1) return `+${h}H${m % 60 ? ` ${m % 60}M` : ""}`;
+  return `+${m}M`;
+}

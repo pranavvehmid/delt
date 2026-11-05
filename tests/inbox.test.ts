@@ -190,3 +190,27 @@ test("sender rules: one per sender, the newest move wins, sorted by name", () =>
   ]);
   assert.deepEqual(senderRules([]), []);
 });
+
+// ---------- Grid look: driver codes and gaps ----------
+import { gapText, senderCode } from "../src/lib/inbox";
+test("sender codes read like timing-tower driver codes", () => {
+  assert.equal(senderCode("COE"), "COE");
+  assert.equal(senderCode("Office of DSW"), "DSW");
+  assert.equal(senderCode("ACM-VIT"), "ACM");
+  assert.equal(senderCode("VIT"), "VIT");
+  assert.equal(senderCode("Photo Club"), "PHO");
+  assert.equal(senderCode("'Dean' via B.Tech"), "DEA");
+  assert.equal(senderCode("Dr. Rao"), "RAO");
+  assert.equal(senderCode(null), "UNK");
+  assert.equal(senderCode("123"), "???");
+  for (const n of ["The Placement Cell", "coursera", "Google Drive"]) assert.match(senderCode(n), /^[A-Z?]{3}$/);
+});
+test("gaps to the leader", () => {
+  const lead = "2026-11-05T12:00:00Z";
+  assert.equal(gapText(lead, lead), "LEADER");
+  assert.equal(gapText("2026-11-05T11:15:00Z", lead), "+45M");
+  assert.equal(gapText("2026-11-05T09:40:00Z", lead), "+2H 20M");
+  assert.equal(gapText("2026-11-05T10:00:00Z", lead), "+2H");
+  assert.equal(gapText("2026-11-03T09:00:00Z", lead), "+2D 3H");
+  assert.equal(gapText("2026-11-04T12:00:00Z", lead), "+1D");
+});
