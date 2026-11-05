@@ -12,7 +12,7 @@ permissions:
 jobs:
   test:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 40
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -26,8 +26,23 @@ jobs:
         run: npx tsc --noEmit
       - name: Build
         run: npm run build
+      # Browsers are cached between runs; the system packages WebKit needs come from apt each time.
+      # (Installing both from scratch sometimes took most of the old 20-minute limit.)
+      - name: Playwright version
+        id: pw
+        run: echo "v=$(node -p "require('@playwright/test/package.json').version")" >> "$GITHUB_OUTPUT"
+      - name: Cache browsers
+        id: pwcache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: pw-${{ runner.os }}-${{ steps.pw.outputs.v }}-chromium-webkit
       - name: Install browsers (Chrome and Safari engines)
-        run: npx playwright install --with-deps chromium webkit
+        if: steps.pwcache.outputs.cache-hit != 'true'
+        run: npx playwright install chromium webkit
+      - name: Install browser system packages
+        timeout-minutes: 15
+        run: npx playwright install-deps chromium webkit
       - name: Browser tests
         run: npm run e2e
         env:
