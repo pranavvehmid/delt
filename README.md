@@ -11,14 +11,14 @@
 <p align="center">
   <a href="https://delt-mu.vercel.app"><img alt="Web app" src="https://img.shields.io/badge/web-delt--mu.vercel.app-1c1917?style=flat-square"></a>
   <a href="https://github.com/pranavvehmid/delt/releases/latest"><img alt="Android release" src="https://img.shields.io/github/v/release/pranavvehmid/delt?style=flat-square&label=android&color=1c1917"></a>
-  <a href="#tests"><img alt="174 tests passing" src="https://img.shields.io/badge/tests-174%20passing-1c1917?style=flat-square"></a>
+  <a href="#tests"><img alt="231 tests passing" src="https://img.shields.io/badge/tests-231%20passing-1c1917?style=flat-square"></a>
   <img alt="Free" src="https://img.shields.io/badge/cost-free-c8102e?style=flat-square">
 </p>
 
 DELT reads your VIT Gmail and sorts every mail into four piles, so exams, registrations, fees and deadlines are always at the top. It works for any `@vitstudent.ac.in` account and costs nothing to run.
 
 <p align="center">
-  <img src="assets/stats.svg" alt="174 tests passing · 14 mail apps studied · 3000 random mails, no crash · 0 rupees to run" width="100%">
+  <img src="assets/stats.svg" alt="231 tests passing · 14 mail apps studied · 3000 random mails, no crash · 0 rupees to run" width="100%">
 </p>
 
 ## How it sorts
@@ -87,6 +87,7 @@ Tap ◐ in the top bar.
 - Google may use what is sent to Gemini's free tier to improve its models. Leave `GEMINI_API_KEY` empty to use rules only.
 - If you add your own Gemini key, it's encrypted before it's stored.
 - Notifications use your browser's own push service. Turning them off removes the device from DELT.
+- **Account menu → Delete my data** removes everything DELT keeps about you and cancels its access to your Gmail.
 
 ## Run your own copy
 
@@ -101,7 +102,7 @@ Create the tables by running [`supabase/schema.sql`](supabase/schema.sql) in the
 
 ## Tests
 
-`npm test` runs 174 checks in a few seconds:
+`npm test` runs 192 checks in a few seconds:
 
 - 80+ real VIT mails and the pile each should land in
 - dates in the formats VIT uses (`15/11/2026`, `15th Nov`, `Nov 15`, `tomorrow 6 PM`), year rollover, impossible dates like 31 Feb
@@ -111,6 +112,10 @@ Create the tables by running [`supabase/schema.sql`](supabase/schema.sql) in the
 - every API route checks sign-in, and every mail query is limited to the signed-in student
 - every combination of appearance settings
 - who background sync picks, the shared AI allowance, encrypted keys, and which notifications get sent
+- text contrast for every pile in every theme, read straight from the CSS
+- deleting a student's data leaves nothing behind
+
+`npm run e2e` runs 39 browser checks (Playwright) on a phone and a desktop screen with fake mail: swiping, reading a mail, moving piles, every Appearance option, scrolling back through 450 mails, search, keyboard-only use, and accessibility checks (axe). GitHub Actions runs both on every push.
 
 `scripts/eval.ts` compares the rules against Gemini and your own corrections on your inbox. It only reads.
 
