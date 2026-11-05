@@ -1,17 +1,43 @@
 import type { Metadata, Viewport } from "next";
-import { Doto, IBM_Plex_Sans, Space_Grotesk, Space_Mono } from "next/font/google";
 import localFont from "next/font/local";
 import "./app.css";
 import { PREPAINT } from "@/lib/prefs";
 
-// Minimal uses one typeface, IBM Plex Sans, at light/regular/medium (Swiss style: weight, not bold).
-// Glyph uses Doto dot-matrix + Space Grotesk.
-const plex = IBM_Plex_Sans({ variable: "--font-plex", subsets: ["latin"], weight: ["300", "400", "500"] });
-const dot = Doto({ variable: "--font-dot", subsets: ["latin"], axes: ["ROND"] });
-const grotesk = Space_Grotesk({ variable: "--font-grotesk", subsets: ["latin"], weight: ["500", "700"] });
-const mono = Space_Mono({ variable: "--font-mono", subsets: ["latin"], weight: ["400", "700"] });
-// Grid (F1-inspired): Titillium Web (SIL Open Font Licence, see fonts/titillium/OFL.txt), shipped with
-// the app so builds never depend on a font download. Only fetched by browsers when Grid is used.
+// Every font ships with the app (SIL Open Font Licence, see src/app/fonts/*/OFL.txt), so builds never
+// depend on downloading fonts, and only the fonts a look uses are fetched by the browser.
+// Minimal: IBM Plex Sans at light / regular / medium (Swiss style: weight, not bold).
+const plex = localFont({
+  variable: "--font-plex",
+  display: "swap",
+  src: [
+    { path: "./fonts/plex/plex-300-normal.woff2", weight: "300", style: "normal" },
+    { path: "./fonts/plex/plex-400-normal.woff2", weight: "400", style: "normal" },
+    { path: "./fonts/plex/plex-500-normal.woff2", weight: "500", style: "normal" },
+  ],
+});
+// Glyph and Extra dark: Doto dot-matrix (variable, with a ROND axis).
+const dot = localFont({ variable: "--font-dot", display: "swap", preload: false, src: [{ path: "./fonts/doto/doto-100-900-normal.woff2", weight: "100 900", style: "normal" }] });
+// Glyph: Space Grotesk.
+const grotesk = localFont({
+  variable: "--font-grotesk",
+  display: "swap",
+  preload: false,
+  src: [
+    { path: "./fonts/grotesk/grotesk-500-normal.woff2", weight: "500", style: "normal" },
+    { path: "./fonts/grotesk/grotesk-700-normal.woff2", weight: "700", style: "normal" },
+  ],
+});
+// Extra dark labels: Space Mono.
+const mono = localFont({
+  variable: "--font-mono",
+  display: "swap",
+  preload: false,
+  src: [
+    { path: "./fonts/mono/mono-400-normal.woff2", weight: "400", style: "normal" },
+    { path: "./fonts/mono/mono-700-normal.woff2", weight: "700", style: "normal" },
+  ],
+});
+// Grid (F1-inspired): Titillium Web.
 const race = localFont({
   variable: "--font-race",
   preload: false,
