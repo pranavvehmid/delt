@@ -75,3 +75,24 @@ test("the before-paint script handles empty, broken and legacy storage", () => {
   assert.deepEqual(runPrepaint({ "delt-look": "calm", "delt-theme": "dark" }, false), toDataset(parsePrefs(null, { look: "calm", theme: "dark" }), false));
   assert.deepEqual(runPrepaint({ "delt-look": "glyph" }, true), toDataset(parsePrefs(null, { look: "glyph" }), true));
 });
+
+test("Extra dark paints the phone's status bar black before the app loads (#26)", () => {
+  const metas = [0, 1].map(() => {
+    const a: Record<string, string> = { content: "#ffffff", media: "(prefers-color-scheme: light)" };
+    return { a, setAttribute: (k: string, v: string) => (a[k] = v), removeAttribute: (k: string) => delete a[k] };
+  });
+  const run = (prefs: object) => {
+    const fake = {
+      document: { documentElement: { dataset: {} }, readyState: "complete", querySelectorAll: () => metas },
+      localStorage: { getItem: (k: string) => (k === "delt-prefs" ? JSON.stringify(prefs) : null) },
+      window: { matchMedia: () => ({ matches: false }) },
+    };
+    new Function("document", "localStorage", "window", PREPAINT)(fake.document, fake.localStorage, fake.window);
+    return metas.map((m) => m.a);
+  };
+  for (const look of ["minimal", "glyph"]) {
+    assert.deepEqual(run({ look, mode: "black" }), [{ content: "#000000" }, { content: "#000000" }]);
+  }
+  assert.equal(run({ look: "minimal", mode: "light" })[0].content, "#fafaf9");
+  assert.equal(run({ look: "minimal", mode: "dark" })[0].content, "#161412");
+});

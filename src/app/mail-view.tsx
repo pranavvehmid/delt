@@ -13,8 +13,18 @@ const esc = (s: string) => s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&
 const linkify = (s: string) => s.replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1">$1</a>');
 const kb = (n: number) => (n > 1048576 ? `${(n / 1048576).toFixed(1)} MB` : `${Math.max(1, Math.round(n / 1024))} KB`);
 
+// In dark themes the mail is shown dark (issue #26): the whole frame is colour-inverted, and pictures
+// are inverted back so photos and logos keep their real colours. "Original colours" turns it off.
+const DARK_MAIL_KEY = "delt-mail-original";
+const KEEP = "img,video,picture,svg,canvas,iframe,[style*='background-image']";
+/** The page colour, flipped, so after the frame is inverted it lands exactly on the page colour. */
+function invertedBg() {
+  const m = getComputedStyle(document.body).backgroundColor.match(/\d+/g);
+  return m ? `rgb(${255 - +m[0]}, ${255 - +m[1]}, ${255 - +m[2]})` : "#fff";
+}
+
 // The mail runs in a sandbox with no scripts at all; links open outside DELT.
-function frameDoc(m: FullMessage) {
+function frameDoc(m: FullMessage, darkBg: string | null) {
   const body = m.html ?? `<pre>${linkify(esc(m.text ?? "(This mail has no readable text.)"))}</pre>`;
   return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta http-equiv="Content-Security-Policy" content="script-src 'none'; object-src 'none'; frame-src 'none'; form-action 'none'">
@@ -25,6 +35,7 @@ function frameDoc(m: FullMessage) {
   img{max-width:100%!important;height:auto!important} table{max-width:100%!important} td{word-break:break-word}
   a{color:#5b3fd6} pre{white-space:pre-wrap;font:15px/1.6 system-ui,sans-serif;margin:0}
   blockquote{margin:8px 0;padding-left:12px;border-left:3px solid #ddd;color:#555}
+${darkBg ? `html,body{background:${darkBg}!important} ${KEEP}{filter:invert(1) hue-rotate(180deg)}` : ""}
 </style></head><body>${body}</body></html>`;
 }
 
@@ -46,6 +57,33 @@ export default function MailView({
   const [height, setHeight] = useState(240);
   const frame = useRef<HTMLIFrameElement>(null);
   const box = useRef<HTMLDivElement>(null);
+  // dark mail in dark themes, unless the student asked for the original colours
+  const [darkTheme, setDarkTheme] = useState(false);
+  const [original, setOriginal] = useState(false);
+  const [darkBg, setDarkBg] = useState<string | null>(null);
+  useEffect(() => {
+    const read = () => {
+      const dark = document.documentElement.dataset.theme === "dark";
+      setDarkTheme(dark);
+      setDarkBg(dark ? invertedBg() : null);
+    };
+    read();
+    try {
+      setOriginal(localStorage.getItem(DARK_MAIL_KEY) === "1");
+    } catch {}
+    const watch = new MutationObserver(() => setTimeout(read, 400)); // after the theme cross-fade
+    watch.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme", "data-tone", "data-look"] });
+    return () => watch.disconnect();
+  }, []);
+  const dimMail = darkTheme && !original;
+  const toggleOriginal = () => {
+    setOriginal((o) => {
+      try {
+        localStorage.setItem(DARK_MAIL_KEY, o ? "0" : "1");
+      } catch {}
+      return !o;
+    });
+  };
   useDialog(box, true, onClose, restoreFocus);
 
   useEffect(() => {
@@ -183,17 +221,24 @@ export default function MailView({
                 <span className="sk" style={{ width: "40%" }} />
               </div>
             ) : (
+              <>
+              {darkTheme && (
+                <button className="mv-colours link" onClick={toggleOriginal} aria-pressed={original}>
+                  {original ? "Show dark" : "Original colours"}
+                </button>
+              )}
               <iframe
                 ref={frame}
                 title="Mail content"
-                className="mv-frame"
+                className={`mv-frame ${dimMail ? "dim" : ""}`}
                 // same-origin only so the height can be measured; no allow-scripts, so nothing in the mail can run
                 sandbox="allow-same-origin allow-popups allow-popups-to-escape-sandbox"
                 referrerPolicy="no-referrer"
-                srcDoc={frameDoc(msg)}
+                srcDoc={frameDoc(msg, dimMail ? darkBg : null)}
                 onLoad={fit}
                 style={{ height }}
               />
+              </>
             )}
           </div>
         </article>

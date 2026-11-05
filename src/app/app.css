@@ -554,7 +554,8 @@ svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width:
   --accent: #ff2e3e;
   --due-soon: #ff2e3e;
 }
-:root[data-look="glyph"][data-tone="black"] { --bg: #000; --surface: #110b20; --surface2: #1c1433; }
+:root[data-look="glyph"][data-tone="black"] { --bg: #000; --surface: #0e0d12; --surface2: #1a1820; }
+:root[data-look="glyph"][data-tone="black"] body { background: #000 radial-gradient(color-mix(in srgb, var(--gold) 9%, transparent) 1.4px, transparent 1.5px) 0 0 / 22px 22px; }
 
 /* four theme choices: their own full-width row */
 .ap-row:has(.seg button:nth-child(4)) { flex-direction: column; align-items: stretch; gap: 8px; padding: 12px 0; }
@@ -665,3 +666,22 @@ body { min-height: 100dvh; }
 /* no grey flash or text selection while swiping a row */
 .row-slide { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
 .mv-scroll { overscroll-behavior: contain; }
+
+/* =========================================================
+   Extra dark, Nothing OS style (issue #26): pure black, white type,
+   one red signal, dot-matrix section names, visible hairlines.
+   ========================================================= */
+:root[data-tone="black"] { --line: #262626; }
+:root[data-tone="black"] .veil { background: rgba(0, 0, 0, 0.72); }
+:root[data-tone="black"] :is(.sheet, .menu) { background: #000; box-shadow: 0 0 0 1px #2e2e2e; }
+:root[data-look="glyph"][data-tone="black"] :is(.sheet, .menu) { box-shadow: 5px 5px 0 var(--ink); border-color: #3a3550; }
+:root:not([data-look="glyph"])[data-tone="black"] .mast button { font-family: var(--font-dot), monospace; font-weight: 700; font-variation-settings: "ROND" 100; letter-spacing: 0.02em; }
+:root:not([data-look="glyph"])[data-tone="black"] .mast sup { font-family: var(--font); color: var(--accent); }
+:root:not([data-look="glyph"])[data-tone="black"] :is(.dayhead, .from, .sync, .lbl, .ap-lbl) { font-family: var(--font-mono), ui-monospace, monospace; }
+:root:not([data-look="glyph"])[data-tone="black"] .toggle input:checked + .knob { background: var(--accent); }
+:root:not([data-look="glyph"])[data-tone="black"] .logo i { box-shadow: 0 0 10px rgb(255 46 62 / 0.55); }
+:root[data-tone="black"] .mv-frame { box-shadow: 0 0 0 1px #262626; }
+
+/* dark mail in dark themes */
+.mv-frame.dim { filter: invert(1) hue-rotate(180deg); background: #fff; box-shadow: none !important; border-color: transparent !important; }
+.mv-colours { display: block; margin: 0 0 10px auto; font-size: 13px; }

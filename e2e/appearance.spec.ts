@@ -91,3 +91,25 @@ test("the panel closes with Done, Esc, or a tap outside", async ({ page }) => {
   await page.locator(".veil").click({ position: { x: 10, y: 10 } });
   await expect(panel).toHaveCount(0);
 });
+
+test("Extra dark: the mail itself is shown dark, with a switch back to original colours (#26)", async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem("delt-prefs", JSON.stringify({ look: "minimal", mode: "black", accent: "auto", size: "normal", density: "comfortable" })));
+  await mockApi(page, smallInbox());
+  await page.goto("/e2e");
+  expect(await page.locator('meta[name="theme-color"]').first().getAttribute("content")).toBe("#000000");
+  await page.locator('li.row[data-mail="fee"] .row-main').click();
+  const frame = page.locator(".mv-frame");
+  await expect(frame).toHaveClass(/dim/);
+  await page.getByRole("button", { name: "Original colours" }).click();
+  await expect(frame).not.toHaveClass(/dim/);
+  await page.getByRole("button", { name: "Show dark" }).click();
+  await expect(frame).toHaveClass(/dim/);
+});
+
+test("Light theme: mail keeps its own colours", async ({ page }) => {
+  await mockApi(page, smallInbox());
+  await page.goto("/e2e");
+  await page.locator('li.row[data-mail="fee"] .row-main').click();
+  await expect(page.locator(".mv-frame")).not.toHaveClass(/dim/);
+  await expect(page.getByRole("button", { name: "Original colours" })).toHaveCount(0);
+});

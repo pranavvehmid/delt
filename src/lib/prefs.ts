@@ -65,4 +65,7 @@ r.dataset.look=ok(p.look,["minimal","glyph"],"minimal");r.dataset.theme=m;r.data
 r.dataset.accent=ok(p.accent,["auto","purple","blue","green","red","gold"],"auto");
 r.dataset.size=ok(p.size,["normal","large"],"normal");
 r.dataset.density=ok(p.density,["comfortable","compact"],"comfortable");
+try{var bg={minimal:{light:"#fafaf9",dark:"#161412"},glyph:{light:"#fff8e8",dark:"#17112b"}}[r.dataset.look][m];if(tone==="black")bg="#000000";
+function bar(){var ms=document.querySelectorAll('meta[name="theme-color"]');for(var i=0;i<ms.length;i++){ms[i].setAttribute("content",bg);ms[i].removeAttribute("media")}}
+bar();if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",bar)}catch(e){}
 })()`;
