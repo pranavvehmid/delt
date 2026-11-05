@@ -120,7 +120,7 @@ export default function MailView({
   const sender = msg?.from || cleanSender(row?.from_name ?? null);
 
   return (
-    <div className="mailview" role="dialog" aria-modal="true" aria-labelledby="mv-title" ref={box}>
+    <div className={`mailview ${row ? `p-${row.priority}` : ""}`} role="dialog" aria-modal="true" aria-labelledby="mv-title" ref={box}>
       <header className="mv-bar">
         <button className="iconbtn" onClick={onClose} aria-label="Back to list" title="Back">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" /></svg>

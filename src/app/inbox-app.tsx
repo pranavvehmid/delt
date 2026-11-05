@@ -7,7 +7,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type PointerEvent as
 import type { EmailRow, Priority } from "@/lib/supabase";
 import {
   PAGE_SIZE, PILES, BUCKETS, ago, cleanSender, cleanSubject, deadlineBuckets, dueLevel, dueText, filterMail, groupByDay, initials, mergeFresh, mergeMore, oldestReceived,
-  openDeadlines, pileCounts, pileLabel, shortTime,
+  openDeadlines, pileCounts, pileLabel, shortTime, gapText, senderCode,
 } from "@/lib/inbox";
 import { calendarLink } from "@/lib/insights";
 import { cacheKey, clearOffline, packCache, unpackCache } from "@/lib/offline";
@@ -305,6 +305,9 @@ export default function InboxApp({ email, name, signOutAction, signInAction }: P
   const searchable = useMemo(() => (hits ? mergeMore(all, hits) : all), [all, hits]);
   const shown = useMemo(() => filterMail(searchable, { pile, unreadOnly, query }), [searchable, pile, unreadOnly, query]);
   const days = useMemo(() => groupByDay(shown, now), [shown, now]);
+  // Grid look: each row's place in the list, and the newest mail to measure gaps from
+  const posOf = useMemo(() => new Map(shown.map((m, i) => [m.id, i + 1])), [shown]);
+  const leaderAt = shown[0]?.received_at ?? "";
   const buckets = useMemo(() => deadlineBuckets(mergeMore(all, due), now), [all, due, now]);
   const dueCount = openDeadlines(buckets);
   const open = route.mailId ? findMail(route.mailId) : null;
@@ -353,6 +356,13 @@ export default function InboxApp({ email, name, signOutAction, signInAction }: P
         </a>
         <button className="sync" onClick={() => sync(true)} disabled={syncing} title="Check for new mail">
           <span className={syncing ? "spin" : ""} aria-hidden="true">↻</span>
+          <span className="lights" aria-hidden="true">
+            <i />
+            <i />
+            <i />
+            <i />
+            <i />
+          </span>
           <span>{syncing ? "Checking…" : syncedAt ? `Updated ${ago(syncedAt, now)}` : "Sync"}</span>
         </button>
         <div className="appbar-r">
@@ -507,7 +517,7 @@ export default function InboxApp({ email, name, signOutAction, signInAction }: P
                 </h2>
                 <ul className="rows">
                   {d.mails.map((m) => (
-                    <MailRow key={m.id} m={m} now={now} onOpen={() => openMail(m)} onRead={() => patch(m.id, { read: m.unread })} onDone={() => patch(m.id, { is_done: !m.is_done })} />
+                    <MailRow key={m.id} m={m} now={now} pos={posOf.get(m.id) ?? 0} leaderAt={leaderAt} onOpen={() => openMail(m)} onRead={() => patch(m.id, { read: m.unread })} onDone={() => patch(m.id, { is_done: !m.is_done })} />
                   ))}
                 </ul>
               </section>
@@ -520,7 +530,7 @@ export default function InboxApp({ email, name, signOutAction, signInAction }: P
                   {loadingOlder ? "Loading older mail…" : "Load older mail"}
                 </button>
               ) : (
-                <>That&apos;s all your mail in DELT</>
+                <span className="finish">That&apos;s all your mail in DELT</span>
               )}
             </div>
           )}
@@ -623,6 +633,9 @@ export default function InboxApp({ email, name, signOutAction, signInAction }: P
 
       {toast && (
         <div className="toast" role="status" aria-live="polite" key={toast.text} style={{ "--life": `${toast.undo ? 5000 : 2600}ms` } as React.CSSProperties}>
+          <b className="rc" aria-hidden="true">
+            Race control
+          </b>
           <span>{toast.text}</span>
           {toast.undo && (
             <button
@@ -650,7 +663,7 @@ function apply(m: EmailRow, p: { read?: boolean; is_done?: boolean; priority?: P
 }
 
 // ---------- one mail row: tap to open, swipe to act ----------
-function MailRow({ m, now, onOpen, onRead, onDone }: { m: EmailRow; now: number; onOpen: () => void; onRead: () => void; onDone: () => void }) {
+function MailRow({ m, now, pos = 0, leaderAt = "", onOpen, onRead, onDone }: { m: EmailRow; now: number; pos?: number; leaderAt?: string; onOpen: () => void; onRead: () => void; onDone: () => void }) {
   const [dx, setDx] = useState(0);
   const drag = useRef<{ x: number; y: number; on: boolean; moved: boolean; dx: number } | null>(null);
   const moved = useRef(false);
@@ -700,7 +713,7 @@ function MailRow({ m, now, onOpen, onRead, onDone }: { m: EmailRow; now: number;
   ].filter(Boolean).join(" ");
 
   return (
-    <li className={`row ink-${m.priority} ${m.unread ? "unread" : ""} ${m.is_done ? "done" : ""} ${dx ? "dragging" : ""}`} data-mail={m.id}>
+    <li className={`row ink-${m.priority} ${m.unread ? "unread" : ""} ${m.is_done ? "done" : ""} ${dx ? "dragging" : ""}`} data-mail={m.id} data-pos={pos} style={{ "--i": Math.min(pos, 14) } as React.CSSProperties}>
       <div className={`swipe-bg ${dx > 0 ? "r" : "l"} ${Math.abs(dx) > LIMIT ? "armed" : ""}`} aria-hidden="true">
         <span>{dx > 0 ? (m.unread ? "Read" : "Unread") : m.is_done ? "Not done" : "Done"}</span>
       </div>
@@ -709,12 +722,18 @@ function MailRow({ m, now, onOpen, onRead, onDone }: { m: EmailRow; now: number;
           <span className={`avatar p-${m.priority}`} aria-hidden="true">
             {initials(sender)}
           </span>
+          <span className="pos" aria-hidden="true">
+            {pos}
+          </span>
           <span className="when" aria-hidden="true">
             {shortTime(m.received_at, now)}
           </span>
           <span className="row-text">
-            <span className="line1">
+            <span className="line1" data-same={senderCode(m.from_name) === sender.toUpperCase() || undefined}>
               <i className={`tagdot pdot p-${m.priority}`} title={pileLabel(m.priority)} aria-hidden="true" />
+              <span className="code" aria-hidden="true">
+                {senderCode(m.from_name)}
+              </span>
               <span className="from ell">{sender}</span>
               <span className="time">{shortTime(m.received_at, now)}</span>
             </span>
@@ -730,6 +749,9 @@ function MailRow({ m, now, onOpen, onRead, onDone }: { m: EmailRow; now: number;
               {m.deadline && !m.is_done && <span className={`due lv-${dueLevel(m.deadline, now)}`}>Due {dueText(m.deadline, now)}</span>}
               {m.is_done && <span className="donemark">✓ Done</span>}
             </span>
+          </span>
+          <span className="gap" aria-hidden="true">
+            {leaderAt ? gapText(m.received_at, leaderAt) : ""}
           </span>
         </button>
         <div className="row-acts hover-only">
