@@ -140,3 +140,6 @@ grant execute on function claim_sync(text, int, int) to service_role;
 
 -- ---------- Nov 2026: #31 AI consent ----------
 alter table users add column if not exists ai_consent boolean;
+
+-- ---------- Nov 2026: #40 sync health ----------
+alter table users add column if not exists last_sync_error text;

@@ -97,6 +97,7 @@ export async function GET(req: NextRequest) {
         // Revoked Google access is flagged by syncUser, so that student is skipped from now on.
         // Any other failure: try again next round. last_synced_at is NOT moved, or mail in the
         // window would be skipped for good (#28); claim_sync's gap stops tight retry loops.
+        await db.from("users").update({ last_sync_error: (e as Error).message.slice(0, 160) }).eq("email", u.email); // #40
         results.push({ email: mask(u.email), error: (e as Error).message.slice(0, 120) });
       } finally {
         await finishSync(u.email);

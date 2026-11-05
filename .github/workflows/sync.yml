@@ -39,6 +39,22 @@ jobs:
             [ "$remaining" -eq 0 ] && break
           done
 
+      # #40: say loudly when background sync is falling behind or students have problems
+      - name: Check sync health
+        if: always()
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          SITE: https://delt-mu.vercel.app
+        run: |
+          [ -z "$CRON_SECRET" ] && exit 0
+          h=$(curl -sS --max-time 30 -H "Authorization: Bearer $CRON_SECRET" "$SITE/api/health") || { echo "::warning::Health check failed"; exit 0; }
+          echo "health: $h"
+          behind=$(echo "$h" | jq -r '.oldestActiveMinutes // 0')
+          problems=$(echo "$h" | jq -r '.withProblems // 0')
+          [ "$behind" -gt 120 ] && echo "::warning::Background sync is $behind minutes behind for active students"
+          [ "$problems" -gt 0 ] && echo "::warning::$problems students had a problem on their last sync"
+          exit 0
+
       # GitHub switches off scheduled workflows after 60 days with no commits. Re-enabling the
       # workflow resets that clock, so background sync and notifications never stop silently (#36, #37).
       - name: Keep this schedule alive

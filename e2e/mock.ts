@@ -86,7 +86,7 @@ export type Api = {
 };
 
 /** Answers every /api call from `mails`. Returns the fake server's state for assertions. */
-export async function mockApi(page: Page, mails: FakeMail[], opts: { reauth?: boolean; aiConsent?: boolean | null } = {}): Promise<Api> {
+export async function mockApi(page: Page, mails: FakeMail[], opts: { reauth?: boolean; aiConsent?: boolean | null; syncProblem?: string } = {}): Promise<Api> {
   let consent = opts.aiConsent === undefined ? true : opts.aiConsent;
   const api: Api = {
     mails,
@@ -166,7 +166,7 @@ export async function mockApi(page: Page, mails: FakeMail[], opts: { reauth?: bo
       if (q.get("due") === "1") list = list.filter((m) => m.deadline);
       const words = (q.get("q") ?? "").toLowerCase().split(/\s+/).filter(Boolean);
       if (words.length) list = list.filter((m) => words.every((w) => `${m.subject} ${m.from_name} ${m.from_address} ${m.summary}`.toLowerCase().includes(w)));
-      return route.fulfill(json({ emails: list.slice(0, limit), more: list.length > limit, reauth: !!opts.reauth && !before && !q.get("q"), aiConsent: consent }));
+      return route.fulfill(json({ emails: list.slice(0, limit), more: list.length > limit, reauth: !!opts.reauth && !before && !q.get("q"), aiConsent: consent, syncProblem: opts.syncProblem ?? null }));
     }
     return route.fulfill(json({ error: `not mocked: ${method} ${path}` }, 500));
   });

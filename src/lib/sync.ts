@@ -15,7 +15,7 @@ import type { Classification, Correction } from "./types";
 import { profileFromName, type StudentProfile } from "./profile";
 import { COOLDOWN_MS, bumpUsage, planAI } from "./ai-quota";
 import { needsReseal, open, openToken, seal } from "./secret";
-import { BATCH, LIST_MAX, UNREAD_LIST_MAX, UNREAD_WINDOW_DAYS, isGone, nextSyncedAt, planSync, unreadChanges } from "./sync-plan";
+import { BATCH, LIST_MAX, UNREAD_LIST_MAX, UNREAD_WINDOW_DAYS, isGone, nextSyncedAt, planSync, syncProblem, unreadChanges } from "./sync-plan";
 
 
 /** What sync talks to: the database, Gmail and the AI. Tests swap these for fakes (#39). */
@@ -274,6 +274,8 @@ export async function syncUser(email: string, mode: SyncMode = "full"): Promise<
   result.fetched = result.sorted; // what the app reports as "N new mails"
   const syncedAt = mode === "later" ? (user.last_synced_at ?? null) : nextSyncedAt({ previous: user.last_synced_at ?? null, startedAt, left: mailPlan.left, failed });
   if (syncedAt !== (user.last_synced_at ?? null)) await D.db.from("users").update({ last_synced_at: syncedAt }).eq("email", email);
+  // #40: remember whether this sync had a problem, so the app can say so (separate write: older databases lack the column)
+  if (mode !== "later") await D.db.from("users").update({ last_sync_error: syncProblem(result.errors) }).eq("email", email);
   // Separate write, so a database without the usage columns yet can't block the sync time.
   if (!plan.own && aiUsed > 0) await D.db.from("users").update(bumpUsage(user.ai_day ?? null, user.ai_calls ?? 0, aiUsed, Date.now())).eq("email", email);
   return result;

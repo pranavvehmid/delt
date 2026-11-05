@@ -39,6 +39,7 @@ export default function InboxApp({ email, name, signOutAction, signInAction }: P
   const [searching, setSearching] = useState(false);
   const [due, setDue] = useState<EmailRow[]>([]);
   const [reauth, setReauth] = useState(false);
+  const [syncProblem, setSyncProblem] = useState<string | null>(null); // #40
   // #31: null = not asked yet, so the app asks once; undefined = unknown (older database)
   const [aiConsent, setAiConsent] = useState<boolean | null | undefined>(undefined);
   // Android app: a newer build is on GitHub (see lib/app-update.ts)
@@ -113,6 +114,7 @@ export default function InboxApp({ email, name, signOutAction, signInAction }: P
       if (!j.more) pagedOlder.current = false;
       setReauth(!!j.reauth);
       setAiConsent(j.aiConsent);
+      setSyncProblem(j.syncProblem ?? null);
     }
     if (d.ok) setDue((await d.json()).emails ?? []);
     if (r.ok) setSavedAt(Date.now());
@@ -401,7 +403,7 @@ export default function InboxApp({ email, name, signOutAction, signInAction }: P
           <span>DELT</span>
           <i />
         </a>
-        <button className="sync" onClick={() => sync(true)} disabled={syncing} title="Check for new mail">
+        <button className={`sync ${syncProblem && !syncing ? "warn" : ""}`} onClick={() => sync(true)} disabled={syncing} title={syncProblem ? `${syncProblem}. Tap to try again.` : "Check for new mail"}>
           <span className={syncing ? "spin" : ""} aria-hidden="true">↻</span>
           <span className="lights" aria-hidden="true">
             <i />
@@ -410,7 +412,7 @@ export default function InboxApp({ email, name, signOutAction, signInAction }: P
             <i />
             <i />
           </span>
-          <span>{syncing ? "Checking…" : syncedAt ? `Updated ${ago(syncedAt, now)}` : "Sync"}</span>
+          <span>{syncing ? "Checking…" : syncProblem ? "Last check had a problem" : syncedAt ? `Updated ${ago(syncedAt, now)}` : "Check for mail"}</span>
         </button>
         <div className="appbar-r">
           <Appearance />

@@ -44,3 +44,13 @@ export function unreadChanges(flaggedInWindow: string[], unreadNow: string[], li
     markUnread: unreadNow,
   };
 }
+
+// ---------- #40: making failures visible ----------
+/** The student-facing summary of a sync's errors, or null when nothing went wrong.
+ *  Running out of free AI checks is normal, not a problem. */
+export function syncProblem(errors: string[]): string | null {
+  const real = errors.filter((e) => !/AI limit|free limit|Gemini key hit/i.test(e));
+  if (!real.length) return null;
+  const first = real[0].replace(/\s+/g, " ").slice(0, 160);
+  return real.length === 1 ? first : `${first} (and ${real.length - 1} more)`;
+}

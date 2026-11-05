@@ -953,3 +953,6 @@ body { min-height: 100dvh; }
 
 /* #32: the hidden-images note above a mail */
 .mv-remote { margin: 0 0 10px; font-size: 13px; display: flex; gap: 8px; flex-wrap: wrap; align-items: baseline; }
+
+/* #40: a sync problem is said, not hidden */
+.sync.warn { color: var(--due-soon); }

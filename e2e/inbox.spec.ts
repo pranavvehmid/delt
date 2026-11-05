@@ -327,3 +327,11 @@ test("a plain browser tab keeps no copy of the inbox (#38)", async ({ page }) =>
   await page.waitForTimeout(1200);
   expect(await page.evaluate(() => Object.keys(localStorage).filter((k) => k.startsWith("delt-inbox:")))).toEqual([]);
 });
+
+test("a sync problem is shown in the header, not hidden (#40)", async ({ page }) => {
+  await mockApi(page, smallInbox(), { syncProblem: "Gmail /messages failed (500)" });
+  await page.goto("/e2e");
+  const btn = page.locator("header .sync");
+  await expect(btn).toContainText("Last check had a problem");
+  await expect(btn).toHaveAttribute("title", "Gmail /messages failed (500). Tap to try again.");
+});

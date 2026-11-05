@@ -23,3 +23,20 @@ export function dueForSync<T extends SyncCandidate>(users: T[], now: number): T[
     .filter((x) => x.overdue >= 0);
   return due.sort((a, b) => b.overdue - a.overdue).map((x) => x.u);
 }
+
+// ---------- #40: is background sync keeping up? ----------
+export type HealthRow = { last_synced_at: string | null; last_seen_at: string | null; last_sync_error?: string | null; access_revoked?: boolean | null };
+export function syncHealth(users: HealthRow[], now: number) {
+  const live = users.filter((u) => !u.access_revoked);
+  const active = live.filter((u) => u.last_seen_at && now - Date.parse(u.last_seen_at) < ACTIVE_WINDOW_MS);
+  const age = (u: HealthRow) => (u.last_synced_at ? now - Date.parse(u.last_synced_at) : Infinity);
+  const oldestActive = active.length ? Math.max(...active.map(age)) : 0;
+  return {
+    students: live.length,
+    active: active.length,
+    syncedLastHour: live.filter((u) => age(u) < 3600_000).length,
+    oldestActiveMinutes: Number.isFinite(oldestActive) ? Math.round(oldestActive / 60_000) : null,
+    withProblems: live.filter((u) => u.last_sync_error).length,
+    revoked: users.length - live.length,
+  };
+}

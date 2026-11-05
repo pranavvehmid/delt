@@ -1,7 +1,7 @@
 // Issue #28: sync never skips mail for good, however much arrives at once.
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { BATCH, LIST_MAX, MAX_STUCK_MS, isGone, nextSyncedAt, planSync, unreadChanges } from "../src/lib/sync-plan";
+import { BATCH, LIST_MAX, MAX_STUCK_MS, isGone, nextSyncedAt, planSync, syncProblem, unreadChanges } from "../src/lib/sync-plan";
 
 const ids = (n: number, from = 0) => Array.from({ length: n }, (_, i) => `m${from + i}`);
 
@@ -63,4 +63,11 @@ test("a cut-off unread list never marks anything read (a student with 1000s of u
   const listed = ids(2000);
   const flagged = [...ids(2000), "m2500"]; // m2500 is unread too, just past the cap
   assert.deepEqual(unreadChanges(flagged, listed, true).markRead, []);
+});
+
+test("sync problems: real errors are reported, running out of free AI isn't (#40)", () => {
+  assert.equal(syncProblem([]), null);
+  assert.equal(syncProblem(["Shared AI limit reached for now; the rest were sorted by rules."]), null);
+  assert.equal(syncProblem(["m1: Gmail /messages/m1 failed (500): oops"]), "m1: Gmail /messages/m1 failed (500): oops");
+  assert.match(syncProblem(["a: x", "b: y", "Your Gemini key hit its free limit"])!, /\(and 1 more\)$/);
 });
