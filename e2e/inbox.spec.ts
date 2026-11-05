@@ -137,3 +137,21 @@ test("Delete my data asks first, then deletes and signs out", async ({ page }) =
   await expect(page).toHaveURL(/\?deleted=1$/);
   expect(api.deleted).toEqual([{ removeLabels: true }]);
 });
+
+test("sorting rules: moving a mail adds a rule for that sender, and it can be removed (#13)", async ({ page }) => {
+  const api = await mockApi(page, smallInbox());
+  await page.goto("/e2e");
+  await page.locator(row("promo")).locator(".row-main").click();
+  await page.getByRole("radio", { name: "Later" }).click();
+  await page.getByRole("button", { name: "Back to list" }).click();
+
+  await page.getByRole("button", { name: "Account" }).click();
+  await page.getByRole("button", { name: "Sorting rules" }).click();
+  const dialog = page.getByRole("dialog", { name: "Settings" });
+  const rule = dialog.getByRole("listitem").filter({ hasText: "Coursera" });
+  await expect(rule).toContainText("Later");
+  await rule.getByRole("button", { name: /Remove rule/ }).click();
+  await expect(rule).toHaveCount(0);
+  await expect(dialog.getByText("None yet.")).toBeVisible();
+  expect(api.forgotten).toEqual(["no-reply@coursera.org"]);
+});

@@ -5,6 +5,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useDialog } from "./use-dialog";
+import { pileLabel, type SenderRule } from "@/lib/inbox";
 
 const REPO = "https://github.com/pranavvehmid/delt";
 
@@ -17,7 +18,7 @@ function b64ToBytes(b64: string) {
   return Uint8Array.from(raw, (c) => c.charCodeAt(0));
 }
 
-export default function Settings({ open, onClose, onToast, section }: { open: boolean; onClose: () => void; onToast: (t: string) => void; section?: "data" }) {
+export default function Settings({ open, onClose, onToast, section }: { open: boolean; onClose: () => void; onToast: (t: string) => void; section?: "data" | "rules" }) {
   const [push, setPush] = useState<PushState>("busy");
   const [ai, setAi] = useState<AiInfo | null>(null);
   const [key, setKey] = useState("");
@@ -27,6 +28,8 @@ export default function Settings({ open, onClose, onToast, section }: { open: bo
   const [deleting, setDeleting] = useState(false);
   const box = useRef<HTMLElement>(null);
   const dataBlock = useRef<HTMLDivElement>(null);
+  const rulesBlock = useRef<HTMLDivElement>(null);
+  const [rules, setRules] = useState<SenderRule[] | null>(null);
   useDialog(box, open, onClose);
 
   const loadPush = useCallback(async () => {
@@ -41,13 +44,28 @@ export default function Settings({ open, onClose, onToast, section }: { open: bo
     if (r.ok) setAi(await r.json());
   }, []);
 
+  const loadRules = useCallback(async () => {
+    const r = await fetch("/api/rules");
+    setRules(r.ok ? (await r.json()).rules ?? [] : []);
+  }, []);
+  async function forget(rule: SenderRule) {
+    setRules((l) => l?.filter((x) => x.from !== rule.from) ?? null);
+    const r = await fetch(`/api/rules?from=${encodeURIComponent(rule.from)}`, { method: "DELETE" });
+    if (!r.ok) {
+      onToast("Couldn't remove that rule");
+      return loadRules();
+    }
+    onToast(`DELT will sort mail from ${rule.name} by itself again`);
+  }
+
   useEffect(() => {
     if (!open) return;
     loadPush();
     loadAi();
+    loadRules();
     setConfirmDelete(false);
-    if (section === "data") requestAnimationFrame(() => dataBlock.current?.scrollIntoView({ block: "center" }));
-  }, [open, loadPush, loadAi, section]);
+    if (section) requestAnimationFrame(() => (section === "data" ? dataBlock : rulesBlock).current?.scrollIntoView({ block: "center" }));
+  }, [open, loadPush, loadAi, loadRules, section]);
 
   async function deleteEverything() {
     setDeleting(true);
@@ -191,6 +209,31 @@ export default function Settings({ open, onClose, onToast, section }: { open: bo
               </a>
               . It&apos;s stored encrypted and only used for your mail.
             </small>
+          )}
+        </div>
+
+        <div className="set-block" ref={rulesBlock}>
+          <b>Your sorting rules</b>
+          <small className="muted">When you move a mail to another pile, DELT sends that sender&apos;s new mail there too.</small>
+          {rules === null ? (
+            <small className="muted">…</small>
+          ) : rules.length === 0 ? (
+            <small className="muted">None yet.</small>
+          ) : (
+            <ul className="rules">
+              {rules.map((r) => (
+                <li key={r.from}>
+                  <span className="ell">
+                    <b className="ell">{r.name}</b>
+                    <small className="muted ell">{r.from}</small>
+                  </span>
+                  <span className={`rule-pile p-${r.priority}`}>{pileLabel(r.priority)}</span>
+                  <button className="pillbtn" onClick={() => forget(r)} aria-label={`Remove rule: mail from ${r.name} goes to ${pileLabel(r.priority)}`}>
+                    Remove
+                  </button>
+                </li>
+              ))}
+            </ul>
           )}
         </div>
 

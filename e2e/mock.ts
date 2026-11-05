@@ -80,6 +80,7 @@ export type Api = {
   patches: Record<string, unknown>[];
   deleted: unknown[];
   emailRequests: string[];
+  forgotten: string[];
   sync: { status: number; body: Record<string, unknown> };
 };
 
@@ -90,6 +91,7 @@ export async function mockApi(page: Page, mails: FakeMail[], opts: { reauth?: bo
     patches: [],
     deleted: [],
     emailRequests: [],
+    forgotten: [],
     sync: opts.reauth ? { status: 409, body: { error: "Google access was removed.", reauth: true } } : { status: 200, body: { fetched: 0 } },
   };
   const json = (body: unknown, status = 200) => ({ status, contentType: "application/json", body: JSON.stringify(body) });
@@ -107,6 +109,20 @@ export async function mockApi(page: Page, mails: FakeMail[], opts: { reauth?: bo
       return route.fulfill(json({ ok: true }));
     }
     if (path === "/api/emails/bulk") return route.fulfill(json({ ok: true }));
+    if (path === "/api/rules") {
+      if (method === "DELETE") {
+        const from = url.searchParams.get("from") ?? "";
+        api.forgotten.push(from);
+        for (const m of api.mails) if (m.from_address.toLowerCase() === from) m.user_corrected = false;
+        return route.fulfill(json({ ok: true }));
+      }
+      const seen = new Map<string, { from: string; name: string; priority: string; mails: number }>();
+      for (const m of api.mails.filter((m) => m.user_corrected)) {
+        const k = m.from_address.toLowerCase();
+        if (!seen.has(k)) seen.set(k, { from: k, name: m.from_name, priority: m.priority, mails: 1 });
+      }
+      return route.fulfill(json({ rules: [...seen.values()] }));
+    }
 
     if (path.startsWith("/api/emails/")) {
       const id = decodeURIComponent(path.slice("/api/emails/".length));

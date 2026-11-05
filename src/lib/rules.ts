@@ -205,7 +205,7 @@ export function classifyByRules(
   });
 
   // 1. Your own corrections for the same sender always win.
-  const fix = corrections.find((c) => c.from === msg.fromAddress);
+  const fix = corrections.find((c) => c.from.toLowerCase() === msg.fromAddress.toLowerCase());
   if (fix) return out(fix.priority, "other", "You moved mail from this sender before", 0.95);
 
   // A file shared with you personally (Drive, Docs) is about your own work.

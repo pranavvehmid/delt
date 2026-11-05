@@ -36,7 +36,7 @@ export default function InboxApp({ email, name, signOutAction, signInAction }: P
   const [searching, setSearching] = useState(false);
   const [due, setDue] = useState<EmailRow[]>([]);
   const [reauth, setReauth] = useState(false);
-  const [settingsSection, setSettingsSection] = useState<"data" | undefined>();
+  const [settingsSection, setSettingsSection] = useState<"data" | "rules" | undefined>();
   const [route, setRoute] = useState<Route>({ tab: "inbox", mailId: null });
   const [pile, setPile] = useState<Priority | "all">("all");
   const [unreadOnly, setUnreadOnly] = useState(false);
@@ -282,6 +282,16 @@ export default function InboxApp({ email, name, signOutAction, signInAction }: P
                   }}
                 >
                   Settings
+                </button>
+                <button
+                  className="menu-item"
+                  onClick={() => {
+                    setMenu(false);
+                    setSettingsSection("rules");
+                    setSettingsOpen(true);
+                  }}
+                >
+                  Sorting rules
                 </button>
                 <button
                   className="menu-item"

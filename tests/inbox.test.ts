@@ -172,3 +172,21 @@ test("search text is made safe for the database filter", () => {
   assert.equal(searchPattern("a"), "");
   assert.ok(searchPattern("x".repeat(500)).length <= 82);
 });
+
+// ---------- issue #13: sender rules ----------
+import { senderRules } from "../src/lib/inbox";
+test("sender rules: one per sender, the newest move wins, sorted by name", () => {
+  const rows = [
+    { from_address: "acm@vitstudent.ac.in", from_name: "ACM-VIT", priority: "noise" as const, received_at: "2026-11-01T10:00:00Z" },
+    { from_address: "ACM@vitstudent.ac.in", from_name: "ACM-VIT", priority: "priority" as const, received_at: "2026-11-03T10:00:00Z" },
+    { from_address: "coe@vit.ac.in", from_name: "'COE' via B.Tech", priority: "very_important" as const, received_at: "2026-11-02T10:00:00Z" },
+    { from_address: "x@y.com", from_name: null, priority: "later" as const, received_at: "2026-11-02T10:00:00Z" },
+    { from_address: null, from_name: "Ghost", priority: "later" as const, received_at: "2026-11-02T10:00:00Z" },
+  ];
+  assert.deepEqual(senderRules(rows), [
+    { from: "acm@vitstudent.ac.in", name: "ACM-VIT", priority: "priority", mails: 2 },
+    { from: "coe@vit.ac.in", name: "COE", priority: "very_important", mails: 1 },
+    { from: "x@y.com", name: "x@y.com", priority: "later", mails: 1 },
+  ]);
+  assert.deepEqual(senderRules([]), []);
+});

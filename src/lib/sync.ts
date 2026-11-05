@@ -74,8 +74,8 @@ export async function syncUser(email: string): Promise<SyncResult> {
     .select("from_address, subject, priority")
     .eq("user_email", email)
     .eq("user_corrected", true)
-    .order("created_at", { ascending: false })
-    .limit(30);
+    .order("received_at", { ascending: false })
+    .limit(300); // newest first, so the latest move for a sender wins (same as the Settings list)
   const corrections: Correction[] = (corrected ?? []).map((c) => ({
     from: c.from_address ?? "",
     subject: c.subject ?? "",
@@ -116,7 +116,7 @@ export async function syncUser(email: string): Promise<SyncResult> {
     if (wait > 0) await new Promise((r) => setTimeout(r, wait));
     lastAI = Date.now();
     aiUsed++;
-    return classifyWithAI(msg, corrections, profile, plan.key ?? undefined);
+    return classifyWithAI(msg, corrections.slice(0, 30), profile, plan.key ?? undefined);
   };
   const aiTimeLeft = () => !aiStopped && aiUsed < plan.allowance && Date.now() - started < AI_TIME_BUDGET_MS;
   const onAIError = (id: string, e: unknown) => {

@@ -202,3 +202,24 @@ export function searchPattern(q: string): string {
   const text = words.join("%").slice(0, 80);
   return text.length >= 2 ? `%${text}%` : "";
 }
+
+// ---------- sender rules (issue #13) ----------
+export type SenderRule = { from: string; name: string; priority: Priority; mails: number };
+
+/** Moving a mail by hand teaches DELT "mail from this sender goes to this pile". The newest
+ *  moved mail from a sender decides. One rule per sender, sorted by name. */
+export function senderRules(rows: { from_address: string | null; from_name: string | null; priority: Priority; received_at: string }[]): SenderRule[] {
+  const by = new Map<string, SenderRule & { at: number }>();
+  for (const r of rows) {
+    const from = (r.from_address ?? "").toLowerCase().trim();
+    if (!from) continue;
+    const at = Date.parse(r.received_at);
+    const cur = by.get(from);
+    if (!cur) by.set(from, { from, name: cleanSender(r.from_name) === "Unknown sender" ? from : cleanSender(r.from_name), priority: r.priority, mails: 1, at });
+    else {
+      cur.mails++;
+      if (at > cur.at) Object.assign(cur, { priority: r.priority, at });
+    }
+  }
+  return [...by.values()].sort((a, b) => a.name.localeCompare(b.name)).map(({ from, name, priority, mails }) => ({ from, name, priority, mails }));
+}

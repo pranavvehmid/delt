@@ -642,3 +642,12 @@ svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width:
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
 }
+
+/* sender rules in Settings (#13) */
+.rules { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.rules li { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--line); }
+.rules li:last-child { border-bottom: 0; }
+.rules li > span:first-child { display: flex; flex-direction: column; min-width: 0; }
+.rules b { font-weight: 500; font-size: 14px; }
+.rules small { font-size: 12px; }
+.rule-pile { font-size: 12.5px; white-space: nowrap; }
