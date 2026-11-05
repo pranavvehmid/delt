@@ -3,11 +3,11 @@
 // DELT v2: one inbox with every mail (colour tag = pile), and a Deadlines tab.
 // Tap a mail to read it full screen. Swipe right = read/unread, left = done.
 // See docs/DESIGN.md for why it works this way.
-import { useCallback, useEffect, useMemo, useRef, useState, type PointerEvent as RPointerEvent } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState, type PointerEvent as RPointerEvent } from "react";
 import type { EmailRow, Priority } from "@/lib/supabase";
 import {
   PAGE_SIZE, PILES, BUCKETS, ago, cleanSender, cleanSubject, deadlineBuckets, dueLevel, dueText, filterMail, groupByDay, initials, mergeFresh, mergeMore, oldestReceived,
-  openDeadlines, pileCounts, pileLabel, shortTime, timeOfDay, gapText, senderCode,
+  openDeadlines, pileCounts, pileLabel, shortTime, timeOfDay, gapText, senderCode, F,
 } from "@/lib/inbox";
 import { calendarLink } from "@/lib/insights";
 import { cacheKey, clearOffline, packCache, unpackCache } from "@/lib/offline";
@@ -285,6 +285,17 @@ export default function InboxApp({ email, name, signOutAction, signInAction }: P
     setToast({ text: "You're offline. Changes are paused until you're back online." });
     return true;
   };
+  // Row handlers that never change identity, so a tap re-renders only the row that changed (#20)
+  const act = useRef<{ openMail: (m: EmailRow) => void; patch: (id: string, p: Patch) => void } | null>(null);
+  const rowActions = useMemo<RowActions>(
+    () => ({
+      open: (m) => act.current?.openMail(m),
+      read: (m) => act.current?.patch(m.id, { read: m.unread }),
+      done: (m) => act.current?.patch(m.id, { is_done: !m.is_done }),
+    }),
+    [],
+  );
+  act.current = { openMail, patch: (id, p) => patch(id, p) };
   function patch(id: string, p: Patch, quiet = false) {
     if (blockedOffline()) return;
     const before = findMail(id);
@@ -563,7 +574,7 @@ export default function InboxApp({ email, name, signOutAction, signInAction }: P
                 </h2>
                 <ul className="rows">
                   {d.mails.map((m) => (
-                    <MailRow key={m.id} m={m} now={now} pos={posOf.get(m.id) ?? 0} leaderAt={leaderAt} onOpen={() => openMail(m)} onRead={() => patch(m.id, { read: m.unread })} onDone={() => patch(m.id, { is_done: !m.is_done })} />
+                    <MailRow key={m.id} m={m} now={now} pos={posOf.get(m.id) ?? 0} leaderAt={leaderAt} on={rowActions} />
                   ))}
                 </ul>
               </section>
@@ -617,8 +628,8 @@ export default function InboxApp({ email, name, signOutAction, signInAction }: P
                       <li key={m.id} className={`row due-row p-${m.priority} ${m.is_done ? "done" : ""}`} data-mail={m.id}>
                         <button className="row-main" onClick={() => openMail(m)}>
                           <span className={`datebox lv-${dueLevel(m.deadline!, now)}`}>
-                            <b>{new Date(m.deadline!).toLocaleDateString("en-IN", { day: "numeric", timeZone: "Asia/Kolkata" })}</b>
-                            <small>{new Date(m.deadline!).toLocaleDateString("en-IN", { month: "short", timeZone: "Asia/Kolkata" })}</small>
+                            <b>{F.dayNum.format(Date.parse(m.deadline!))}</b>
+                            <small>{F.monthShort.format(Date.parse(m.deadline!))}</small>
                           </span>
                           <span className="row-text">
                             <span className="subj">{cleanSubject(m.subject)}</span>
@@ -720,7 +731,11 @@ function apply(m: EmailRow, p: { read?: boolean; is_done?: boolean; priority?: P
 }
 
 // ---------- one mail row: tap to open, swipe to act ----------
-function MailRow({ m, now, pos = 0, leaderAt = "", onOpen, onRead, onDone }: { m: EmailRow; now: number; pos?: number; leaderAt?: string; onOpen: () => void; onRead: () => void; onDone: () => void }) {
+type RowActions = { open: (m: EmailRow) => void; read: (m: EmailRow) => void; done: (m: EmailRow) => void };
+
+// memo: a row re-renders only when its own mail, position, gap or the minute changes (#20)
+const MailRow = memo(function MailRow({ m, now, pos = 0, leaderAt = "", on }: { m: EmailRow; now: number; pos?: number; leaderAt?: string; on: RowActions }) {
+  const onOpen = () => on.open(m), onRead = () => on.read(m), onDone = () => on.done(m);
   const [dx, setDx] = useState(0);
   const drag = useRef<{ x: number; y: number; on: boolean; moved: boolean; dx: number } | null>(null);
   const moved = useRef(false);
@@ -823,7 +838,7 @@ function MailRow({ m, now, pos = 0, leaderAt = "", onOpen, onRead, onDone }: { m
       </div>
     </li>
   );
-}
+});
 
 function Skeleton() {
   return (

@@ -5,7 +5,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { EmailRow, Priority } from "@/lib/supabase";
 import type { FullMessage } from "@/lib/gmail";
-import { PILES, cleanSender, cleanSubject, dueLevel, dueText, pileLabel, wrongPileLink } from "@/lib/inbox";
+import { F, PILES, cleanSender, cleanSubject, dueLevel, dueText, pileLabel, wrongPileLink } from "@/lib/inbox";
 import { calendarLink } from "@/lib/insights";
 import { useDialog } from "./use-dialog";
 
@@ -150,7 +150,7 @@ export default function MailView({
           <div className="mv-from">
             <b>{sender}</b>
             <span className="muted">
-              {new Date(msg?.date ?? row?.received_at ?? now).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short", timeZone: "Asia/Kolkata" })}
+              {F.dateTime.format(new Date(msg?.date ?? row?.received_at ?? now))}
               {msg?.to ? ` · to ${msg.to.length > 40 ? "you and others" : msg.to}` : ""}
             </span>
           </div>
@@ -176,7 +176,7 @@ export default function MailView({
             <div className={`mv-due lv-${dueLevel(row.deadline, now)}`}>
               <span>
                 <b>Due {dueText(row.deadline, now)}</b>
-                <span className="muted"> · {new Date(row.deadline).toLocaleString("en-IN", { weekday: "short", day: "numeric", month: "short", hour: "numeric", minute: "2-digit", timeZone: "Asia/Kolkata" })}</span>
+                <span className="muted"> · {F.dueFull.format(new Date(row.deadline))}</span>
               </span>
               <a className="pillbtn" href={calendarLink(subject, row.deadline, row.summary)} target="_blank" rel="noreferrer">+ Calendar</a>
             </div>

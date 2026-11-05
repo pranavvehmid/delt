@@ -19,7 +19,31 @@ export const pileLabel = (p: Priority) => PILES.find((x) => x.key === p)!.label;
 const TZ = "Asia/Kolkata";
 const DAY = 86400_000;
 /** Calendar day in IST, e.g. "2026-11-04". */
-export const istDay = (t: number) => new Date(t).toLocaleDateString("en-CA", { timeZone: TZ });
+// #60: build each formatter once. A toLocaleDateString call with a timeZone makes a new
+// Intl.DateTimeFormat every time (about 74x slower), and the inbox formats several dates per row.
+const fmt = (locale: string, o: Intl.DateTimeFormatOptions) => new Intl.DateTimeFormat(locale, { timeZone: TZ, ...o });
+export const F = {
+  day: fmt("en-CA", {}),
+  weekdayDayMonth: fmt("en-IN", { weekday: "short", day: "numeric", month: "short" }),
+  time: fmt("en-IN", { hour: "numeric", minute: "2-digit" }),
+  dayMonth: fmt("en-IN", { day: "numeric", month: "short" }),
+  dayNum: fmt("en-IN", { day: "numeric" }),
+  monthShort: fmt("en-IN", { month: "short" }),
+  dateTime: fmt("en-IN", { dateStyle: "medium", timeStyle: "short" }),
+  dueFull: fmt("en-IN", { weekday: "short", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" }),
+};
+const dayCache = new Map<number, string>();
+/** Calendar day in IST, e.g. "2026-11-04" (cached per minute). */
+export const istDay = (t: number) => {
+  const k = Math.floor(t / 60_000);
+  let d = dayCache.get(k);
+  if (!d) {
+    d = F.day.format(t);
+    if (dayCache.size > 20_000) dayCache.clear();
+    dayCache.set(k, d);
+  }
+  return d;
+};
 
 export const cleanSender = (n: string | null) => (n ?? "").replace(/\s+via\s+.*$/i, "").replace(/['"]/g, "").trim() || "Unknown sender";
 export const cleanSubject = (s: string | null) =>
@@ -62,7 +86,7 @@ export function dayLabel(t: number, now: number) {
   const d = istDay(t);
   if (d === istDay(now)) return "Today";
   if (d === istDay(now - DAY)) return "Yesterday";
-  return new Date(t).toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "short", timeZone: TZ });
+  return F.weekdayDayMonth.format(t);
 }
 
 /** Splits an already-sorted list into day sections, keeping order. */
@@ -81,14 +105,14 @@ export function groupByDay<T extends Mail>(mails: T[], now: number) {
 /** Row time: "4:05 pm" for today, "Yesterday", or "2 Nov". */
 export function shortTime(iso: string, now: number) {
   const t = Date.parse(iso);
-  if (istDay(t) === istDay(now)) return new Date(t).toLocaleTimeString("en-IN", { hour: "numeric", minute: "2-digit", timeZone: TZ });
+  if (istDay(t) === istDay(now)) return F.time.format(t);
   if (istDay(t) === istDay(now - DAY)) return "Yesterday";
-  return new Date(t).toLocaleDateString("en-IN", { day: "numeric", month: "short", timeZone: TZ });
+  return F.dayMonth.format(t);
 }
 
 /** "9:07 pm" (IST). Rows sit under a day heading, so they only need the time (#42). */
 export const timeOfDay = (iso: string) =>
-  new Date(Date.parse(iso)).toLocaleTimeString("en-IN", { hour: "numeric", minute: "2-digit", timeZone: TZ }).toLowerCase();
+  F.time.format(Date.parse(iso)).toLowerCase();
 
 /** "just now", "3 min ago", "2 h ago". */
 export function ago(t: number, now: number) {
@@ -104,11 +128,11 @@ export function dueText(iso: string, now: number) {
   const t = Date.parse(iso);
   if (t < now) return "overdue";
   const days = Math.round((Date.parse(istDay(t)) - Date.parse(istDay(now))) / DAY);
-  const time = new Date(t).toLocaleTimeString("en-IN", { hour: "numeric", minute: "2-digit", timeZone: TZ }).replace(":00", "");
+  const time = F.time.format(t).replace(":00", "");
   if (days === 0) return `today ${time}`;
   if (days === 1) return `tomorrow ${time}`;
   if (days < 7) return `in ${days} days`;
-  return new Date(t).toLocaleDateString("en-IN", { day: "numeric", month: "short", timeZone: TZ });
+  return F.dayMonth.format(t);
 }
 
 /** How close a deadline is: drives the chip colour. */

@@ -7,7 +7,8 @@
 export const SHARED_DAILY_PER_STUDENT = 25;
 export const COOLDOWN_MS = 15 * 60_000;
 
-const istDay = (t: number) => new Date(t).toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
+const IST_DAY = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Kolkata" });
+const istDay = (t: number) => IST_DAY.format(t);
 
 export type AiPlan = { key: string | null; own: boolean; allowance: number; why: string };
 
