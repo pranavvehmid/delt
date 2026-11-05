@@ -11,6 +11,7 @@ import {
 import { calendarLink } from "@/lib/insights";
 import MailView from "./mail-view";
 import Appearance from "./appearance";
+import Settings from "./settings";
 
 type Route = { tab: "inbox" | "deadlines"; mailId: string | null };
 const SYNC_EVERY = 5 * 60_000;
@@ -33,6 +34,7 @@ export default function InboxApp({ email, name, signOutAction }: { email: string
   const [now, setNow] = useState(() => Date.now());
   const [toast, setToast] = useState<{ text: string; undo?: () => void } | null>(null);
   const [menu, setMenu] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const [showDone, setShowDone] = useState(false);
 
   // ---------- routing (hash, so the phone's Back button closes a mail) ----------
@@ -160,6 +162,15 @@ export default function InboxApp({ email, name, signOutAction }: { email: string
                   <b>{name}</b>
                   <small>{email}</small>
                 </div>
+                <button
+                  className="menu-item"
+                  onClick={() => {
+                    setMenu(false);
+                    setSettingsOpen(true);
+                  }}
+                >
+                  Settings
+                </button>
                 <a className="menu-item" href={`https://mail.google.com/mail/?authuser=${encodeURIComponent(email)}`} target="_blank" rel="noreferrer">
                   Open Gmail ↗
                 </a>
@@ -325,6 +336,8 @@ export default function InboxApp({ email, name, signOutAction }: { email: string
           onPatch={(p) => patch(route.mailId!, p)}
         />
       )}
+
+      <Settings open={settingsOpen} onClose={() => setSettingsOpen(false)} onToast={(text) => setToast({ text })} />
 
       {toast && (
         <div className="toast" role="status">

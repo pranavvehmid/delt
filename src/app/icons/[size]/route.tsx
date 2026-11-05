@@ -6,6 +6,20 @@ import type { NextRequest } from "next/server";
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ size: string }> }) {
   const { size: raw } = await params;
+  // Small white "D" on transparent, for the Android status bar.
+  if (raw === "badge") {
+    return new ImageResponse(
+      (
+        <div style={{ width: 96, height: 96, display: "flex" }}>
+          <svg width={96} height={96} viewBox="20 24 72 60">
+            <path fill="#ffffff" fillRule="evenodd" d="M28 32H49A22 22 0 0 1 49 76H28Z M38 42H48A12 12 0 0 1 48 66H38Z" />
+            <circle cx="79" cy="71" r="5" fill="#ffffff" />
+          </svg>
+        </div>
+      ),
+      { width: 96, height: 96, headers: { "Cache-Control": "public, max-age=604800, immutable" } },
+    );
+  }
   const size = raw === "192" ? 192 : 512;
   const maskable = req.nextUrl.searchParams.get("m") === "1";
   const pad = maskable ? 0 : size * 0.04;

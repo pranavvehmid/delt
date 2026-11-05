@@ -185,7 +185,7 @@ mkdirSync("assets", { recursive: true });
 {
   const H = 190;
   const stats = [
-    ["151", "TESTS PASSING"],
+    ["174", "TESTS PASSING"],
     ["14", "MAIL APPS STUDIED"],
     ["3000", "RANDOM MAILS, NO CRASH"],
     ["0", "RUPEES TO RUN"],
@@ -203,7 +203,7 @@ mkdirSync("assets", { recursive: true });
     </g>`;
     })
     .join("");
-  writeFileSync("assets/stats.svg", svg(H, "151 tests passing · 14 mail apps studied · 3000 random mails, no crash · 0 rupees to run", cells, extra));
+  writeFileSync("assets/stats.svg", svg(H, "174 tests passing · 14 mail apps studied · 3000 random mails, no crash · 0 rupees to run", cells, extra));
 }
 
 // =====================================================================

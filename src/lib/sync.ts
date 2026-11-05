@@ -1,7 +1,7 @@
 import "server-only";
 import { db, type Priority } from "./supabase";
 import { classifyByRules, type RuleResult } from "./rules";
-import { aiEnabled, classifyWithAI, QuotaExhausted } from "./classify";
+import { classifyWithAI, QuotaExhausted } from "./classify";
 import {
   ensureLabels,
   getAccessToken,
@@ -12,6 +12,8 @@ import {
 } from "./gmail";
 import type { Classification, Correction } from "./types";
 import { profileFromName, type StudentProfile } from "./profile";
+import { COOLDOWN_MS, bumpUsage, planAI } from "./ai-quota";
+import { open } from "./secret";
 
 const FIRST_SYNC_DAYS = 14;
 const MAX_PER_SYNC = 150;
@@ -90,19 +92,32 @@ export async function syncUser(email: string): Promise<SyncResult> {
   }
 
   // 2. Ask free Gemini about the new mails that matter most or that the rules weren't sure about.
-  let aiStopped = !aiEnabled();
+  // The shared key is split fairly between students (see ai-quota.ts); a student's own key isn't limited.
+  const plan = planAI({
+    ownKey: open(user.gemini_key_enc),
+    sharedKey: process.env.GEMINI_API_KEY,
+    sharedCooldownUntil: await sharedCooldownUntil(),
+    usedDay: user.ai_day ?? null,
+    usedToday: user.ai_calls ?? 0,
+    now: Date.now(),
+  });
+  let aiStopped = !plan.key;
+  let aiUsed = 0;
   let lastAI = 0;
   const askAI = async (msg: ParsedMessage) => {
     const wait = lastAI + AI_GAP_MS - Date.now();
     if (wait > 0) await new Promise((r) => setTimeout(r, wait));
     lastAI = Date.now();
-    return classifyWithAI(msg, corrections, profile);
+    aiUsed++;
+    return classifyWithAI(msg, corrections, profile, plan.key ?? undefined);
   };
-  const aiTimeLeft = () => !aiStopped && Date.now() - started < AI_TIME_BUDGET_MS;
+  const aiTimeLeft = () => !aiStopped && aiUsed < plan.allowance && Date.now() - started < AI_TIME_BUDGET_MS;
   const onAIError = (id: string, e: unknown) => {
     if (e instanceof QuotaExhausted) {
       aiStopped = true;
-      result.errors.push("Free AI limit reached for now; the rest were sorted by rules.");
+      // Tell every other sync to rest the shared key for a while instead of hitting the limit again.
+      if (!plan.own) void restSharedKey();
+      result.errors.push(plan.own ? "Your Gemini key hit its free limit; the rest were sorted by rules." : "Shared AI limit reached for now; the rest were sorted by rules.");
     } else {
       result.errors.push(`AI ${id}: ${(e as Error).message}`);
     }
@@ -218,5 +233,18 @@ export async function syncUser(email: string): Promise<SyncResult> {
   }
 
   await db.from("users").update({ last_synced_at: startedAt }).eq("email", email);
+  // Separate write, so a database without the usage columns yet can't block the sync time.
+  if (!plan.own && aiUsed > 0) await db.from("users").update(bumpUsage(user.ai_day ?? null, user.ai_calls ?? 0, aiUsed, Date.now())).eq("email", email);
   return result;
+}
+
+// ---------- shared Gemini key cooldown, stored in app_state so every sync sees it ----------
+async function sharedCooldownUntil(): Promise<number | null> {
+  const { data, error } = await db.from("app_state").select("value").eq("key", "gemini_cooldown_until").maybeSingle();
+  if (error || !data) return null;
+  const t = Number((data.value as { until?: number })?.until);
+  return Number.isFinite(t) ? t : null;
+}
+async function restSharedKey() {
+  await db.from("app_state").upsert({ key: "gemini_cooldown_until", value: { until: Date.now() + COOLDOWN_MS }, updated_at: new Date().toISOString() });
 }

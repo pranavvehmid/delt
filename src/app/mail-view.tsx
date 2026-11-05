@@ -5,7 +5,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { EmailRow, Priority } from "@/lib/supabase";
 import type { FullMessage } from "@/lib/gmail";
-import { PILES, cleanSender, cleanSubject, dueLevel, dueText } from "@/lib/inbox";
+import { PILES, cleanSender, cleanSubject, dueLevel, dueText, pileLabel, wrongPileLink } from "@/lib/inbox";
 import { calendarLink } from "@/lib/insights";
 
 const esc = (s: string) => s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
@@ -122,6 +122,11 @@ export default function MailView({
                 </button>
               ))}
             </div>
+          )}
+          {row && (
+            <a className="mv-report muted" href={wrongPileLink(subject, cleanSender(row.from_name), pileLabel(row.priority))} target="_blank" rel="noreferrer" title="Opens a public GitHub issue. Check it before posting.">
+              Wrong pile? Report it ↗
+            </a>
           )}
 
           {row?.deadline && (

@@ -1,6 +1,6 @@
 // Re-sorts mail already in the database with the current rules (and free AI).
 // Run after changing the sorting rules:
-//   npx tsx --conditions=react-server --env-file=.env.local scripts/resort.ts [email] [--apply] [--ai=40]
+//   npx tsx --conditions=react-server --env-file=.env.local scripts/resort.ts [email] [--apply] [--ai=40] [--rules-only]
 // Without --apply it only prints what would change. Mails you moved by hand are never touched.
 import { db } from "../src/lib/supabase";
 import { getAccessToken, getMessage, type ParsedMessage } from "../src/lib/gmail";
@@ -13,6 +13,8 @@ const args = process.argv.slice(2);
 const apply = args.includes("--apply");
 const aiMax = Number(args.find((a) => a.startsWith("--ai="))?.split("=")[1] ?? 0);
 const only = args.find((a) => a.includes("@"));
+// --rules-only: leave mail the AI already sorted alone (it is usually better on unclear mail).
+const rulesOnly = args.includes("--rules-only");
 const RANK = { very_important: 0, priority: 1, later: 2, noise: 3 } as const;
 const short = { very_important: "VERY", priority: "prio", later: "late", noise: "nois" } as const;
 
@@ -24,12 +26,13 @@ async function main() {
     const profile = profileFromName(user.name);
     console.log(`\n== ${user.email} (${profile.regNo ?? "no reg no"}, year ${profile.year ?? "?"})`);
     const token = await getAccessToken(user.refresh_token);
-    const { data: rows } = await db
+    let rq = db
       .from("emails")
       .select("id, priority, subject")
       .eq("user_email", user.email)
-      .eq("user_corrected", false)
-      .order("received_at", { ascending: false });
+      .eq("user_corrected", false);
+    if (rulesOnly) rq = rq.eq("sorted_by", "rules");
+    const { data: rows } = await rq.order("received_at", { ascending: false });
 
     const items: { id: string; old: string; msg: ParsedMessage; c: Classification; conf: number; ai: boolean }[] = [];
     for (let i = 0; i < (rows ?? []).length; i += 3) {

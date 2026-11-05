@@ -115,3 +115,16 @@ test("initials skip small words and split hyphens", async () => {
   assert.equal(initials("Controller of Examinations"), "CE");
   assert.equal(initials(""), "?");
 });
+
+test("wrong-pile report link carries subject, sender and pile, nothing else", async () => {
+  const { wrongPileLink } = await import("../src/lib/inbox");
+  const u = new URL(wrongPileLink("CAT-1 schedule & seating", "Controller of Examinations", "Later"));
+  assert.equal(u.origin + u.pathname, "https://github.com/pranavvehmid/delt/issues/new");
+  assert.equal(u.searchParams.get("labels"), "sorting");
+  assert.equal(u.searchParams.get("title"), "Wrong pile: CAT-1 schedule & seating");
+  const body = u.searchParams.get("body")!;
+  assert.match(body, /CAT-1 schedule & seating/);
+  assert.match(body, /DELT put it in:\*\* Later/);
+  assert.match(body, /public/);
+  assert.doesNotMatch(body, /@/);
+});

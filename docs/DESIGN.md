@@ -92,4 +92,8 @@ Deadlines ─ from mail only: Overdue · Today · Tomorrow · This week · Later
 - `src/app/mail-view.tsx`: the full-screen mail.
 - `src/app/app.css`: layout, Minimal and Glyph, accents, size and spacing.
 - `src/app/appearance.tsx` + `src/lib/prefs.ts`: the Appearance panel and saved preferences.
+- `src/app/settings.tsx`: notifications on/off, your own Gemini key, help links.
+- `src/lib/schedule.ts`: who background sync checks next (active students ~15 min, others daily). Run by `.github/workflows/sync.yml`.
+- `src/lib/ai-quota.ts` + `src/lib/secret.ts`: fair share of the shared Gemini key, and encryption for students' own keys.
+- `src/lib/notify-plan.ts` + `src/lib/notify.ts` + `public/sw.js`: phone notifications for urgent mail and deadlines due within a day.
 - `src/lib/rules.ts`, `classify.ts`, `sync.ts`, `gmail.ts`: sorting and Gmail.

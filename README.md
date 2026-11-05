@@ -11,14 +11,14 @@
 <p align="center">
   <a href="https://delt-mu.vercel.app"><img alt="Web app" src="https://img.shields.io/badge/web-delt--mu.vercel.app-1c1917?style=flat-square"></a>
   <a href="https://github.com/pranavvehmid/delt/releases/latest"><img alt="Android release" src="https://img.shields.io/github/v/release/pranavvehmid/delt?style=flat-square&label=android&color=1c1917"></a>
-  <a href="#tests"><img alt="151 tests passing" src="https://img.shields.io/badge/tests-151%20passing-1c1917?style=flat-square"></a>
+  <a href="#tests"><img alt="174 tests passing" src="https://img.shields.io/badge/tests-174%20passing-1c1917?style=flat-square"></a>
   <img alt="Free" src="https://img.shields.io/badge/cost-free-c8102e?style=flat-square">
 </p>
 
 DELT reads your VIT Gmail and sorts every mail into four piles, so exams, registrations, fees and deadlines are always at the top. It works for any `@vitstudent.ac.in` account and costs nothing to run.
 
 <p align="center">
-  <img src="assets/stats.svg" alt="151 tests passing · 14 mail apps studied · 3000 random mails, no crash · 0 rupees to run" width="100%">
+  <img src="assets/stats.svg" alt="174 tests passing · 14 mail apps studied · 3000 random mails, no crash · 0 rupees to run" width="100%">
 </p>
 
 ## How it sorts
@@ -50,8 +50,16 @@ Most mail is sorted by simple rules. When the rules aren't sure, Google Gemini's
 - **Tap a mail** to read the whole thing inside DELT. You can move it to another pile, add its deadline to Google Calendar, or mark it done.
 - **Deadlines** lists the due dates found in your mail: overdue, today, tomorrow, this week, later.
 - On a phone, swipe right to mark read, swipe left to mark done. You can undo either.
+- **Wrong pile?** Each open mail has a link that starts a GitHub issue with the subject and pile filled in.
 
-New mail is checked when you open the app, every 5 minutes while it's open, and once a day at 7 AM.
+New mail is checked when you open the app and every 5 minutes while it's open. In the background, a free GitHub Actions job checks students who used DELT this week about every 15 minutes, and everyone else at least once a day.
+
+### Settings
+
+Account menu → Settings:
+
+- **Notifications:** a phone alert for new urgent mail, and a reminder for any deadline due within a day.
+- **AI sorting:** DELT shares one free Gemini key between students, with a daily allowance each. You can add your own free key from [Google AI Studio](https://aistudio.google.com/apikey); it's stored encrypted and only used for your mail.
 
 ### Appearance
 
@@ -77,6 +85,8 @@ Tap ◐ in the top bar.
 - It stores a short preview and a one-line summary of each mail, not the full text. The full mail is fetched from Gmail when you open it.
 - Every student sees only their own mail. Each database query is tied to the signed-in account, and the tests check this.
 - Google may use what is sent to Gemini's free tier to improve its models. Leave `GEMINI_API_KEY` empty to use rules only.
+- If you add your own Gemini key, it's encrypted before it's stored.
+- Notifications use your browser's own push service. Turning them off removes the device from DELT.
 
 ## Run your own copy
 
@@ -87,11 +97,11 @@ cp .env.example .env.local   # Google OAuth, Supabase and Gemini keys (all free)
 npm run dev
 ```
 
-Create the tables by running [`supabase/schema.sql`](supabase/schema.sql) in the Supabase SQL editor.
+Create the tables by running [`supabase/schema.sql`](supabase/schema.sql) in the Supabase SQL editor. Then `bash scripts/push-secrets.sh` copies the notification keys to Vercel and the sync secret to GitHub.
 
 ## Tests
 
-`npm test` runs 151 checks in a few seconds:
+`npm test` runs 174 checks in a few seconds:
 
 - 80+ real VIT mails and the pile each should land in
 - dates in the formats VIT uses (`15/11/2026`, `15th Nov`, `Nov 15`, `tomorrow 6 PM`), year rollover, impossible dates like 31 Feb
@@ -100,12 +110,13 @@ Create the tables by running [`supabase/schema.sql`](supabase/schema.sql) in the
 - other batches, branches and staff accounts
 - every API route checks sign-in, and every mail query is limited to the signed-in student
 - every combination of appearance settings
+- who background sync picks, the shared AI allowance, encrypted keys, and which notifications get sent
 
 `scripts/eval.ts` compares the rules against Gemini and your own corrections on your inbox. It only reads.
 
 ## Contributing
 
-Open tasks are in [Issues](https://github.com/pranavvehmid/delt/issues). Ones marked [good first issue](https://github.com/pranavvehmid/delt/labels/good%20first%20issue) are small. If you're a VIT student, the most useful thing is [trying it on your own inbox](https://github.com/pranavvehmid/delt/issues/1) and reporting what goes wrong.
+Open tasks are in [Issues](https://github.com/pranavvehmid/delt/issues). Ones marked [good first issue](https://github.com/pranavvehmid/delt/labels/good%20first%20issue) are small. If you're a VIT student, the most useful thing is trying it on your own inbox: see [docs/TESTING.md](docs/TESTING.md).
 
 Setup steps and rules for pull requests are in [CONTRIBUTING.md](CONTRIBUTING.md).
 

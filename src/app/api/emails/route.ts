@@ -29,6 +29,8 @@ export async function GET(req: NextRequest) {
 
   const { data, error } = await query;
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  // Opening the app marks the student as active, so background sync checks them more often.
+  await db.from("users").update({ last_seen_at: new Date().toISOString() }).eq("email", email);
   return NextResponse.json({ emails: data });
 }
 

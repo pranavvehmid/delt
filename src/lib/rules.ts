@@ -27,6 +27,7 @@ const P = {
     /\bcall for ([a-z]+ ){0,3}(applications|nominations|participants|proposals|volunteers|members|entries)\b/,
     /\b(fill|submit) (the|this|your) (google )?form\b/, /\bon or before\b/, /\bno later than\b/, /\bfinal call\b/, /\blast chance\b/,
     /\benrol(l)?(ment)? (now|by|before|closes)\b/,
+    /\bsubmissions? (are |is )?(now )?(open|opens|closing|closes|close|due)\b/,
   ],
   interview: [/\binterviews?\b/, /\bshortlist(ed)?\b/, /\bselection (round|process|test)\b/, /\baptitude test\b/, /\bgroup discussion\b/, /\bassessment round\b/],
   fee: [/\bfee(s)? (payment|due|pay)\b/, /\bpay (the|your) fees?\b/, /\bpayment (due|deadline|link)\b/],
@@ -59,11 +60,20 @@ const P = {
 };
 
 const PROGRAMME = /\bsummer school\b|\bwinter school\b|\bimmersion\b|\bnational university of\b|\buniversity of [a-z]+\b|\b(certificate|specialised|specialized) courses?\b|\bcourses? under\b|\b(programme|program) 20\d\d\b|\bai programme\b|\b[a-z]+ programme$/;
+// Optional add-ons, even when the mail mentions FFCS: minors, honours, open electives.
+const OPTIONAL_COURSE = /\b(minor|honou?rs)\s+(in|degree|programme|program)\b|\bopen elective\b/;
+// Mail for international / NRI students only.
+const INTERNATIONAL = /\b(oci|foreign nationals?|nri students?|international students?)\b/;
+// Something you personally have to go and get.
+const COLLECT = /\b(collect|pick up)\s+(your|the)\b/;
+// A file or folder someone shared with you directly (Google Drive, Docs, Sheets).
+const SHARED_WITH_YOU = /\bshared with you\b|\binvited you to (edit|view|comment)/;
 const SENIOR =/\b(final|pre-?final|2nd|second|3rd|third|4th|fourth)[- ]years?\b|\b(m\.?tech|mba|mca|m\.?sc|ph\.?d|research scholars?|pg students|integrated m\.?tech)\b/;
 const FOR_FIRST_YEARS = /\b(first|1st)[- ]years?\b|\bfreshers?\b|\bfreshman\b|\ball (the )?(students|years)\b|\bopen to all\b|\bug[- ]freshers\b/;
 
 /** True when the mail is clearly aimed at other years or programmes. */
 function notForYou(text: string, subject: string, profile: StudentProfile): string | null {
+  if (INTERNATIONAL.test(subject)) return "Meant for international students";
   if (FOR_FIRST_YEARS.test(text)) return null;
   // Batch years mentioned near "batch"/"students"/"b.tech", none of them yours.
   const years = [...text.matchAll(/\b(20[1-3]\d)\s*(?:batch|admitted|students|-\s*20\d\d batch)|\b(?:batch|b\.?tech\.?\s*\(?)\s*(20[1-3]\d)/g)]
@@ -198,6 +208,11 @@ export function classifyByRules(
   const fix = corrections.find((c) => c.from === msg.fromAddress);
   if (fix) return out(fix.priority, "other", "You moved mail from this sender before", 0.95);
 
+  // A file shared with you personally (Drive, Docs) is about your own work.
+  if (SHARED_WITH_YOU.test(subject) && (fromGoogle || /@docs\.google\.com$/.test(msg.fromAddress))) {
+    return out("very_important", "other", "Shared with you directly", 0.85);
+  }
+
   // 2. Account security from Google: worth knowing, not urgent.
   if (inSubject("account") && (fromGoogle || fromVit)) return out("priority", "account", "Account security notice", 0.9);
 
@@ -215,6 +230,9 @@ export function classifyByRules(
   // 6. Scholarships: eligibility is specific, so keep them out of the way.
   if (inSubject("scholarship")) return out("later", "scholarship", "Scholarship: check if you're eligible", 0.7);
 
+  // Optional minors, honours and open electives: worth a look, not urgent.
+  if (OPTIONAL_COURSE.test(subject)) return out("later", "academic", "Optional course or minor", 0.75);
+
   // 7. Things you must act on.
   if (inSubject("exam")) return out("very_important", "exam", "Exam, quiz or test", 0.85);
   if (inSubject("interview")) return out("very_important", "interview", "Interview or selection round", 0.85);
@@ -224,6 +242,7 @@ export function classifyByRules(
   }
   if (inText("fee") && (upcoming || inSubject("fee"))) return out("very_important", "deadline", "Fee payment", 0.85);
   if (inText("attendance") && fromVit) return out("very_important", "academic", "Attendance warning", 0.8);
+  if (COLLECT.test(subject) && fromVit) return out("very_important", "academic", "Something to collect", 0.75);
 
   const isHack = inSubject("hackathon") || (inText("hackathon") && !inSubject("club_event"));
   const isEvent = inSubject("club_event");

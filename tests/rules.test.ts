@@ -108,7 +108,7 @@ const CASES: Case[] = [
   { subject: "Riviera’26 Merchandise – Extension of Discount Sale on Saturday, 31-October-2026", want: "noise", cat: "promotion" },
   { subject: "50% off on all courses - limited time!", body: "Buy now.", from: "deals@udemy-mail.com", want: "noise", cat: "promotion" },
   { subject: "Apple Mac @ University Program – Exclusive Apple Offers for the VIT Community", want: "noise", cat: "promotion" },
-  { subject: "Folder shared with you: \"Ventura \"", from: "drive-shares-dm-noreply@google.com", want: "noise" },
+  { subject: "Folder shared with you: \"Ventura \"", from: "drive-shares-dm-noreply@google.com", want: "very_important" }, // the student moved this to Urgent: a file shared with you is your own work
 
   // ---------- the "- reg" trap: VIT's "regarding" must not mean registration ----------
   { subject: "Lost & Found Items (1 Sep 2026 & 31 Oct 2026) - reg", want: "later" },

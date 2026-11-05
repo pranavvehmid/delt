@@ -57,7 +57,9 @@ export async function classifyWithAI(
   msg: ParsedMessage,
   corrections: Correction[] = [],
   profile?: StudentProfile,
+  apiKey: string | undefined = process.env.GEMINI_API_KEY,
 ): Promise<Classification> {
+  if (!apiKey) throw new Error("No Gemini key");
   const body = msg.body.length > MAX_BODY_CHARS ? msg.body.slice(0, MAX_BODY_CHARS) + "\n[...cut]" : msg.body;
   const prefs = corrections.length
     ? `The student moved these mails by hand earlier (sender | subject -> priority):\n${corrections
@@ -70,7 +72,7 @@ export async function classifyWithAI(
     `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`,
     {
       method: "POST",
-      headers: { "Content-Type": "application/json", "x-goog-api-key": process.env.GEMINI_API_KEY! },
+      headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
       body: JSON.stringify({
         systemInstruction: { parts: [{ text: systemFor(profile) }] },
         contents: [

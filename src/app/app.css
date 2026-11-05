@@ -588,3 +588,17 @@ svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width:
 :root:not([data-look="glyph"]) .signin .p-later .tagdot { background: rgb(var(--ink) / 0.48); }
 :root:not([data-look="glyph"]) .signin .p-noise .tagdot { background: rgb(var(--ink) / 0.3); }
 :root:not([data-look="glyph"]) .signin .p-very_important .tagdot { background: var(--accent); }
+
+/* settings sheet */
+.settings .set-block { display: flex; flex-direction: column; gap: 10px; padding: 14px 0; border-bottom: 1px solid var(--line); }
+.settings .set-block:last-child { border-bottom: 0; }
+.settings .set-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.settings .set-row > span { display: flex; flex-direction: column; gap: 2px; }
+.settings b { font-weight: 600; font-size: 15px; }
+.settings small { font-size: 12.5px; line-height: 1.4; }
+.settings .keyform { display: flex; gap: 8px; }
+.settings .keyform input { flex: 1; min-width: 0; height: 36px; padding: 0 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); color: var(--text); font: inherit; font-size: 13px; }
+.settings .set-link { font-size: 14px; padding: 4px 0; }
+:root:not([data-look="glyph"]) .settings b { font-weight: 500; }
+:root:not([data-look="glyph"]) .settings .keyform input { border-radius: 0; background: none; border: 0; border-bottom: 1px solid rgb(var(--ink) / 0.2); padding: 0; }
+.mv-report { display: inline-block; margin-top: 8px; font-size: 12.5px; text-decoration: underline; text-underline-offset: 3px; }

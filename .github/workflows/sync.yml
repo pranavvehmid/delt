@@ -1,0 +1,35 @@
+# Background sync for every student (issues #4 and #5), free on GitHub Actions.
+# Every ~15 minutes it asks the site to sync whoever is due: students who opened DELT
+# this week about every 15 minutes, everyone else once a day. It keeps calling while
+# students are left. GitHub may start scheduled runs a few minutes late.
+name: Sync mail
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 14
+    steps:
+      - name: Sync students who are due
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          SITE: https://delt-mu.vercel.app
+        run: |
+          if [ -z "$CRON_SECRET" ]; then echo "::notice::Add the CRON_SECRET repository secret to turn on background sync."; exit 0; fi
+          for i in $(seq 1 8); do
+            out=$(curl -sS --max-time 150 -H "Authorization: Bearer $CRON_SECRET" "$SITE/api/sync") || { echo "request failed"; exit 1; }
+            synced=$(echo "$out" | jq -r '.synced // 0')
+            remaining=$(echo "$out" | jq -r '.remaining // 0')
+            reminders=$(echo "$out" | jq -r '.reminders // 0')
+            echo "round $i: synced $synced, $remaining left, $reminders reminders"
+            if echo "$out" | jq -e '.error' > /dev/null; then echo "$out"; exit 1; fi
+            [ "$remaining" -eq 0 ] && break
+          done

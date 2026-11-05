@@ -151,3 +151,22 @@ export function deadlineBuckets<T extends Mail>(mails: T[], now: number) {
 
 /** Number of deadlines that still need you (for the tab badge). */
 export const openDeadlines = (b: Record<Bucket, unknown[]>) => b.Overdue.length + b.Today.length + b.Tomorrow.length + b["This week"].length;
+
+/**
+ * A pre-filled "Mail in the wrong pile" GitHub issue (issue #1). Only the subject,
+ * sender name and pile go in; never the mail body or addresses. The student sees
+ * it on GitHub and can edit or cancel before posting.
+ */
+export function wrongPileLink(subject: string, sender: string, pile: string) {
+  const body = [
+    `**Subject line**\n${subject}`,
+    `**Sender**\n${sender}`,
+    `**DELT put it in:** ${pile}`,
+    `**It should be in:** Urgent / Priority / Later / Noise`,
+    `**Why**\n`,
+    `**Your batch year** (for example 2026)\n`,
+    `_This issue is public. Remove anything private before posting._`,
+  ].join("\n\n");
+  const q = new URLSearchParams({ title: `Wrong pile: ${subject}`.slice(0, 120), labels: "sorting", body });
+  return `https://github.com/pranavvehmid/delt/issues/new?${q.toString()}`;
+}

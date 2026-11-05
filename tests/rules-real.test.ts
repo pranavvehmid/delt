@@ -34,3 +34,29 @@ test("open hackathons and contests still rank high", () => {
   assert.equal(pile("HackVIT 2026 - registrations close Friday", "Register by 6 Nov 2026."), "very_important");
   assert.equal(pile("Code2Create: coding contest - register now", "Contest on 9 Nov 2026."), "very_important");
 });
+
+// ---- issue #2: patterns from the Nov 2026 eval that apply to every student ----
+test("open calls for submissions count like open registrations", () => {
+  assert.equal(pile("RIVIERA’27 | EVENT PROPOSAL SUBMISSIONS OPEN!", "Submit your proposal by 12 Nov 2026."), "very_important");
+});
+
+test("something you personally must collect is Urgent", () => {
+  assert.equal(pile("Please come and collect your Engineering Drawing Workbook - Reg"), "very_important");
+});
+
+test("a Google Drive file shared with you is Urgent", () => {
+  assert.equal(pile('Folder shared with you: "Ventura"', "A B shared a folder with you.", "drive-shares-dm-noreply@google.com"), "very_important");
+});
+
+test("optional minors, honours and open electives go to Later, even during FFCS", () => {
+  assert.equal(pile("Register for the Minor in Quantum Technologies during FFCS - Applications open"), "later");
+  assert.equal(pile("Honours in Data Science - applications invited"), "later");
+  assert.equal(pile("BAHUM220 - Yoga for Human Excellence - Open Elective - reg"), "later");
+  // the FFCS itself stays Urgent
+  assert.equal(pile("FFCS registration for Winter Semester opens tomorrow"), "very_important");
+});
+
+test("instructions for international students go to Later", () => {
+  assert.equal(pile("Reminder: Important Instructions for OCI / Foreign Nationals Travelling Home"), "later");
+  assert.equal(pile("NRI students: document verification schedule"), "later");
+});
