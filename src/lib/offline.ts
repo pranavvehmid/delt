@@ -4,7 +4,7 @@
 
 export const OFFLINE_MAX = 200;
 const VERSION = 1;
-const MAX_AGE_MS = 30 * 86400_000;
+const MAX_AGE_MS = 7 * 86400_000; // #38
 const PREFIX = "delt-inbox:";
 export const cacheKey = (email: string) => PREFIX + email.toLowerCase();
 
@@ -26,6 +26,21 @@ export function unpackCache<T>(raw: string | null, now: number): Cached<T> | nul
     return null;
   }
 }
+
+/** #38: keep a copy only in the installed app (Home Screen or the Android app), never in a
+ *  plain browser tab, which may be a shared lab computer. */
+export const isInstalledApp = () => {
+  try {
+    return (
+      window.matchMedia?.("(display-mode: standalone)").matches ||
+      document.referrer.startsWith("android-app://") ||
+      !!localStorage.getItem("delt-app-build") ||
+      (navigator as Navigator & { standalone?: boolean }).standalone === true
+    );
+  } catch {
+    return false;
+  }
+};
 
 /** Removes every saved inbox and the cached app pages from this device. */
 export async function clearOffline() {

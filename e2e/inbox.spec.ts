@@ -158,7 +158,8 @@ test("sorting rules: moving a mail adds a rule for that sender, and it can be re
 
 test("offline: the saved inbox shows, marked offline, and changes are paused (#14)", async ({ page, context }) => {
   await mockApi(page, smallInbox());
-  await page.goto("/e2e");
+  await page.route("https://api.github.com/**", (r) => r.fulfill({ contentType: "application/json", body: JSON.stringify({ name: "DELT for Android (build 6)" }) }));
+  await page.goto("/e2e?app=6"); // the installed app keeps an offline copy; a browser tab doesn't (#38)
   await expect(page.locator(row("cat1"))).toBeVisible();
   await page.waitForTimeout(1200); // the copy is saved shortly after the list loads
 
@@ -317,4 +318,12 @@ test("security headers: DELT can't be framed, and only loads its own scripts (#3
     expect(h["referrer-policy"]).toBe("strict-origin-when-cross-origin");
     expect(h["x-powered-by"]).toBeUndefined();
   }
+});
+
+test("a plain browser tab keeps no copy of the inbox (#38)", async ({ page }) => {
+  await mockApi(page, smallInbox());
+  await page.goto("/e2e");
+  await expect(page.locator(row("cat1"))).toBeVisible();
+  await page.waitForTimeout(1200);
+  expect(await page.evaluate(() => Object.keys(localStorage).filter((k) => k.startsWith("delt-inbox:")))).toEqual([]);
 });

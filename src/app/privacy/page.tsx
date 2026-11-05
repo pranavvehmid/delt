@@ -33,11 +33,11 @@ export default function Privacy() {
         <li>A Google sign-in token, so mail can be checked while the app is closed. It&apos;s stored encrypted.</li>
         <li>The senders you moved to another pile (your sorting rules).</li>
         <li>If you turn on notifications: your browser&apos;s push address. If you add your own Gemini key: that key, encrypted.</li>
-        <li>On your phone: the newest 200 mails, so DELT opens offline. Signing out removes them.</li>
+        <li>In the installed app (not a browser tab): the newest 200 mails for up to 7 days, so DELT opens offline. Signing out removes them.</li>
       </ul>
       <p>
-        Everything stays until you delete it. Automatic clean-up of old mail is planned (
-        <a href="https://github.com/pranavvehmid/delt/issues/38">#38</a>).
+        Mail older than 6 months is deleted automatically, except mails you moved to another pile (they hold your sorting rules). Everything else stays until you delete it (
+        Settings → Your data).
       </p>
 
       <h2>Who can see it</h2>

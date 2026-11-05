@@ -10,7 +10,7 @@ import {
   openDeadlines, pileCounts, pileLabel, shortTime, timeOfDay, gapText, senderCode, F, needsYou,
 } from "@/lib/inbox";
 import { calendarLink } from "@/lib/insights";
-import { cacheKey, clearOffline, packCache, unpackCache } from "@/lib/offline";
+import { cacheKey, clearOffline, isInstalledApp, packCache, unpackCache } from "@/lib/offline";
 import MailView from "./mail-view";
 import Appearance from "./appearance";
 import Settings from "./settings";
@@ -198,7 +198,7 @@ export default function InboxApp({ email, name, signOutAction, signInAction }: P
   }, [email]);
   // Keep the saved copy up to date with what's on screen (read, done, moved).
   useEffect(() => {
-    if (!mails || offline) return;
+    if (!mails || offline || !isInstalledApp()) return;
     const t = setTimeout(() => {
       try {
         localStorage.setItem(cacheKey(email), packCache(mails, due, savedAt ?? Date.now()));

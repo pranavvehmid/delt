@@ -6,6 +6,7 @@ import { AccessRevoked } from "@/lib/gmail";
 import { limited } from "@/lib/rate-limit";
 import { dueForSync } from "@/lib/schedule";
 import { markSeen, notifyStudent } from "@/lib/notify";
+import { purgeOldMail } from "@/lib/retention";
 import { timingSafeEqual } from "node:crypto";
 
 // #34: compare the cron secret in constant time
@@ -112,7 +113,9 @@ export async function GET(req: NextRequest) {
     if (synced.has(email) || Date.now() - started > BUDGET_MS + 20_000) continue;
     reminders += await notifyStudent(email);
   }
-  return NextResponse.json({ synced: results.length, remaining: Math.max(0, queue.length - processed.size), reminders, results });
+  // #38: drop mail previews older than 6 months (not the ones a student moved)
+  const purged = queue.length - processed.size === 0 ? await purgeOldMail() : 0;
+  return NextResponse.json({ purged, synced: results.length, remaining: Math.max(0, queue.length - processed.size), reminders, results });
 }
 
 // Logs shouldn't carry full addresses.
