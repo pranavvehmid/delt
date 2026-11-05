@@ -1,7 +1,8 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { auth } from "@/auth";
 import { db } from "@/lib/supabase";
-import { getAccessToken, getFullMessage } from "@/lib/gmail";
+import { AccessRevoked, getAccessToken, getFullMessage } from "@/lib/gmail";
+import { markRevoked } from "@/lib/sync";
 
 // GET /api/emails/:id — the full original mail, fetched live from Gmail.
 // DELT never stores mail bodies; this reads it on demand for the signed-in owner only.
@@ -23,6 +24,10 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
     const msg = await getFullMessage(token, id);
     return NextResponse.json(msg, { headers: { "Cache-Control": "private, no-store" } });
   } catch (e) {
+    if (e instanceof AccessRevoked) {
+      await markRevoked(email);
+      return NextResponse.json({ error: e.message, reauth: true }, { status: 409 });
+    }
     return NextResponse.json({ error: (e as Error).message.slice(0, 200) }, { status: 502 });
   }
 }

@@ -3,6 +3,7 @@ import { db, type Priority } from "./supabase";
 import { classifyByRules, type RuleResult } from "./rules";
 import { classifyWithAI, QuotaExhausted } from "./classify";
 import {
+  AccessRevoked,
   ensureLabels,
   getAccessToken,
   getMessage,
@@ -43,7 +44,13 @@ export async function syncUser(email: string): Promise<SyncResult> {
   const { data: user, error } = await db.from("users").select("*").eq("email", email).single();
   if (error || !user) throw new Error(`No saved Google account for ${email}. Sign in again.`);
 
-  const token = await getAccessToken(user.refresh_token);
+  let token: string;
+  try {
+    token = await getAccessToken(user.refresh_token);
+  } catch (e) {
+    if (e instanceof AccessRevoked) await markRevoked(email);
+    throw e;
+  }
   const profile: StudentProfile = profileFromName(user.name);
 
   // First run: last 14 days. Later runs: everything since the last sync, plus an hour of overlap.
@@ -236,6 +243,12 @@ export async function syncUser(email: string): Promise<SyncResult> {
   // Separate write, so a database without the usage columns yet can't block the sync time.
   if (!plan.own && aiUsed > 0) await db.from("users").update(bumpUsage(user.ai_day ?? null, user.ai_calls ?? 0, aiUsed, Date.now())).eq("email", email);
   return result;
+}
+
+/** Issue #10: remember that Google access is gone, so the app asks the student to sign in
+ *  again and background sync stops trying. Cleared on the next sign-in (auth.ts). */
+export async function markRevoked(email: string) {
+  await db.from("users").update({ access_revoked: true }).eq("email", email); // no-op on an older database
 }
 
 // ---------- shared Gemini key cooldown, stored in app_state so every sync sees it ----------

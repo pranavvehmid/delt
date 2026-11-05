@@ -43,6 +43,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           name: token.name ?? null,
         });
         if (error) console.error("Saving refresh token failed:", error.message);
+        // Signed in again after removing access (issue #10): background sync can use the new token.
+        else await db.from("users").update({ access_revoked: false }).eq("email", token.email.toLowerCase());
       }
       return token;
     },

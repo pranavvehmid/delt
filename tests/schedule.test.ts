@@ -34,3 +34,9 @@ test("most overdue first", () => {
   const order = dueForSync([u("a", 20, 1), u("b", 60, 1), u("c", 30 * 60, null)], NOW).map((x) => x.email);
   assert.deepEqual(order, ["c", "b", "a"]);
 });
+
+test("students who removed Google access are skipped until they sign in again", () => {
+  const revoked = { ...u("gone", null, null), access_revoked: true };
+  const back = { ...u("back", null, null), access_revoked: false };
+  assert.deepEqual(dueForSync([revoked, back], NOW).map((x) => x.email), ["back"]);
+});

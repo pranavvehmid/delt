@@ -4,6 +4,16 @@ import { parseUnsubscribe } from "./insights";
 
 const API = "https://gmail.googleapis.com/gmail/v1/users/me";
 
+/** The student removed DELT's access in their Google account (or the token expired for good). */
+export class AccessRevoked extends Error {
+  constructor() {
+    super("Google access was removed. Sign in again to keep DELT working.");
+    this.name = "AccessRevoked";
+  }
+}
+/** Google's answer to a refresh token that no longer works. */
+export const isRevokedAnswer = (status: number, body: string) => (status === 400 || status === 401) && /invalid_grant|unauthorized_client/.test(body);
+
 export async function getAccessToken(refreshToken: string, attempt = 0): Promise<string> {
   const res = await fetch("https://oauth2.googleapis.com/token", {
     method: "POST",
@@ -21,7 +31,9 @@ export async function getAccessToken(refreshToken: string, attempt = 0): Promise
       await new Promise((r) => setTimeout(r, 800 * 2 ** attempt));
       return getAccessToken(refreshToken, attempt + 1);
     }
-    throw new Error(`Google token refresh failed (${res.status}): ${await res.text()}`);
+    const body = await res.text();
+    if (isRevokedAnswer(res.status, body)) throw new AccessRevoked();
+    throw new Error(`Google token refresh failed (${res.status}): ${body.slice(0, 200)}`);
   }
   return (await res.json()).access_token;
 }
@@ -268,4 +280,25 @@ export async function batchModify(token: string, ids: string[], addLabelIds: str
       body: JSON.stringify({ ids: ids.slice(i, i + 1000), addLabelIds, removeLabelIds }),
     });
   }
+}
+
+/** Removes DELT's MailSort labels from the student's Gmail. Their mail stays where it is. */
+export async function removeDeltLabels(token: string): Promise<number> {
+  const { labels = [] } = await gmail<{ labels?: { id: string; name: string }[] }>(token, "/labels");
+  let n = 0;
+  for (const l of labels.filter((l) => l.name === "MailSort" || l.name.startsWith("MailSort/"))) {
+    const res = await fetch(`${API}/labels/${l.id}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` } });
+    if (res.ok || res.status === 404) n++;
+  }
+  return n;
+}
+
+/** Tells Google to cancel DELT's access for this student. */
+export async function revokeGoogleToken(token: string): Promise<boolean> {
+  const res = await fetch("https://oauth2.googleapis.com/revoke", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({ token }),
+  });
+  return res.ok || res.status === 400; // 400 = already revoked
 }

@@ -111,3 +111,7 @@ alter table emails add column if not exists reminded boolean not null default fa
 alter table app_state enable row level security;
 alter table push_subscriptions enable row level security;
 grant select, insert, update, delete on app_state, push_subscriptions to service_role;
+
+-- ---------- Nov 2026: issues #9 to #12 ----------
+-- #10: set when Google says DELT's access was removed; cleared on the next sign-in.
+alter table users add column if not exists access_revoked boolean not null default false;

@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { auth } from "@/auth";
 import { db } from "@/lib/supabase";
 import { syncUser } from "@/lib/sync";
+import { AccessRevoked } from "@/lib/gmail";
 import { dueForSync } from "@/lib/schedule";
 import { markSeen, notifyStudent } from "@/lib/notify";
 
@@ -17,6 +18,8 @@ export async function POST() {
     await markSeen(email); // they're looking at it, no need to ping their phone
     return NextResponse.json(result);
   } catch (e) {
+    // Google access removed: the app shows "Sign in again" (issue #10).
+    if (e instanceof AccessRevoked) return NextResponse.json({ error: e.message, reauth: true }, { status: 409 });
     return NextResponse.json({ error: (e as Error).message }, { status: 500 });
   }
 }
@@ -32,11 +35,11 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const started = Date.now();
-  let { data: users, error } = await db.from("users").select("email, last_synced_at, last_seen_at");
+  let { data: users, error } = await db.from("users").select("email, last_synced_at, last_seen_at, access_revoked");
   if (error) {
     // Database not updated yet (no last_seen_at): treat everyone as daily.
     const r = await db.from("users").select("email, last_synced_at");
-    users = (r.data ?? []).map((u) => ({ ...u, last_seen_at: null }));
+    users = (r.data ?? []).map((u) => ({ ...u, last_seen_at: null, access_revoked: null }));
     error = r.error;
   }
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
@@ -49,13 +52,15 @@ export async function GET(req: NextRequest) {
       const r = await syncUser(u.email);
       results.push({ email: mask(u.email), fetched: r.fetched, notified: await notifyStudent(u.email) });
     } catch (e) {
-      // e.g. the student removed DELT's access in Google: move on, they'll sync again when they sign in
+      // Revoked Google access is flagged by syncUser, so that student is skipped from now on.
+      // Any other failure: move on and try again next round.
       await db.from("users").update({ last_synced_at: new Date().toISOString() }).eq("email", u.email);
       results.push({ email: mask(u.email), error: (e as Error).message.slice(0, 120) });
     }
   }
   // Deadline reminders for students who weren't due for a sync this round.
   const synced = new Set(queue.slice(0, results.length).map((u) => u.email));
+  for (const u of users ?? []) if (u.access_revoked) synced.add(u.email); // no reminders for students who left
   let reminders = 0;
   const { data: subscribed } = await db.from("push_subscriptions").select("user_email");
   for (const email of new Set((subscribed ?? []).map((s) => s.user_email as string))) {
