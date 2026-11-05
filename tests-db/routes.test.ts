@@ -36,6 +36,10 @@ const mail = (user: string, id: string, extra: Record<string, unknown> = {}) => 
   priority: "very_important",
   category: "fees",
   summary: "Pay the fee",
+  // every row has the same keys: a bulk insert sends missing ones as null
+  deadline: null,
+  user_corrected: false,
+  unread: false,
   ...extra,
 });
 
