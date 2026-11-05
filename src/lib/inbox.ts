@@ -31,6 +31,7 @@ export const F = {
   monthShort: fmt("en-IN", { month: "short" }),
   dateTime: fmt("en-IN", { dateStyle: "medium", timeStyle: "short" }),
   dueFull: fmt("en-IN", { weekday: "short", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" }),
+  weekday: fmt("en-IN", { weekday: "long" }),
 };
 const dayCache = new Map<number, string>();
 /** Calendar day in IST, e.g. "2026-11-04" (cached per minute). */
@@ -293,4 +294,18 @@ export function needsYou<T extends Mail>(mails: T[], now: number, max = 5): T[] 
     .filter((m) => (m.unread && m.priority === "very_important" && !m.is_done) || soon(m))
     .sort((a, b) => dueAt(a) - dueAt(b) || Date.parse(b.received_at) - Date.parse(a.received_at))
     .slice(0, max);
+}
+
+// ---------- #55: a deadline row says only what its heading doesn't ----------
+export function dueInBucket(iso: string, bucket: Bucket, now: number): string {
+  const t = Date.parse(iso);
+  const hm = F.time.format(t).toLowerCase().replace(":00", "");
+  const endOfDay = /^(12 am|11:59 pm)$/.test(hm);
+  if (bucket === "Overdue") {
+    const days = Math.round((Date.parse(istDay(now)) - Date.parse(istDay(t))) / DAY);
+    return days <= 0 ? "earlier today" : days === 1 ? "since yesterday" : `${days} days ago`;
+  }
+  if (bucket === "Today" || bucket === "Tomorrow") return endOfDay ? "end of day" : hm;
+  if (bucket === "This week") return F.weekday.format(t) + (endOfDay ? "" : ` ${hm}`);
+  return dueText(iso, now);
 }

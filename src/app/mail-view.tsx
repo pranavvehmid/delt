@@ -51,7 +51,7 @@ export default function MailView({
   now: number;
   gmailLink: string;
   onClose: () => void;
-  onPatch: (p: { read?: boolean; is_done?: boolean; priority?: Priority }) => void;
+  onPatch: (p: { read?: boolean; is_done?: boolean; priority?: Priority; deadline?: null }) => void;
   onReauth?: () => void;
   restoreFocus?: () => HTMLElement | null;
   /** #48: on wide screens the mail sits beside the list instead of covering it */
@@ -226,6 +226,9 @@ export default function MailView({
                 <span className="muted"> · {F.dueFull.format(new Date(row.deadline))}</span>
               </span>
               <a className="pillbtn" href={calendarLink(subject, row.deadline, row.summary)} target="_blank" rel="noreferrer">+ Calendar</a>
+              <button className="link mv-wrongdate" onClick={() => onPatch({ deadline: null })}>
+                Wrong date? Remove
+              </button>
             </div>
           )}
 

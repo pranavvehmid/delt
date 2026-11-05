@@ -415,3 +415,17 @@ test("the account menu keeps Delete my data apart, last (#53)", async ({ page })
   expect(items.map((x) => x.trim())).toEqual(["Settings", "Sorting rules", "Open Gmail ↗", "Sign out", "Delete my data"]);
   await expect(page.locator("#acct-menu .menu-sep")).toHaveCount(2);
 });
+
+test("deadlines say only what the heading doesn't, label their icons, and a wrong date can be removed (#55)", async ({ page }) => {
+  const api = await mockApi(page, smallInbox());
+  await page.goto("/e2e#/deadlines");
+  const r = page.locator('li.row[data-mail="fee"]');
+  await expect(r.locator(".due")).not.toContainText(/tomorrow/i);
+  await expect(r.getByText("Calendar")).toBeVisible();
+  await expect(page.getByText("Nothing else is due.")).toBeVisible();
+  await r.locator(".row-main").click();
+  await page.getByRole("button", { name: "Wrong date? Remove" }).click();
+  expect(api.patches.at(-1)).toEqual({ id: "fee", deadline: null });
+  await page.getByRole("button", { name: "Back to list" }).click();
+  await expect(page.locator('li.row[data-mail="fee"]')).toHaveCount(0);
+});

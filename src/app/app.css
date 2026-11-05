@@ -992,3 +992,9 @@ body { min-height: 100dvh; }
 
 /* #54: due dates read like the rest of the app (lowercase am/pm), not in shouted capitals */
 :root:not([data-look="glyph"]) :is(.due, .donemark) { text-transform: none; letter-spacing: 0.01em; font-size: 12.5px; }
+
+/* #55: deadline row icons with words */
+.iconbtn.labelled { width: auto; min-width: 44px; height: 44px; flex-direction: column; gap: 1px; padding: 0 6px; border-radius: 10px; }
+.iconbtn.labelled small { font-size: 10.5px; line-height: 1; color: var(--muted); }
+.iconbtn.labelled svg { width: 18px; height: 18px; }
+.mv-wrongdate { font-size: 13px; margin-left: 4px; }

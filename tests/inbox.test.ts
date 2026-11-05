@@ -249,3 +249,12 @@ test("due times: lowercase, no :00, and no time for end-of-day deadlines (#54)",
   assert.equal(dueText("2026-11-06T23:59:00+05:30", N), "tomorrow");
   assert.equal(dueText("2026-11-07T00:00:00+05:30", N), "in 2 days");
 });
+
+test("deadline rows inside a bucket (#55)", async () => {
+  const { dueInBucket } = await import("../src/lib/inbox");
+  const N = Date.parse("2026-11-05T10:00:00+05:30");
+  assert.equal(dueInBucket("2026-11-06T09:30:00+05:30", "Tomorrow", N), "9:30 am");
+  assert.equal(dueInBucket("2026-11-06T23:59:00+05:30", "Tomorrow", N), "end of day");
+  assert.equal(dueInBucket("2026-11-08T17:00:00+05:30", "This week", N), "Sunday 5 pm");
+  assert.equal(dueInBucket("2026-11-03T17:00:00+05:30", "Overdue", N), "2 days ago");
+});

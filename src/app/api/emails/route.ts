@@ -66,6 +66,8 @@ const Patch = z.object({
   read: z.boolean().optional(),
   /** false = move only this mail, don't make a rule for the sender (#46) */
   teach: z.boolean().optional(),
+  /** null = "Wrong date? Remove" (#55); an ISO date puts it back (Undo) */
+  deadline: z.string().datetime({ offset: true }).nullable().optional(),
 });
 
 // PATCH: move a mail or recategorise it (teaches the sorter), mark it done,
@@ -78,12 +80,13 @@ export async function PATCH(req: NextRequest) {
 
   const parsed = Patch.safeParse(await req.json());
   if (!parsed.success) return NextResponse.json({ error: "Bad request" }, { status: 400 });
-  const { id, priority, category, is_done, read, teach } = parsed.data;
+  const { id, priority, category, is_done, read, teach, deadline } = parsed.data;
 
   const update: Record<string, unknown> = {};
   if (priority) Object.assign(update, teach === false ? { priority, user_corrected: false, sorted_by: "manual" } : { priority, user_corrected: true });
   if (category) Object.assign(update, { category, user_corrected: true });
   if (is_done !== undefined) update.is_done = is_done;
+  if (deadline !== undefined) update.deadline = deadline;
   if (read !== undefined) update.unread = !read;
 
   const { error } = await db.from("emails").update(update).eq("id", id).eq("user_email", email);

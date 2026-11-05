@@ -7,7 +7,7 @@ import { memo, useCallback, useEffect, useMemo, useRef, useState, type PointerEv
 import type { EmailRow, Priority } from "@/lib/supabase";
 import {
   PAGE_SIZE, PILES, BUCKETS, ago, cleanSender, cleanSubject, deadlineBuckets, dueLevel, dueText, filterMail, groupByDay, initials, mergeFresh, mergeMore, oldestReceived,
-  openDeadlines, pileCounts, pileLabel, shortTime, timeOfDay, gapText, senderCode, F, needsYou,
+  openDeadlines, pileCounts, pileLabel, shortTime, timeOfDay, gapText, senderCode, F, needsYou, dueInBucket,
 } from "@/lib/inbox";
 import { calendarLink } from "@/lib/insights";
 import { cacheKey, clearOffline, isInstalledApp, packCache, unpackCache } from "@/lib/offline";
@@ -312,7 +312,7 @@ export default function InboxApp({ email, name, signOutAction, signInAction }: P
     setHits((l) => l?.map(fn) ?? null);
     setDue((l) => l.map(fn));
   };
-  type Patch = { read?: boolean; is_done?: boolean; priority?: Priority; teach?: boolean };
+  type Patch = { read?: boolean; is_done?: boolean; priority?: Priority; teach?: boolean; deadline?: null };
   async function answerAi(consent: boolean) {
     setAiConsent(consent);
     setToast({ text: consent ? "AI sorting on. Change it in Settings." : "Rules only. Change it in Settings." });
@@ -341,7 +341,15 @@ export default function InboxApp({ email, name, signOutAction, signInAction }: P
     updateAll((m) => (m.id === id ? apply(m, p) : m));
     fetch("/api/emails", { method: "PATCH", body: JSON.stringify({ id, ...p }) }).then((r) => !r.ok && setToast({ text: "Couldn't save that change" }));
     if (quiet || !before) return;
-    const undo = () => patch(id, { read: p.read !== undefined ? !before.unread : undefined, is_done: p.is_done !== undefined ? before.is_done : undefined, priority: p.priority ? before.priority : undefined }, true);
+    const undo = () => {
+      if (p.deadline === null) {
+        // put the removed deadline back
+        updateAll((m) => (m.id === id ? { ...m, deadline: before.deadline } : m));
+        void fetch("/api/emails", { method: "PATCH", body: JSON.stringify({ id, deadline: before.deadline }) });
+        return;
+      }
+      patch(id, { read: p.read !== undefined ? !before.unread : undefined, is_done: p.is_done !== undefined ? before.is_done : undefined, priority: p.priority ? before.priority : undefined }, true);
+    };
     // Moving a mail also teaches DELT where that sender's mail goes: say so, and offer a one-off move (#46).
     if (p.priority && p.teach !== false) {
       const sender = cleanSender(before.from_name);
@@ -356,7 +364,7 @@ export default function InboxApp({ email, name, signOutAction, signInAction }: P
       });
     }
     const text =
-      p.priority ? `Moved to ${pileLabel(p.priority)}` : p.is_done !== undefined ? (p.is_done ? "Marked done" : "Not done") : p.read ? "Marked read" : "Marked unread";
+      p.deadline === null ? "Deadline removed" : p.priority ? `Moved to ${pileLabel(p.priority)}` : p.is_done !== undefined ? (p.is_done ? "Marked done" : "Not done") : p.read ? "Marked read" : "Marked unread";
     setToast({ text, undo });
   }
   async function markAllRead(ids: string[]) {
@@ -741,18 +749,21 @@ export default function InboxApp({ email, name, signOutAction, signInAction }: P
                           <span className="row-text">
                             <span className="subj">{cleanSubject(m.subject)}</span>
                             <span className="meta">
-                              <span className={`due lv-${dueLevel(m.deadline!, now)}`}>{dueText(m.deadline!, now)}</span>
+                              <span className={`due lv-${dueLevel(m.deadline!, now)}`}>{dueInBucket(m.deadline!, b, now)}</span>
                               <span className={`tag p-${m.priority}`}>{pileLabel(m.priority)}</span>
                               <span className="muted ell">{cleanSender(m.from_name)}</span>
                             </span>
                           </span>
                         </button>
                         <div className="row-acts">
-                          <a className="iconbtn" href={calendarLink(cleanSubject(m.subject), m.deadline!, m.summary)} target="_blank" rel="noreferrer" title="Add to Google Calendar" aria-label="Add to Google Calendar">
+                          {/* #55: icons with words, not just tooltips phones never show */}
+                          <a className="iconbtn labelled" href={calendarLink(cleanSubject(m.subject), m.deadline!, m.summary)} target="_blank" rel="noreferrer" aria-label="Add to Google Calendar">
                             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16v14H4zM4 10h16M8 3v4m8-4v4" /></svg>
+                            <small aria-hidden="true">Calendar</small>
                           </a>
-                          <button className={`iconbtn check ${m.is_done ? "on" : ""}`} onClick={() => patch(m.id, { is_done: !m.is_done })} aria-label={m.is_done ? "Mark not done" : "Mark done"} title="Done">
+                          <button className={`iconbtn labelled check ${m.is_done ? "on" : ""}`} onClick={() => patch(m.id, { is_done: !m.is_done })} aria-label={m.is_done ? "Mark not done" : "Mark done"}>
                             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 5 5 9-10" /></svg>
+                            <small aria-hidden="true">{m.is_done ? "Undo" : "Done"}</small>
                           </button>
                         </div>
                       </li>
@@ -762,6 +773,7 @@ export default function InboxApp({ email, name, signOutAction, signInAction }: P
               </section>
             ))
           )}
+          {mails !== null && BUCKETS.some((b) => b !== "Done" && buckets[b].length > 0) && <p className="foot muted">Nothing else is due.</p>}
         </main>
       )}
 
@@ -841,12 +853,13 @@ export default function InboxApp({ email, name, signOutAction, signInAction }: P
   );
 }
 
-function apply(m: EmailRow, p: { read?: boolean; is_done?: boolean; priority?: Priority; teach?: boolean }): EmailRow {
+function apply(m: EmailRow, p: { read?: boolean; is_done?: boolean; priority?: Priority; teach?: boolean; deadline?: null }): EmailRow {
   return {
     ...m,
     ...(p.read !== undefined ? { unread: !p.read } : {}),
     ...(p.is_done !== undefined ? { is_done: p.is_done } : {}),
     ...(p.priority ? { priority: p.priority, user_corrected: p.teach !== false } : {}),
+    ...(p.deadline === null ? { deadline: null } : {}),
   };
 }
 
