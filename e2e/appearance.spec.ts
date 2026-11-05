@@ -159,3 +159,23 @@ test("the DELT logo is the same Minimal wordmark in every look and theme", async
     }
   }
 });
+
+test.describe("with animations on", () => {
+  test.use({ contextOptions: { reducedMotion: "no-preference" } });
+  test("opening and closing a mail, a panel, and switching theme all still work", async ({ page }) => {
+    await mockApi(page, smallInbox());
+    const errors: string[] = [];
+    page.on("pageerror", (e) => errors.push(e.message));
+    await page.goto("/e2e");
+    await page.locator('li.row[data-mail="cat1"] .row-main').click();
+    await expect(page.getByRole("dialog", { name: "CAT-1 exam schedule released" })).toBeVisible();
+    await page.getByRole("button", { name: "Back to list" }).click();
+    await expect(page.getByRole("dialog")).toHaveCount(0);
+    const panel = await openPanel(page);
+    await panel.getByRole("radio", { name: "Dark", exact: true }).click();
+    await expect(html(page)).toHaveAttribute("data-theme", "dark");
+    await page.keyboard.press("Escape");
+    await expect(panel).toHaveCount(0);
+    expect(errors).toEqual([]);
+  });
+});

@@ -14,6 +14,7 @@ import { cacheKey, clearOffline, packCache, unpackCache } from "@/lib/offline";
 import MailView from "./mail-view";
 import Appearance from "./appearance";
 import Settings from "./settings";
+import { transition } from "./motion";
 
 type Route = { tab: "inbox" | "deadlines"; mailId: string | null };
 const SYNC_EVERY = 5 * 60_000;
@@ -57,7 +58,12 @@ export default function InboxApp({ email, name, signOutAction, signInAction }: P
 
   // ---------- routing (hash, so the phone's Back button closes a mail) ----------
   useEffect(() => {
-    const on = () => setRoute(readRoute());
+    // opening/closing a mail and switching tabs animate (see motion.ts); the first read doesn't
+    let first = true;
+    const on = () => {
+      if (first) return (first = false), setRoute(readRoute());
+      transition(() => setRoute(readRoute()));
+    };
     on();
     window.addEventListener("hashchange", on);
     return () => window.removeEventListener("hashchange", on);
@@ -366,7 +372,7 @@ export default function InboxApp({ email, name, signOutAction, signInAction }: P
                   onClick={() => {
                     setMenu(false);
                     setSettingsSection(undefined);
-                    setSettingsOpen(true);
+                    transition(() => setSettingsOpen(true));
                   }}
                 >
                   Settings
@@ -376,7 +382,7 @@ export default function InboxApp({ email, name, signOutAction, signInAction }: P
                   onClick={() => {
                     setMenu(false);
                     setSettingsSection("rules");
-                    setSettingsOpen(true);
+                    transition(() => setSettingsOpen(true));
                   }}
                 >
                   Sorting rules
@@ -386,7 +392,7 @@ export default function InboxApp({ email, name, signOutAction, signInAction }: P
                   onClick={() => {
                     setMenu(false);
                     setSettingsSection("data");
-                    setSettingsOpen(true);
+                    transition(() => setSettingsOpen(true));
                   }}
                 >
                   Delete my data
@@ -613,10 +619,10 @@ export default function InboxApp({ email, name, signOutAction, signInAction }: P
         />
       )}
 
-      <Settings open={settingsOpen} section={settingsSection} onClose={() => setSettingsOpen(false)} onToast={(text) => setToast({ text })} />
+      <Settings open={settingsOpen} section={settingsSection} onClose={() => transition(() => setSettingsOpen(false))} onToast={(text) => setToast({ text })} />
 
       {toast && (
-        <div className="toast" role="status" aria-live="polite">
+        <div className="toast" role="status" aria-live="polite" key={toast.text} style={{ "--life": `${toast.undo ? 5000 : 2600}ms` } as React.CSSProperties}>
           <span>{toast.text}</span>
           {toast.undo && (
             <button

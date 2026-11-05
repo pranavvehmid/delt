@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { DEFAULTS, KEY, LOOK_ACCENTS, parsePrefs, toDataset, type Prefs } from "@/lib/prefs";
 import { useDialog } from "./use-dialog";
+import { transition } from "./motion";
 
 const ACCENTS: { key: Prefs["accent"]; label: string; color: string }[] = [
   {
@@ -50,10 +51,9 @@ function readPrefs(): Prefs {
 function apply(p: Prefs) {
   const root = document.documentElement;
   const dark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-  root.classList.add("theming"); // cross-fade colours instead of snapping
-  Object.assign(root.dataset, toDataset(p, dark));
+  // one GPU cross-fade of the whole screen, instead of animating every element's colours
+  transition(() => Object.assign(root.dataset, toDataset(p, dark)));
   window.setTimeout(() => {
-    root.classList.remove("theming");
     const bg = getComputedStyle(document.body).backgroundColor;
     document
       .querySelector('meta[name="theme-color"]')
@@ -74,7 +74,8 @@ export default function Appearance() {
     return () => mq.removeEventListener("change", on);
   }, []);
   const box = useRef<HTMLElement>(null);
-  useDialog(box, open, () => setOpen(false));
+  const show = (v: boolean) => transition(() => setOpen(v));
+  useDialog(box, open, () => show(false));
 
   function set<K extends keyof Prefs>(k: K, v: Prefs[K]) {
     const next = { ...p, [k]: v };
@@ -121,7 +122,7 @@ export default function Appearance() {
     <>
       <button
         className="iconbtn"
-        onClick={() => setOpen(true)}
+        onClick={() => show(true)}
         aria-label="Appearance"
         aria-haspopup="dialog"
         title="Appearance"
@@ -134,7 +135,7 @@ export default function Appearance() {
       {open &&
         createPortal(
           <>
-            <div className="veil" onClick={() => setOpen(false)} />
+            <div className="veil" onClick={() => show(false)} />
             <section
               className="sheet"
               role="dialog"
@@ -145,7 +146,7 @@ export default function Appearance() {
               <div className="sheet-grip" aria-hidden="true" />
               <header className="sheet-head">
                 <h2 id="ap-title" tabIndex={-1} data-autofocus>Appearance</h2>
-                <button className="link" onClick={() => setOpen(false)}>
+                <button className="link" onClick={() => show(false)}>
                   Done
                 </button>
               </header>
