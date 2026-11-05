@@ -12,14 +12,14 @@ async function axe(page: Page, what: string) {
   expect(bad.map((v) => `${what}: ${v.id} (${v.impact}) ${v.help} -> ${v.nodes.slice(0, 3).map((n) => n.target.join(" ")).join(" | ")}`)).toEqual([]);
 }
 
-async function setLook(page: Page, look: "minimal" | "glyph", mode: "light" | "dark" | "black") {
+async function setLook(page: Page, look: "minimal" | "glyph" | "grid", mode: "light" | "dark" | "black") {
   await page.addInitScript(([look, mode]) => localStorage.setItem("delt-prefs", JSON.stringify({ look, mode, accent: "auto", size: "normal", density: "comfortable" })), [look, mode]);
 }
 
 test.describe("axe", () => {
   test.use({ contextOptions: { reducedMotion: "reduce" } });
-for (const look of ["minimal", "glyph"] as const) {
-  for (const mode of ["light", "dark", "black"] as const) {
+for (const [look, modes] of [["minimal", ["light", "dark", "black"]], ["glyph", ["light", "dark", "black"]], ["grid", ["dark", "black"]]] as const) {
+  for (const mode of modes) {
     test(`axe: ${look} ${mode}: inbox, mail, deadlines, settings`, async ({ page }) => {
       await setLook(page, look, mode);
       await mockApi(page, smallInbox());

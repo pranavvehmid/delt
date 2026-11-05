@@ -15,7 +15,7 @@ test("junk in storage never breaks the app", () => {
 });
 
 test("valid saved values are kept, invalid ones fall back one by one", () => {
-  const p = parsePrefs(JSON.stringify({ look: "glyph", mode: "auto", accent: "teal", size: "large", density: "compact" }));
+  const p = parsePrefs(JSON.stringify({ look: "glyph", mode: "auto", accent: "chartreuse", size: "large", density: "compact" }));
   assert.deepEqual(p, { look: "glyph", mode: "auto", accent: "auto", size: "large", density: "compact" });
 });
 
@@ -66,7 +66,7 @@ test("the before-paint script agrees with parsePrefs for every combination", () 
               assert.deepEqual(runPrepaint({ "delt-prefs": raw }, dark), toDataset(parsePrefs(raw), dark));
               n++;
             }
-  assert.equal(n, 2 * 4 * 6 * 2 * 2 * 2);
+  assert.equal(n, OPTIONS.look.length * 4 * OPTIONS.accent.length * 2 * 2 * 2);
 });
 
 test("the before-paint script handles empty, broken and legacy storage", () => {
@@ -95,4 +95,13 @@ test("Extra dark paints the phone's status bar black before the app loads (#26)"
   }
   assert.equal(run({ look: "minimal", mode: "light" })[0].content, "#fafaf9");
   assert.equal(run({ look: "minimal", mode: "dark" })[0].content, "#161412");
+});
+
+test("Grid (F1-inspired) is always dark, and only offers its own driver colours", () => {
+  assert.equal(toDataset({ ...DEFAULTS, look: "grid", mode: "light" }, false).theme, "dark");
+  assert.equal(toDataset({ ...DEFAULTS, look: "grid", mode: "auto" }, false).theme, "dark");
+  assert.equal(toDataset({ ...DEFAULTS, look: "grid", mode: "black" }, false).tone, "black");
+  assert.equal(toDataset({ ...DEFAULTS, look: "grid", accent: "papaya" }, false).accent, "papaya");
+  assert.equal(toDataset({ ...DEFAULTS, look: "grid", accent: "purple" }, false).accent, "auto");
+  assert.equal(toDataset({ ...DEFAULTS, look: "minimal", accent: "papaya" }, false).accent, "auto");
 });

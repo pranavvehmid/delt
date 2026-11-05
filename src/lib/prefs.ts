@@ -2,20 +2,27 @@
 // Saved per device in localStorage and applied as data-* attributes on <html>.
 
 export type Prefs = {
-  look: "minimal" | "glyph";
+  look: "minimal" | "glyph" | "grid";
   mode: "light" | "dark" | "black" | "auto";
-  accent: "auto" | "purple" | "blue" | "green" | "red" | "gold";
+  accent: "auto" | "purple" | "blue" | "green" | "red" | "gold" | "papaya" | "teal" | "navy" | "racing" | "sky" | "pink";
   size: "normal" | "large";
   density: "comfortable" | "compact";
 };
 
 export const OPTIONS = {
-  look: ["minimal", "glyph"],
+  look: ["minimal", "glyph", "grid"],
   mode: ["light", "dark", "black", "auto"],
-  accent: ["auto", "purple", "blue", "green", "red", "gold"],
+  accent: ["auto", "purple", "blue", "green", "red", "gold", "papaya", "teal", "navy", "racing", "sky", "pink"],
   size: ["normal", "large"],
   density: ["comfortable", "compact"],
 } as const satisfies { [K in keyof Prefs]: readonly Prefs[K][] };
+
+/** Accent colours each look offers. Grid (F1-inspired) has its own "driver colours". */
+export const LOOK_ACCENTS: Record<Prefs["look"], readonly Prefs["accent"][]> = {
+  minimal: ["auto", "purple", "blue", "green", "red", "gold"],
+  glyph: ["auto", "purple", "blue", "green", "red", "gold"],
+  grid: ["auto", "papaya", "teal", "navy", "racing", "sky", "pink", "gold"],
+};
 
 export const DEFAULTS: Prefs = { look: "minimal", mode: "light", accent: "auto", size: "normal", density: "comfortable" };
 export const KEY = "delt-prefs";
@@ -44,9 +51,12 @@ export function parsePrefs(raw: string | null, legacy: { look?: string | null; t
 export const resolveMode = (mode: Prefs["mode"], systemDark: boolean): "light" | "dark" =>
   mode === "auto" ? (systemDark ? "dark" : "light") : mode === "black" ? "dark" : mode;
 
-/** The attributes set on <html>. */
+/** The attributes set on <html>. Grid is always dark (Extra dark makes it pure black);
+ *  an accent the look doesn't offer falls back to the look's own default. */
 export function toDataset(p: Prefs, systemDark: boolean) {
-  return { look: p.look, theme: resolveMode(p.mode, systemDark), tone: p.mode === "black" ? "black" : "normal", accent: p.accent, size: p.size, density: p.density };
+  const theme = p.look === "grid" ? "dark" : resolveMode(p.mode, systemDark);
+  const accent = LOOK_ACCENTS[p.look].includes(p.accent) ? p.accent : "auto";
+  return { look: p.look, theme, tone: p.mode === "black" ? "black" : "normal", accent, size: p.size, density: p.density };
 }
 
 /**
@@ -61,11 +71,12 @@ try{raw=localStorage.getItem("delt-prefs");var v=raw?JSON.parse(raw):null;if(v&&
 if(!raw){var lk=localStorage.getItem("delt-look"),lt=localStorage.getItem("delt-theme");if(lk)p={look:lk==="glyph"?"glyph":"minimal"};if(lt==="dark"||lt==="light")p.mode=lt}}catch(e){}
 var m=ok(p.mode,["light","dark","black","auto"],"light"),tone=m==="black"?"black":"normal";if(m==="black")m="dark";
 if(m==="auto")m=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";
-r.dataset.look=ok(p.look,["minimal","glyph"],"minimal");r.dataset.theme=m;r.dataset.tone=tone;
-r.dataset.accent=ok(p.accent,["auto","purple","blue","green","red","gold"],"auto");
+var look=ok(p.look,["minimal","glyph","grid"],"minimal");if(look==="grid")m="dark";
+r.dataset.look=look;r.dataset.theme=m;r.dataset.tone=tone;
+r.dataset.accent=ok(p.accent,look==="grid"?["auto","papaya","teal","navy","racing","sky","pink","gold"]:["auto","purple","blue","green","red","gold"],"auto");
 r.dataset.size=ok(p.size,["normal","large"],"normal");
 r.dataset.density=ok(p.density,["comfortable","compact"],"comfortable");
-try{var bg={minimal:{light:"#fafaf9",dark:"#161412"},glyph:{light:"#fff8e8",dark:"#17112b"}}[r.dataset.look][m];if(tone==="black")bg="#000000";
+try{var bg={minimal:{light:"#fafaf9",dark:"#161412"},glyph:{light:"#fff8e8",dark:"#17112b"},grid:{light:"#0b0b0e",dark:"#0b0b0e"}}[look][m];if(tone==="black")bg="#000000";
 function bar(){var ms=document.querySelectorAll('meta[name="theme-color"]');for(var i=0;i<ms.length;i++){ms[i].setAttribute("content",bg);ms[i].removeAttribute("media")}}
 bar();if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",bar)}catch(e){}
 })()`;

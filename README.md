@@ -76,9 +76,9 @@ Tap ◐ in the top bar.
 
 | Setting | Options |
 |---|---|
-| Look | **Minimal**: black and white, one typeface. More important mail is printed darker, and urgent mail gets a small red mark. **Glyph**: purple and gold, dot-matrix type |
-| Theme | Light, Dark, Extra dark (pure black), Auto |
-| Accent | Default, Purple, Blue, Green, Red, Gold |
+| Look | **Minimal**: black and white, one typeface. More important mail is printed darker, and urgent mail gets a small red mark. **Glyph**: purple and gold, dot-matrix type. **Grid**: F1-inspired race dark. Piles are flags (red Urgent, yellow Priority, green Later, blue Noise), mail sits in a timing tower, with italic racing type and a kerb under the top bar |
+| Theme | Light, Dark, Extra dark (pure black, Nothing OS style: dot-matrix section names, mail shown dark), Auto. Grid is always dark |
+| Accent | Default, Purple, Blue, Green, Red, Gold. In Grid, a driver colour: Race red, Papaya, Teal, Navy, Racing green, Sky, Pink, Black and gold |
 | Text | Normal, Large |
 | Spacing | Comfortable, Compact |
 

@@ -101,3 +101,33 @@ test("Glyph look: muted text passes 4.5:1 on its cards", () => {
     }
   }
 });
+
+test("Grid (F1-inspired): every pile and the due dates are readable in Dark and Extra dark", () => {
+  const G = ':root[data-look="grid"][data-theme][data-tone]';
+  const dark = vars(G);
+  const black = { ...dark, ...vars(':root[data-look="grid"][data-theme][data-tone="black"]') };
+  for (const [name, t] of Object.entries({ Dark: dark, "Extra dark": black })) {
+    const fg = t.ink.split(/\s+/).map(Number) as RGB;
+    const bg = hex(t.bg);
+    const floor = Number(t.floor);
+    for (const [pile, lv] of Object.entries(LEVELS)) {
+      for (const a of [ink(floor, lv), quiet(floor, lv)]) {
+        // rows sit on --surface, which is lighter than the page: check against that
+        for (const ground of [bg, hex(t.surface)]) {
+          const r = ratio(mix(fg, ground, a), ground);
+          assert.ok(r >= 4.5, `Grid ${name} ${pile}: ${r.toFixed(2)}:1`);
+        }
+      }
+    }
+    for (const c of ["due-soon", "due-week"]) assert.ok(ratio(hex(t[c]), hex(t.surface)) >= 4.5, `Grid ${name} ${c}`);
+  }
+});
+
+test("Grid: text on every driver colour (buttons, counts, toasts) is readable", () => {
+  const rules = [...css.matchAll(/:root\[data-look="grid"\]\[data-theme\]\[data-accent="(\w+)"\] \{ --accent: (#[0-9a-f]{6}); --on-accent: (#[0-9a-f]{6}); \}/g)];
+  assert.ok(rules.length >= 7, "found the driver colours");
+  for (const [, key, accent, on] of rules) {
+    const r = ratio(hex(accent), hex(on));
+    assert.ok(r >= 4.5, `${key}: ${r.toFixed(2)}:1`);
+  }
+});

@@ -17,11 +17,6 @@ const kb = (n: number) => (n > 1048576 ? `${(n / 1048576).toFixed(1)} MB` : `${M
 // are inverted back so photos and logos keep their real colours. "Original colours" turns it off.
 const DARK_MAIL_KEY = "delt-mail-original";
 const KEEP = "img,video,picture,svg,canvas,iframe,[style*='background-image']";
-/** The page colour, flipped, so after the frame is inverted it lands exactly on the page colour. */
-function invertedBg() {
-  const m = getComputedStyle(document.body).backgroundColor.match(/\d+/g);
-  return m ? `rgb(${255 - +m[0]}, ${255 - +m[1]}, ${255 - +m[2]})` : "#fff";
-}
 
 // The mail runs in a sandbox with no scripts at all; links open outside DELT.
 function frameDoc(m: FullMessage, darkBg: string | null) {
@@ -65,7 +60,7 @@ export default function MailView({
     const read = () => {
       const dark = document.documentElement.dataset.theme === "dark";
       setDarkTheme(dark);
-      setDarkBg(dark ? invertedBg() : null);
+      setDarkBg(dark ? "transparent" : null); // the page shows through, exactly its own colour
     };
     read();
     try {

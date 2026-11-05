@@ -509,7 +509,7 @@ export default function InboxApp({ email, name, signOutAction, signInAction }: P
                 {(b !== "Done" || showDone) && (
                   <ul className="rows">
                     {buckets[b].map((m) => (
-                      <li key={m.id} className={`row due-row ${m.is_done ? "done" : ""}`} data-mail={m.id}>
+                      <li key={m.id} className={`row due-row p-${m.priority} ${m.is_done ? "done" : ""}`} data-mail={m.id}>
                         <button className="row-main" onClick={() => openMail(m)}>
                           <span className={`datebox lv-${dueLevel(m.deadline!, now)}`}>
                             <b>{new Date(m.deadline!).toLocaleDateString("en-IN", { day: "numeric", timeZone: "Asia/Kolkata" })}</b>

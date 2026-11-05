@@ -113,3 +113,29 @@ test("Light theme: mail keeps its own colours", async ({ page }) => {
   await expect(page.locator(".mv-frame")).not.toHaveClass(/dim/);
   await expect(page.getByRole("button", { name: "Original colours" })).toHaveCount(0);
 });
+
+test("Grid (F1-inspired): always dark, its own driver colours, and back to Minimal cleanly", async ({ page }) => {
+  test.setTimeout(60_000); // eight colour changes, each a cross-fade
+  await mockApi(page, smallInbox());
+  await page.goto("/e2e");
+  const panel = await openPanel(page);
+  await panel.getByRole("radio", { name: /Grid/ }).click();
+  await expect(html(page)).toHaveAttribute("data-look", "grid");
+  await expect(html(page)).toHaveAttribute("data-theme", "dark");
+  // only Dark and Extra dark
+  await expect(panel.getByRole("radio", { name: "Light", exact: true })).toHaveCount(0);
+  await panel.getByRole("radio", { name: "Extra dark", exact: true }).click();
+  await expect(html(page)).toHaveAttribute("data-tone", "black");
+  for (const [name, key] of [["Teal", "teal"], ["Navy", "navy"], ["Racing green", "racing"], ["Sky", "sky"], ["Pink", "pink"], ["Black and gold", "gold"], ["Race red", "auto"], ["Papaya", "papaya"]] as const) {
+    await panel.getByRole("radio", { name, exact: true }).click();
+    await expect(html(page)).toHaveAttribute("data-accent", key);
+  }
+  expect(await noSideScroll(page)).toBe(true);
+  // the racing typeface is in use
+  expect(await page.evaluate(() => getComputedStyle(document.querySelector(".mast button")!).fontStyle)).toBe("italic");
+
+  // Minimal doesn't have papaya: it falls back to its default
+  await panel.getByRole("radio", { name: /Minimal/ }).click();
+  await expect(html(page)).toHaveAttribute("data-look", "minimal");
+  await expect(html(page)).toHaveAttribute("data-accent", "auto");
+});

@@ -4,7 +4,7 @@
 // text size and spacing. Saved on this device; applied as data-* on <html>.
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { DEFAULTS, KEY, parsePrefs, toDataset, type Prefs } from "@/lib/prefs";
+import { DEFAULTS, KEY, LOOK_ACCENTS, parsePrefs, toDataset, type Prefs } from "@/lib/prefs";
 import { useDialog } from "./use-dialog";
 
 const ACCENTS: { key: Prefs["accent"]; label: string; color: string }[] = [
@@ -19,6 +19,22 @@ const ACCENTS: { key: Prefs["accent"]; label: string; color: string }[] = [
   { key: "red", label: "Red", color: "#d93025" },
   { key: "gold", label: "Gold", color: "#e0a810" },
 ];
+// Grid's "driver colours": paddock colours, named by colour (team and driver names are trademarks).
+const GRID_ACCENTS: { key: Prefs["accent"]; label: string; color: string }[] = [
+  { key: "auto", label: "Race red", color: "#e10600" },
+  { key: "papaya", label: "Papaya", color: "#ff8000" },
+  { key: "teal", label: "Teal", color: "#27f4d2" },
+  { key: "navy", label: "Navy", color: "#3671c6" },
+  { key: "racing", label: "Racing green", color: "#229971" },
+  { key: "sky", label: "Sky", color: "#64c4ff" },
+  { key: "pink", label: "Pink", color: "#ff87bc" },
+  { key: "gold", label: "Black and gold", color: "conic-gradient(#d4a017 0 50%, #111 0)" },
+];
+const LOOKS = [
+  { key: "minimal", name: "Minimal", note: "Black and white" },
+  { key: "glyph", name: "Glyph", note: "Purple and gold" },
+  { key: "grid", name: "Grid", note: "F1-inspired, race dark" },
+] as const;
 
 function readPrefs(): Prefs {
   try {
@@ -62,6 +78,9 @@ export default function Appearance() {
 
   function set<K extends keyof Prefs>(k: K, v: Prefs[K]) {
     const next = { ...p, [k]: v };
+    // each look has its own colours; Grid is always dark
+    if (!LOOK_ACCENTS[next.look].includes(next.accent)) next.accent = "auto";
+    if (next.look === "grid" && (next.mode === "light" || next.mode === "auto")) next.mode = "dark";
     setP(next);
     try {
       localStorage.setItem(KEY, JSON.stringify(next));
@@ -132,25 +151,21 @@ export default function Appearance() {
               </header>
 
               <div className="looks" role="radiogroup" aria-label="Look">
-                {(["minimal", "glyph"] as const).map((l) => (
+                {LOOKS.map((l) => (
                   <button
-                    key={l}
+                    key={l.key}
                     role="radio"
-                    aria-checked={p.look === l}
-                    className={`look-card ${p.look === l ? "on" : ""}`}
-                    onClick={() => set("look", l)}
+                    aria-checked={p.look === l.key}
+                    className={`look-card ${p.look === l.key ? "on" : ""}`}
+                    onClick={() => set("look", l.key)}
                   >
-                    <span className={`look-prev lp-${l}`} aria-hidden="true">
+                    <span className={`look-prev lp-${l.key}`} aria-hidden="true">
                       <i />
                       <i />
                       <i />
                     </span>
-                    <b>{l === "minimal" ? "Minimal" : "Glyph"}</b>
-                    <small>
-                      {l === "minimal"
-                        ? "Black and white"
-                        : "Purple and gold"}
-                    </small>
+                    <b>{l.name}</b>
+                    <small>{l.note}</small>
                   </button>
                 ))}
               </div>
@@ -158,22 +173,29 @@ export default function Appearance() {
               <Seg
                 k="mode"
                 label="Theme"
-                items={[
-                  ["light", "Light"],
-                  ["dark", "Dark"],
-                  ["black", "Extra dark"],
-                  ["auto", "Auto"],
-                ]}
+                items={
+                  p.look === "grid"
+                    ? [
+                        ["dark", "Dark"],
+                        ["black", "Extra dark"],
+                      ]
+                    : [
+                        ["light", "Light"],
+                        ["dark", "Dark"],
+                        ["black", "Extra dark"],
+                        ["auto", "Auto"],
+                      ]
+                }
               />
 
               <div className="ap-row">
-                <span className="ap-lbl">Accent</span>
+                <span className="ap-lbl">{p.look === "grid" ? "Driver colour" : "Accent"}</span>
                 <div
                   className="swatches"
                   role="radiogroup"
                   aria-label="Accent colour"
                 >
-                  {ACCENTS.map((a) => (
+                  {(p.look === "grid" ? GRID_ACCENTS : ACCENTS).map((a) => (
                     <button
                       key={a.key}
                       role="radio"
