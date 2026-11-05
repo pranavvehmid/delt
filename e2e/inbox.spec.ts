@@ -306,3 +306,15 @@ test("a mail fetches nothing from the sender until Load images, and can't redire
   await expect.poll(() => hits.filter((h) => h.includes("tracker")).length).toBeGreaterThan(0);
   expect(hits.some((h) => h.includes("phish"))).toBe(false);
 });
+
+test("security headers: DELT can't be framed, and only loads its own scripts (#34)", async ({ request }) => {
+  for (const path of ["/", "/privacy", "/e2e"]) {
+    const h = (await request.get(path)).headers();
+    expect(h["x-frame-options"]).toBe("DENY");
+    expect(h["content-security-policy"]).toContain("frame-ancestors 'none'");
+    expect(h["content-security-policy"]).toContain("object-src 'none'");
+    expect(h["x-content-type-options"]).toBe("nosniff");
+    expect(h["referrer-policy"]).toBe("strict-origin-when-cross-origin");
+    expect(h["x-powered-by"]).toBeUndefined();
+  }
+});

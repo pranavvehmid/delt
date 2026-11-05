@@ -6,6 +6,15 @@ import { AccessRevoked } from "@/lib/gmail";
 import { limited } from "@/lib/rate-limit";
 import { dueForSync } from "@/lib/schedule";
 import { markSeen, notifyStudent } from "@/lib/notify";
+import { timingSafeEqual } from "node:crypto";
+
+// #34: compare the cron secret in constant time
+function cronAllowed(header: string | null) {
+  const secret = process.env.CRON_SECRET;
+  if (!secret || !header) return false;
+  const a = Buffer.from(header), b = Buffer.from(`Bearer ${secret}`);
+  return a.length === b.length && timingSafeEqual(a, b);
+}
 
 export const maxDuration = 120;
 
@@ -51,7 +60,7 @@ const BUDGET_MS = 90_000;
 // both with "Authorization: Bearer <CRON_SECRET>". Syncs whoever is due (see lib/schedule.ts),
 // then sends phone notifications for urgent mail and deadlines due within a day.
 export async function GET(req: NextRequest) {
-  if (!process.env.CRON_SECRET || req.headers.get("authorization") !== `Bearer ${process.env.CRON_SECRET}`) {
+  if (!cronAllowed(req.headers.get("authorization"))) { // Bearer CRON_SECRET
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const started = Date.now();
