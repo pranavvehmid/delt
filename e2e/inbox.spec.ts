@@ -182,3 +182,14 @@ test("offline: the saved inbox shows, marked offline, and changes are paused (#1
   await context.setOffline(false);
   await expect(page.getByRole("status").filter({ hasText: "You're offline" })).toHaveCount(0);
 });
+
+test("iPhone: tapping search doesn't zoom the page, and nothing scrolls sideways (#17)", async ({ page, isMobile }) => {
+  test.skip(!isMobile, "phone screens only");
+  await mockApi(page, smallInbox());
+  await page.goto("/e2e");
+  const box = page.getByRole("textbox", { name: "Search mail" });
+  expect(await box.evaluate((el) => parseFloat(getComputedStyle(el).fontSize))).toBeGreaterThanOrEqual(16);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true);
+  await page.locator(row("cat1")).locator(".row-main").click();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true);
+});
