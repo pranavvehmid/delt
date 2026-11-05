@@ -453,3 +453,11 @@ test("an empty search says what was searched and offers to widen it; matches are
   await expect(page.locator(row("fee"))).toBeVisible();
   await expect(page.locator(row("fee")).locator("mark")).toHaveText("Hostel");
 });
+
+test("the sign-in page shows a sorted example, Google's button and the Android app (#58)", async ({ page }) => {
+  await page.goto("/");
+  await expect(page.getByRole("list", { name: "An example of a sorted inbox" }).getByRole("listitem")).toHaveCount(4);
+  await expect(page.getByRole("button", { name: "Sign in with Google" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Get the Android app" })).toHaveAttribute("href", /DELT\.apk$/);
+  await expect(page.getByRole("link", { name: "Privacy" })).toBeVisible();
+});
