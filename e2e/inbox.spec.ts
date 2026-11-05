@@ -10,11 +10,14 @@ test.describe("swiping (phone)", () => {
   test("swipe right marks read, swipe right again marks unread", async ({ page }) => {
     const api = await mockApi(page, smallInbox());
     await page.goto("/e2e");
+    // #50: a one-time hint, gone after the first real swipe
+    await expect(page.getByText("swipe a mail right to mark it read")).toBeVisible();
     await expect(page.locator(row("cat1"))).toHaveClass(/unread/);
     await swipe(page, row("cat1"), 130);
     await expect(page.locator(row("cat1"))).not.toHaveClass(/unread/);
     await expect(page.getByRole("status").filter({ hasText: "Marked read" })).toBeVisible();
     expect(api.patches).toContainEqual({ id: "cat1", read: true });
+    await expect(page.getByText("swipe a mail right to mark it read")).toHaveCount(0);
     await swipe(page, row("cat1"), 130);
     await expect(page.locator(row("cat1"))).toHaveClass(/unread/);
   });

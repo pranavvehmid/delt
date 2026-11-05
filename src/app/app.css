@@ -967,3 +967,11 @@ body { min-height: 100dvh; }
 /* #49: previous / next mail */
 .mv-step { display: inline-flex; margin-right: auto; }
 .mv-step .iconbtn:disabled { opacity: 0.35; }
+
+/* #50: swipes you can discover and feel */
+.swipe-bg span { display: inline-flex; align-items: center; gap: 8px; }
+.swipe-bg svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+:root[data-look="minimal"] .swipe-bg.l { background: var(--accent); color: var(--on-accent); }
+.swipe-hint { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin: 12px 0 0; font-size: 13.5px; color: var(--muted); }
+.shell.hinting .rows > li:first-child .row-slide { animation: swipe-nudge 2.4s 0.6s var(--ease) 2 both; }
+@keyframes swipe-nudge { 0%, 30%, 100% { transform: none; } 12% { transform: translateX(-28px); } 20% { transform: translateX(10px); } }

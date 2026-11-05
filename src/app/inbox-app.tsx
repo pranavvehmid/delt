@@ -39,6 +39,19 @@ export default function InboxApp({ email, name, signOutAction, signInAction }: P
   const [searching, setSearching] = useState(false);
   const [due, setDue] = useState<EmailRow[]>([]);
   const [reauth, setReauth] = useState(false);
+  // #50: tell touch users once that rows can be swiped
+  const [swipeHint, setSwipeHint] = useState(false);
+  useEffect(() => {
+    try {
+      setSwipeHint(window.matchMedia("(pointer: coarse)").matches && !localStorage.getItem("delt-swipe-hint"));
+    } catch {}
+  }, []);
+  const dismissSwipeHint = () => {
+    setSwipeHint(false);
+    try {
+      localStorage.setItem("delt-swipe-hint", "1");
+    } catch {}
+  };
   // #48: wide screens read mail in a pane beside the list
   const [wide, setWide] = useState(false);
   const wideRef = useRef(false);
@@ -309,16 +322,16 @@ export default function InboxApp({ email, name, signOutAction, signInAction }: P
     return true;
   };
   // Row handlers that never change identity, so a tap re-renders only the row that changed (#20)
-  const act = useRef<{ openMail: (m: EmailRow) => void; patch: (id: string, p: Patch) => void } | null>(null);
+  const act = useRef<{ openMail: (m: EmailRow) => void; patch: (id: string, p: Patch) => void; learned: () => void } | null>(null);
   const rowActions = useMemo<RowActions>(
     () => ({
       open: (m) => act.current?.openMail(m),
-      read: (m) => act.current?.patch(m.id, { read: m.unread }),
-      done: (m) => act.current?.patch(m.id, { is_done: !m.is_done }),
+      read: (m) => (act.current?.patch(m.id, { read: m.unread }), act.current?.learned()),
+      done: (m) => (act.current?.patch(m.id, { is_done: !m.is_done }), act.current?.learned()),
     }),
     [],
   );
-  act.current = { openMail, patch: (id, p) => patch(id, p) };
+  act.current = { openMail, patch: (id, p) => patch(id, p), learned: () => swipeHint && dismissSwipeHint() };
   function patch(id: string, p: Patch, quiet = false) {
     if (blockedOffline()) return;
     const before = findMail(id);
@@ -411,7 +424,7 @@ export default function InboxApp({ email, name, signOutAction, signInAction }: P
   const gmailLink = (m: EmailRow) => `https://mail.google.com/mail/?authuser=${encodeURIComponent(email)}#all/${m.thread_id ?? m.id}`;
 
   return (
-    <div className={`shell ${route.mailId && wide ? "reading" : ""}`}>
+    <div className={`shell ${route.mailId && wide ? "reading" : ""} ${swipeHint ? "hinting" : ""}`}>
       {/* ---------- top bar ---------- */}
       <header className="appbar">
         <a href="#/inbox" className="logo" onClick={() => goTab("inbox")} aria-label="DELT inbox">
@@ -594,6 +607,16 @@ export default function InboxApp({ email, name, signOutAction, signInAction }: P
             />
           ) : (
             <>
+            {swipeHint && route.tab === "inbox" && (
+              <p className="swipe-hint">
+                <span>
+                  <b>Tip:</b> swipe a mail right to mark it read, left when it&apos;s done.
+                </span>
+                <button className="link" onClick={dismissSwipeHint}>
+                  Got it
+                </button>
+              </p>
+            )}
             {pinned.length > 0 && (
               <section className="day needs" aria-labelledby="needs-you">
                 <h2 className="dayhead" id="needs-you">
@@ -814,7 +837,9 @@ const MailRow = memo(function MailRow({ m, now, pos = 0, leaderAt = "", on, curr
       } catch {}
     }
     d.moved = true;
+    const was = Math.abs(d.dx) > LIMIT;
     d.dx = Math.max(-140, Math.min(140, x));
+    if (!was && Math.abs(d.dx) > LIMIT) navigator.vibrate?.(10); // #50: you can feel it's armed
     setDx(d.dx);
   };
   const up = () => {
@@ -843,7 +868,14 @@ const MailRow = memo(function MailRow({ m, now, pos = 0, leaderAt = "", on, curr
   return (
     <li className={`row ink-${m.priority} ${m.unread ? "unread" : ""} ${m.is_done ? "done" : ""} ${dx ? "dragging" : ""}`} data-mail={m.id} data-pos={pos} style={{ "--i": Math.min(pos, 14) } as React.CSSProperties}>
       <div className={`swipe-bg ${dx > 0 ? "r" : "l"} ${Math.abs(dx) > LIMIT ? "armed" : ""}`} aria-hidden="true">
-        <span>{dx > 0 ? (m.unread ? "Read" : "Unread") : m.is_done ? "Not done" : "Done"}</span>
+        <span>
+          {dx > 0 ? (
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16v12H4zM4 7l8 6 8-6" /></svg>
+          ) : (
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 5 5 9-10" /></svg>
+          )}
+          {dx > 0 ? (m.unread ? "Read" : "Unread") : m.is_done ? "Not done" : "Done"}
+        </span>
       </div>
       <div className="row-slide" style={{ transform: dx ? `translateX(${dx}px)` : undefined }} onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={up}>
         <button className="row-main" onClick={() => !moved.current && onOpen()} aria-current={current || undefined} aria-label={label} aria-describedby={m.summary || m.snippet ? `sum-${m.id}` : undefined}>
