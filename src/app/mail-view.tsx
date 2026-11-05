@@ -49,7 +49,7 @@ export default function MailView({
   const [msg, setMsg] = useState<FullMessage | null>(null);
   const [error, setError] = useState("");
   const [tries, setTries] = useState(0);
-  const [height, setHeight] = useState(240);
+  const [height, setHeight] = useState(96);
   const frame = useRef<HTMLIFrameElement>(null);
   const box = useRef<HTMLDivElement>(null);
   // dark mail in dark themes, unless the student asked for the original colours
@@ -111,8 +111,12 @@ export default function MailView({
   // Grow the frame to the mail's own height, so the whole mail scrolls as one page.
   function fit() {
     const doc = frame.current?.contentDocument;
-    if (!doc?.documentElement) return;
-    setHeight(Math.max(160, doc.documentElement.scrollHeight));
+    if (!doc?.body) return;
+    // The mail's own height (#45). documentElement.scrollHeight is never smaller than the frame,
+    // so a short mail used to keep the frame's starting height and leave a tall empty box.
+    const body = doc.body, m = doc.defaultView?.getComputedStyle(body);
+    const content = Math.max(body.scrollHeight, body.getBoundingClientRect().height) + (m ? parseFloat(m.marginTop) + parseFloat(m.marginBottom) : 0);
+    setHeight(Math.max(96, Math.ceil(content)));
     doc.querySelectorAll("img").forEach((img) => img.complete || img.addEventListener("load", fit, { once: true }));
   }
 

@@ -235,3 +235,15 @@ test("no update banner for an up-to-date app or a normal browser", async ({ page
   await expect(page.locator(row("cat1"))).toBeVisible();
   await expect(page.getByText("A new version of the DELT app is ready.")).toHaveCount(0);
 });
+
+test("the mail frame fits the mail: short mail, short box; long mail, all of it (#45)", async ({ page }) => {
+  await mockApi(page, smallInbox());
+  await page.goto("/e2e");
+  await page.locator(row("cat1")).locator(".row-main").click();
+  await expect(page.frameLocator(".mv-frame").getByText("Full text of")).toBeVisible();
+  await expect.poll(async () => (await page.locator(".mv-frame").boundingBox())!.height).toBeLessThan(140);
+  await page.getByRole("button", { name: "Back to list" }).click();
+  await page.locator(row("news")).locator(".row-main").click();
+  await expect(page.frameLocator(".mv-frame").getByText("Paragraph 40 of")).toBeAttached();
+  await expect.poll(async () => (await page.locator(".mv-frame").boundingBox())!.height).toBeGreaterThan(900);
+});
