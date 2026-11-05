@@ -200,6 +200,9 @@ test("AI is off until the student answers, once (#31)", async ({ page }) => {
   const ask = page.getByRole("region", { name: "Let AI double-check unclear mail?" });
   await expect(ask).toBeVisible();
   await expect(ask.getByRole("link", { name: "Privacy" })).toHaveAttribute("href", "/privacy");
+  // both answers look the same (#44)
+  const look = (name: string) => ask.getByRole("button", { name }).evaluate((b) => { const s = getComputedStyle(b); return [s.backgroundColor, s.color, s.fontWeight, s.borderTopWidth].join(); });
+  expect(await look("Allow AI")).toBe(await look("Rules only"));
   await ask.getByRole("button", { name: "Rules only" }).click();
   await expect(ask).toHaveCount(0);
   await page.getByRole("button", { name: "Account" }).click();

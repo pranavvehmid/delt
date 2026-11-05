@@ -456,11 +456,12 @@ export default function InboxApp({ email, name, signOutAction, signInAction }: P
             </a>
           </span>
           <span className="ask-btns">
-            <button className="pillbtn on" onClick={() => answerAi(true)}>
-              Allow AI
-            </button>
+            {/* #44: a consent question gets two equal answers, no nudge; the one that shares nothing comes first */}
             <button className="pillbtn" onClick={() => answerAi(false)}>
               Rules only
+            </button>
+            <button className="pillbtn" onClick={() => answerAi(true)}>
+              Allow AI
             </button>
           </span>
         </section>
