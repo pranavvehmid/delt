@@ -2,6 +2,7 @@ import "server-only";
 import type { ParsedMessage } from "./gmail";
 import type { StudentProfile } from "./profile";
 import type { Classification, Category, Correction } from "./types";
+import { senderPile, topicPile } from "./topics";
 
 // Free, offline sorter. Decides in a fixed order (first match wins):
 //   your corrections > promotions > not-for-you > achievements > scholarships >
@@ -207,8 +208,12 @@ export function classifyByRules(
   });
 
   // 1. Your own corrections for the same sender always win.
-  const fix = corrections.find((c) => c.from.toLowerCase() === msg.fromAddress.toLowerCase());
-  if (fix) return out(fix.priority, "other", "You moved mail from this sender before", 0.95);
+  // #25: when one sender's mail was moved to different piles, the most similar subject decides.
+  const fix = senderPile(msg.fromAddress, msg.subject, corrections);
+  if (fix) return out(fix, "other", "You moved mail from this sender before", 0.95);
+  // #25: and mail about something you moved twice before goes the same way, whoever sends it.
+  const topic = topicPile(msg.subject, corrections);
+  if (topic) return out(topic, "other", "Like mail you moved before", 0.8);
 
   // A file shared with you personally (Drive, Docs) is about your own work.
   if (SHARED_WITH_YOU.test(subject) && (fromGoogle || /@docs\.google\.com$/.test(msg.fromAddress))) {
