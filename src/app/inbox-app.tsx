@@ -39,6 +39,9 @@ export default function InboxApp({ email, name, signOutAction, signInAction }: P
   const [searching, setSearching] = useState(false);
   const [due, setDue] = useState<EmailRow[]>([]);
   const [reauth, setReauth] = useState(false);
+  // #51: pull down at the top of the list to check for mail (touch screens)
+  const [pull, setPull] = useState(0);
+  const PULL_AT = 72;
   // #50: tell touch users once that rows can be swiped
   const [swipeHint, setSwipeHint] = useState(false);
   useEffect(() => {
@@ -400,6 +403,36 @@ export default function InboxApp({ email, name, signOutAction, signInAction }: P
     return () => io.disconnect();
   }, [canLoadOlder, loadOlder, mails?.length]);
 
+  useEffect(() => {
+    if (!window.matchMedia("(pointer: coarse)").matches) return;
+    let startY: number | null = null, dist = 0;
+    const down = (e: TouchEvent) => {
+      startY = window.scrollY <= 0 && !route.mailId && route.tab === "inbox" ? e.touches[0].clientY : null;
+      dist = 0;
+    };
+    const move = (e: TouchEvent) => {
+      if (startY === null) return;
+      dist = Math.max(0, Math.min(120, (e.touches[0].clientY - startY) * 0.5));
+      setPull(dist);
+    };
+    const up = () => {
+      if (startY !== null && dist >= PULL_AT) sync(true);
+      startY = null;
+      dist = 0;
+      setPull(0);
+    };
+    window.addEventListener("touchstart", down, { passive: true });
+    window.addEventListener("touchmove", move, { passive: true });
+    window.addEventListener("touchend", up);
+    window.addEventListener("touchcancel", up);
+    return () => {
+      window.removeEventListener("touchstart", down);
+      window.removeEventListener("touchmove", move);
+      window.removeEventListener("touchend", up);
+      window.removeEventListener("touchcancel", up);
+    };
+  }, [route.mailId, route.tab, sync]);
+
   // account menu: Esc or a click/tab outside closes it (issue #8)
   const acct = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -557,6 +590,11 @@ export default function InboxApp({ email, name, signOutAction, signInAction }: P
         </div>
       )}
 
+      {pull > 0 && (
+        <div className="pull" style={{ height: pull }} aria-hidden="true">
+          <span>{pull >= PULL_AT ? "Release to check for mail" : "Pull to check for mail"}</span>
+        </div>
+      )}
       <nav className="mast" aria-label="Sections">
         <button className={route.tab === "inbox" ? "on" : ""} onClick={() => goTab("inbox")} aria-current={route.tab === "inbox" ? "page" : undefined}>
           Inbox{counts.all.unread > 0 && <sup><span className="sr-only">, </span>{counts.all.unread > 99 ? "99+" : counts.all.unread}<span className="sr-only"> unread</span></sup>}

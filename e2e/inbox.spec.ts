@@ -378,3 +378,23 @@ test("next and previous mail from inside a mail, by button and J/K; Back still g
   await page.goBack();
   await expect(page.locator(".mailview")).toHaveCount(0);
 });
+
+test("pull down at the top of the list to check for mail (#51)", async ({ page, isMobile, browserName }) => {
+  test.skip(!isMobile || browserName === "webkit", "touch only; WebKit doesn't let scripts create Touch objects");
+  const api = await mockApi(page, smallInbox());
+  let checks = 0;
+  await page.route("**/api/sync", (r) => (checks++, r.fulfill({ contentType: "application/json", body: JSON.stringify({ fetched: 0 }) })));
+  await page.goto("/e2e");
+  await expect(page.locator(row("cat1"))).toBeVisible();
+  await page.waitForTimeout(500);
+  const before = checks;
+  await page.evaluate(async () => {
+    const t = (y: number) => [new Touch({ identifier: 1, target: document.body, clientX: 200, clientY: y })];
+    window.dispatchEvent(new TouchEvent("touchstart", { touches: t(100) }));
+    for (let y = 110; y <= 300; y += 20) window.dispatchEvent(new TouchEvent("touchmove", { touches: t(y) }));
+    await new Promise((r) => setTimeout(r, 50));
+    window.dispatchEvent(new TouchEvent("touchend", { touches: [] }));
+  });
+  await expect.poll(() => checks).toBeGreaterThan(before);
+  void api;
+});

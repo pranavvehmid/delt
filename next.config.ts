@@ -23,7 +23,8 @@ const csp = [
   "base-uri 'self'",
   "form-action 'self' https://accounts.google.com",
   "frame-ancestors 'none'",
-  "upgrade-insecure-requests",
+  // no upgrade-insecure-requests: HSTS already forces https, and in WebKit it also upgrades
+  // http://localhost, which broke every Safari-engine test (#34 follow-up)
 ].join("; ");
 
 const securityHeaders = [
