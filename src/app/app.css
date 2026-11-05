@@ -846,3 +846,12 @@ body { min-height: 100dvh; }
 .doc li { margin: 4px 0; }
 .doc a:not(.logo) { color: inherit; text-decoration: underline; text-underline-offset: 3px; }
 .signin .fine a { color: inherit; text-decoration: underline; text-underline-offset: 3px; }
+
+/* Extra dark readability (user report): dot-matrix and mono need more weight and less spacing on pure black */
+:root[data-look="minimal"][data-tone="black"] .mast button { font-weight: 900; letter-spacing: -0.01em; color: rgb(var(--ink) / 0.66); }
+:root[data-look="minimal"][data-tone="black"] .mast button.on { color: rgb(var(--ink)); }
+:root[data-look="minimal"][data-tone="black"] :is(.dayhead, .from, .sync, .lbl, .ap-lbl, .due, .donemark) { letter-spacing: 0.03em; }
+:root[data-look="minimal"][data-tone="black"] .sync { color: rgb(var(--ink) / 0.72); }
+:root[data-look="minimal"][data-tone="black"] .avatar.me { background: transparent; color: rgb(var(--ink)); box-shadow: inset 0 0 0 1.5px rgb(var(--ink) / 0.85); }
+/* Glyph: the day's counts in the body face, not tiny dim dots */
+:root[data-look="glyph"] .dayhead .muted { font-family: var(--font); font-weight: 500; font-size: 13px; letter-spacing: 0; color: var(--muted); }
