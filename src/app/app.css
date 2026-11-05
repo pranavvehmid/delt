@@ -1002,3 +1002,7 @@ body { min-height: 100dvh; }
 /* #56: the welcome panel */
 .welcome h2 { margin: 0 0 6px; font-size: 24px; }
 .welcome-steps { margin: 14px 0 18px; padding-left: 20px; display: flex; flex-direction: column; gap: 12px; font-size: 14.5px; line-height: 1.5; }
+
+/* #57: empty states that offer a way out, and marked search matches */
+.empty-acts { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin-top: 10px; }
+mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: inherit; padding: 0 1px; }

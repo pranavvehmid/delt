@@ -654,9 +654,34 @@ export default function InboxApp({ email, name, signOutAction, signInAction }: P
             <Skeleton />
           ) : shown.length === 0 ? (
             <Empty
-              title={query && searching ? "Searching…" : query ? "No results" : unreadOnly ? "No unread mail" : "No mail here"}
-              hint={query && !searching ? "Try a sender or a word from the subject." : ""}
-            />
+              title={
+                query && searching
+                  ? "Searching…"
+                  : query
+                    ? `Nothing matches “${query.trim()}”${pile !== "all" || unreadOnly ? ` in ${[pile !== "all" ? pileLabel(pile) : "", unreadOnly ? "unread mail" : ""].filter(Boolean).join(", ")}` : ""}`
+                    : unreadOnly
+                      ? "No unread mail"
+                      : "No mail here"
+              }
+              hint={query && !searching && pile === "all" && !unreadOnly ? "Try a sender or a word from the subject." : ""}
+            >
+              {/* #57: one tap to widen an empty search or filter */}
+              {!searching && pile !== "all" && (
+                <button className="pillbtn" onClick={() => setPile("all")}>
+                  {query ? "Search all piles" : "Show all piles"}
+                </button>
+              )}
+              {!searching && unreadOnly && (
+                <button className="pillbtn" onClick={() => setUnreadOnly(false)}>
+                  Include read mail
+                </button>
+              )}
+              {query && !searching && (
+                <button className="pillbtn" onClick={() => setQuery("")}>
+                  Clear search
+                </button>
+              )}
+            </Empty>
           ) : (
             <>
             {swipeHint && route.tab === "inbox" && (
@@ -676,7 +701,7 @@ export default function InboxApp({ email, name, signOutAction, signInAction }: P
                 </h2>
                 <ul className="rows">
                   {pinned.map((m) => (
-                    <MailRow key={m.id} m={m} now={now} pos={posOf.get(m.id) ?? 0} leaderAt={leaderAt} on={rowActions} current={route.mailId === m.id} />
+                    <MailRow key={m.id} m={m} now={now} pos={posOf.get(m.id) ?? 0} leaderAt={leaderAt} on={rowActions} current={route.mailId === m.id} query={query} />
                   ))}
                 </ul>
               </section>
@@ -691,7 +716,7 @@ export default function InboxApp({ email, name, signOutAction, signInAction }: P
                 </h2>
                 <ul className="rows">
                   {d.mails.map((m) => (
-                    <MailRow key={m.id} m={m} now={now} pos={posOf.get(m.id) ?? 0} leaderAt={leaderAt} on={rowActions} current={route.mailId === m.id} />
+                    <MailRow key={m.id} m={m} now={now} pos={posOf.get(m.id) ?? 0} leaderAt={leaderAt} on={rowActions} current={route.mailId === m.id} query={query} />
                   ))}
                 </ul>
               </section>
@@ -871,7 +896,7 @@ function apply(m: EmailRow, p: { read?: boolean; is_done?: boolean; priority?: P
 type RowActions = { open: (m: EmailRow) => void; read: (m: EmailRow) => void; done: (m: EmailRow) => void };
 
 // memo: a row re-renders only when its own mail, position, gap or the minute changes (#20)
-const MailRow = memo(function MailRow({ m, now, pos = 0, leaderAt = "", on, current = false }: { m: EmailRow; now: number; pos?: number; leaderAt?: string; on: RowActions; current?: boolean }) {
+const MailRow = memo(function MailRow({ m, now, pos = 0, leaderAt = "", on, current = false, query = "" }: { m: EmailRow; now: number; pos?: number; leaderAt?: string; on: RowActions; current?: boolean; query?: string }) {
   const onOpen = () => on.open(m), onRead = () => on.read(m), onDone = () => on.done(m);
   const [dx, setDx] = useState(0);
   const drag = useRef<{ x: number; y: number; on: boolean; moved: boolean; dx: number } | null>(null);
@@ -952,10 +977,14 @@ const MailRow = memo(function MailRow({ m, now, pos = 0, leaderAt = "", on, curr
               <span className="code" aria-hidden="true">
                 {senderCode(m.from_name)}
               </span>
-              <span className="from ell">{sender}</span>
+              <span className="from ell">
+                <Marked text={sender} query={query} />
+              </span>
               <span className="time">{timeOfDay(m.received_at)}</span>
             </span>
-            <span className="subj ell">{cleanSubject(m.subject)}</span>
+            <span className="subj ell">
+              <Marked text={cleanSubject(m.subject)} query={query} />
+            </span>
             <span className="sum ell" id={`sum-${m.id}`}>
               {m.summary || m.snippet}
             </span>
@@ -1005,11 +1034,27 @@ function Skeleton() {
   );
 }
 
-function Empty({ title, hint }: { title: string; hint: string }) {
+function Empty({ title, hint, children }: { title: string; hint: string; children?: React.ReactNode }) {
   return (
-    <div className="empty">
+    <div className="empty" role="status">
       <b>{title}</b>
       {hint && <span className="muted">{hint}</span>}
+      {children && <span className="empty-acts">{children}</span>}
     </div>
+  );
+}
+
+/** #57: the searched words, marked in a subject or sender. */
+function Marked({ text, query }: { text: string; query: string }) {
+  const q = query.trim();
+  if (q.length < 2) return <>{text}</>;
+  const i = text.toLowerCase().indexOf(q.toLowerCase());
+  if (i < 0) return <>{text}</>;
+  return (
+    <>
+      {text.slice(0, i)}
+      <mark>{text.slice(i, i + q.length)}</mark>
+      {text.slice(i + q.length)}
+    </>
   );
 }

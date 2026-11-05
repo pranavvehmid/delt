@@ -442,3 +442,14 @@ test("a first-time student gets a short welcome, once (#56)", async ({ page }) =
   await expect(page.locator(row("cat1"))).toBeVisible();
   await expect(page.getByRole("dialog", { name: "Welcome to DELT" })).toHaveCount(0);
 });
+
+test("an empty search says what was searched and offers to widen it; matches are marked (#57)", async ({ page }) => {
+  await mockApi(page, smallInbox());
+  await page.goto("/e2e");
+  await page.getByRole("navigation", { name: "Filter by pile" }).getByRole("button", { name: /^Noise/ }).click();
+  await page.getByRole("textbox", { name: "Search mail" }).fill("hostel");
+  await expect(page.getByText("Nothing matches “hostel” in Noise")).toBeVisible();
+  await page.getByRole("button", { name: "Search all piles" }).click();
+  await expect(page.locator(row("fee"))).toBeVisible();
+  await expect(page.locator(row("fee")).locator("mark")).toHaveText("Hostel");
+});
