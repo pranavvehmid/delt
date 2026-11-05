@@ -41,6 +41,8 @@ const P = {
     /\bcircular\b/, /\bnotice\b/, /\bannouncement\b/, /\btime ?table\b/, /\bholiday\b/, /\bvacation\b/, /\binstructional day\b/,
     /\bhostel\b/, /\bmess\b/, /\bresults?\b/, /\bacademic calendar\b/, /\bclass(es)? (cancelled|rescheduled|shifted|relocated)\b/,
     /\brelocation\b/, /\bbus (facility|service)\b/, /\btransport\b/,
+    // #24: day-to-day campus notices (timings, outages, venue changes)
+    /\btimings?\b/, /\bshut ?down\b/, /\binterruption\b/, /\boutage\b/, /\bmaintenance\b/, /\bchange of venue\b/, /\bvenue (change|changed)\b/,
   ],
   decision: [/\bhas been decided\b/, /\bis hereby\b/, /\bmandatory\b/, /\bcompulsory\b/, /\bpostponed\b/, /\brescheduled\b/, /\bwith immediate effect\b/],
   academic: [/\bassignment\b/, /\bdigital assignment\b/, /\bsyllabus\b/, /\bproctor\b/, /\bfaculty advisor\b/, /\bvtop\b/, /\bworkbook\b/, /\bcourse (page|material|enrol)/, /\bda ?\d{1,2}\b/, /\bwelcome to [a-z]{3,6}\d{3}/, /\b[a-z]{4,6}\d{3}[a-z]?\b/],
@@ -234,11 +236,16 @@ export function classifyByRules(
   if (OPTIONAL_COURSE.test(subject)) return out("later", "academic", "Optional course or minor", 0.75);
 
   // 7. Things you must act on.
+  // #24: results being out is news, not an exam to prepare for
+  if (/\b(results?|marks|grades?)\b.{0,30}\b(published|declared|announced|released|uploaded|available|out)\b/.test(subject)) {
+    return out("priority", "announcement", "Results are out", 0.8);
+  }
   if (inSubject("exam")) return out("very_important", "exam", "Exam, quiz or test", 0.85);
   if (inSubject("interview")) return out("very_important", "interview", "Interview or selection round", 0.85);
   // Paid programmes and certificate courses from other institutions: optional, so "later".
   if (PROGRAMME.test(subject) && !/\bffcs\b|\bcourse registration\b|\bvtop\b/.test(subject)) {
-    return out("later", "club_event", "Optional programme", 0.75);
+    // #24: a course sold by an outside sender is an ad
+    return fromVit ? out("later", "club_event", "Optional programme", 0.75) : out("noise", "promotion", "Paid course from outside VIT", 0.75);
   }
   if (inText("fee") && (upcoming || inSubject("fee"))) return out("very_important", "deadline", "Fee payment", 0.85);
   if (inText("attendance") && fromVit) return out("very_important", "academic", "Attendance warning", 0.8);
