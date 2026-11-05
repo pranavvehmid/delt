@@ -139,3 +139,30 @@ for (const look of ["minimal", "glyph", "grid"] as const) {
     }
   });
 }
+
+// #63: no text that carries information is under 12.5 px on a phone, in any look.
+for (const look of ["minimal", "glyph", "grid"] as const) {
+  test(`no information text under 12.5 px in the ${look} inbox and deadlines (#63)`, async ({ page }, info) => {
+    test.skip(info.project.name !== "phone", "phones only");
+    await page.addInitScript((l) => localStorage.setItem("delt-prefs", JSON.stringify({ look: l, mode: "light", accent: "auto", size: "normal", density: "comfortable" })), look);
+    await mockApi(page, smallInbox());
+    for (const tab of ["", "#/deadlines"]) {
+      await page.goto("/e2e" + tab);
+      await expect(page.locator("li.row").first()).toBeVisible();
+      const small = await page.evaluate(() => {
+        const out: string[] = [];
+        const w = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+        while (w.nextNode()) {
+          const t = w.currentNode as Text;
+          const el = t.parentElement!;
+          if (!t.data.trim() || el.closest(".sr-only")) continue;
+          if (!el.getBoundingClientRect().width || getComputedStyle(el).visibility === "hidden") continue;
+          const size = parseFloat(getComputedStyle(el).fontSize);
+          if (size < 12.5) out.push(`${el.className || el.tagName} "${t.data.trim().slice(0, 20)}" ${size}px`);
+        }
+        return [...new Set(out)];
+      });
+      expect(small, tab || "inbox").toEqual([]);
+    }
+  });
+}

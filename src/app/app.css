@@ -1053,3 +1053,10 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   }
 }
 .swipe-hint .link { white-space: nowrap; }
+
+/* #63: nothing that carries information is under 12.5 px. Comes last so it wins over each
+   look's own sizes; uppercase labels get less tracking so they don't grow too wide. */
+:root:not([data-look="glyph"]) :is(.sync, .sync span, .mast sup, .dayhead, .row .from, .finish, .foot, .when, .gap) { font-size: 12.5px !important; }
+:root:not([data-look="glyph"]) :is(.dayhead, .row .from, .sync) { letter-spacing: 0.06em !important; }
+:root[data-look="glyph"] :is(.fchip .n, .line1 .time, .row .tag, .due, .finish, .foot) { font-size: 12.5px !important; }
+:is(.badge, .datebox small, .iconbtn.labelled small, .meta .muted) { font-size: 12.5px !important; }
