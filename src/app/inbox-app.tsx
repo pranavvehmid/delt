@@ -7,7 +7,7 @@ import { memo, useCallback, useEffect, useMemo, useRef, useState, type PointerEv
 import type { EmailRow, Priority } from "@/lib/supabase";
 import {
   PAGE_SIZE, PILES, BUCKETS, ago, cleanSender, cleanSubject, deadlineBuckets, dueLevel, dueText, filterMail, groupByDay, initials, mergeFresh, mergeMore, oldestReceived,
-  openDeadlines, pileCounts, pileLabel, shortTime, timeOfDay, gapText, senderCode, F,
+  openDeadlines, pileCounts, pileLabel, shortTime, timeOfDay, gapText, senderCode, F, needsYou,
 } from "@/lib/inbox";
 import { calendarLink } from "@/lib/insights";
 import { cacheKey, clearOffline, packCache, unpackCache } from "@/lib/offline";
@@ -345,9 +345,15 @@ export default function InboxApp({ email, name, signOutAction, signInAction }: P
   const counts = useMemo(() => pileCounts(all), [all]);
   const searchable = useMemo(() => (hits ? mergeMore(all, hits) : all), [all, hits]);
   const shown = useMemo(() => filterMail(searchable, { pile, unreadOnly, query }), [searchable, pile, unreadOnly, query]);
-  const days = useMemo(() => groupByDay(shown, now), [shown, now]);
+  // #23: in All (no search), what needs you comes first; those mails move up instead of repeating
+  const pinned = useMemo(() => (pile === "all" && !query.trim() ? needsYou(shown, now) : []), [pile, query, shown, now]);
+  const rest = useMemo(() => {
+    const ids = new Set(pinned.map((m) => m.id));
+    return ids.size ? shown.filter((m) => !ids.has(m.id)) : shown;
+  }, [shown, pinned]);
+  const days = useMemo(() => groupByDay(rest, now), [rest, now]);
   // Grid look: each row's place in the list, and the newest mail to measure gaps from
-  const posOf = useMemo(() => new Map(shown.map((m, i) => [m.id, i + 1])), [shown]);
+  const posOf = useMemo(() => new Map([...pinned, ...rest].map((m, i) => [m.id, i + 1])), [pinned, rest]);
   const leaderAt = shown[0]?.received_at ?? "";
   const buckets = useMemo(() => deadlineBuckets(mergeMore(all, due), now), [all, due, now]);
   const dueCount = openDeadlines(buckets);
@@ -570,7 +576,20 @@ export default function InboxApp({ email, name, signOutAction, signInAction }: P
               hint={query && !searching ? "Try a sender or a word from the subject." : ""}
             />
           ) : (
-            days.map((d) => (
+            <>
+            {pinned.length > 0 && (
+              <section className="day needs" aria-labelledby="needs-you">
+                <h2 className="dayhead" id="needs-you">
+                  Needs you
+                </h2>
+                <ul className="rows">
+                  {pinned.map((m) => (
+                    <MailRow key={m.id} m={m} now={now} pos={posOf.get(m.id) ?? 0} leaderAt={leaderAt} on={rowActions} />
+                  ))}
+                </ul>
+              </section>
+            )}
+            {days.map((d) => (
               <section key={d.key} className="day">
                 <h2 className="dayhead">
                   {d.label}
@@ -584,7 +603,8 @@ export default function InboxApp({ email, name, signOutAction, signInAction }: P
                   ))}
                 </ul>
               </section>
-            ))
+            ))}
+            </>
           )}
           {mails !== null && !query.trim() && (
             <div ref={sentinel} className="foot muted" aria-live="polite">

@@ -274,3 +274,15 @@ export function gapText(receivedAt: string, leaderAt: string): string {
   if (h >= 1) return `+${h}H${m % 60 ? ` ${m % 60}M` : ""}`;
   return `+${m}M`;
 }
+
+// ---------- #23: what needs you, above everything else ----------
+/** Unread Urgent mail, and anything due within 48 h (or up to a day overdue) that isn't done or Noise.
+ *  Due soonest first, then newest. At most `max`. */
+export function needsYou<T extends Mail>(mails: T[], now: number, max = 5): T[] {
+  const dueAt = (m: T) => (m.deadline ? Date.parse(m.deadline) : Infinity);
+  const soon = (m: T) => m.deadline && !m.is_done && m.priority !== "noise" && dueAt(m) <= now + 2 * DAY && dueAt(m) >= now - DAY;
+  return mails
+    .filter((m) => (m.unread && m.priority === "very_important" && !m.is_done) || soon(m))
+    .sort((a, b) => dueAt(a) - dueAt(b) || Date.parse(b.received_at) - Date.parse(a.received_at))
+    .slice(0, max);
+}

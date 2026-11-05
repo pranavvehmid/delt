@@ -221,3 +221,22 @@ test("rows show the time of day in IST, lowercase", () => {
   assert.equal(timeOfDay("2026-11-04T15:37:00Z"), "9:07 pm");
   assert.equal(timeOfDay("2026-11-04T03:30:00Z"), "9:00 am");
 });
+
+// ---------- #23: Needs you ----------
+import { needsYou } from "../src/lib/inbox";
+test("needs you: unread urgent and soon-due mail, due soonest first, nothing done or noise", () => {
+  const NOW_ = Date.parse("2026-11-05T12:00:00Z");
+  const h = (n: number) => new Date(NOW_ + n * 3600_000).toISOString();
+  const mails = [
+    at("urgent-unread", 1, { priority: "very_important", unread: true }),
+    at("urgent-read", 1, { priority: "very_important", unread: false }),
+    at("due-30h", 5, { priority: "priority", deadline: h(30) }),
+    at("due-10h", 9, { priority: "later", deadline: h(10) }),
+    at("due-done", 2, { priority: "priority", deadline: h(5), is_done: true }),
+    at("due-noise", 2, { priority: "noise", deadline: h(5) }),
+    at("due-far", 2, { priority: "priority", deadline: h(100) }),
+    at("overdue-2d", 2, { priority: "priority", deadline: h(-48) }),
+  ];
+  assert.deepEqual(needsYou(mails, NOW_).map((m) => m.id), ["due-10h", "due-30h", "urgent-unread"]);
+  assert.equal(needsYou(mails, NOW_, 2).length, 2);
+});

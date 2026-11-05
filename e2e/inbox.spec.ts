@@ -276,3 +276,18 @@ test("Mark all read can be undone (#47)", async ({ page }) => {
   expect(api.bulk[1].read).toBe(false);
   expect(new Set(api.bulk[1].ids)).toEqual(new Set(api.bulk[0].ids));
 });
+
+test("All starts with what needs you: due soon first, then unread urgent; not shown when filtering (#23)", async ({ page }) => {
+  await mockApi(page, smallInbox());
+  await page.goto("/e2e");
+  const needs = page.getByRole("region", { name: "Needs you" });
+  await expect(needs.locator("li.row")).toHaveCount(2);
+  await expect(needs.locator("li.row").first()).toHaveAttribute("data-mail", "fee");
+  await expect(needs.locator("li.row").nth(1)).toHaveAttribute("data-mail", "cat1");
+  await expect(page.locator('li.row[data-mail="fee"]')).toHaveCount(1); // moved up, not repeated
+  await page.getByRole("navigation", { name: "Filter by pile" }).getByRole("button", { name: /^Urgent/ }).click();
+  await expect(needs).toHaveCount(0);
+  await page.getByRole("navigation", { name: "Filter by pile" }).getByRole("button", { name: /^All/ }).click();
+  await page.getByRole("textbox", { name: "Search mail" }).fill("hostel");
+  await expect(needs).toHaveCount(0);
+});
