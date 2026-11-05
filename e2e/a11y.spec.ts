@@ -166,3 +166,15 @@ for (const look of ["minimal", "glyph", "grid"] as const) {
     }
   });
 }
+
+// #64: the selected All chip is readable in Glyph in every mode
+for (const mode of ["light", "dark", "black"] as const) {
+  test(`the selected All chip has enough contrast in Glyph ${mode} (#64)`, async ({ page }) => {
+    await page.addInitScript((m) => localStorage.setItem("delt-prefs", JSON.stringify({ look: "glyph", mode: m, accent: "auto", size: "normal", density: "comfortable" })), mode);
+    await mockApi(page, smallInbox());
+    await page.goto("/e2e");
+    await expect(page.locator(".fchip.p-all.on")).toBeVisible();
+    const r = await new AxeBuilder({ page }).include(".fchip.p-all.on").withRules(["color-contrast"]).analyze();
+    expect(r.violations.map((v) => v.nodes.map((n) => n.failureSummary))).toEqual([]);
+  });
+}

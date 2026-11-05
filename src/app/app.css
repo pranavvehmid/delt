@@ -1060,3 +1060,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 :root:not([data-look="glyph"]) :is(.dayhead, .row .from, .sync) { letter-spacing: 0.06em !important; }
 :root[data-look="glyph"] :is(.fchip .n, .line1 .time, .row .tag, .due, .finish, .foot) { font-size: 12.5px !important; }
 :is(.badge, .datebox small, .iconbtn.labelled small, .meta .muted) { font-size: 12.5px !important; }
+
+/* #64: the selected All chip is filled with the accent, which is dark ink in Glyph light,
+   so its words use the accent's own text colour instead of hard-coded ink */
+:root[data-look="glyph"] .fchip.p-all.on, :root[data-look="glyph"] .fchip.p-all.on .n { color: var(--on-accent); }
