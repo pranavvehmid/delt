@@ -493,3 +493,10 @@ test("a filter change draws the first rows at once and the rest right after (#60
   await chips.getByRole("button", { name: /^All/ }).click();
   await expect(page.locator("li.row")).toHaveCount(total);
 });
+
+test("the privacy page has bullets and space between paragraphs (#66)", async ({ page }) => {
+  await page.goto("/privacy");
+  const doc = page.locator(".doc");
+  expect(await doc.locator("ul").first().evaluate((el) => getComputedStyle(el).listStyleType)).toBe("disc");
+  expect(await doc.locator("p + p").first().evaluate((el) => parseFloat(getComputedStyle(el).marginTop))).toBeGreaterThan(8);
+});

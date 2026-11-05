@@ -1085,3 +1085,11 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   .mv-short { display: inline; }
   .mv-gmail svg { width: 17px; height: 17px; }
 }
+
+/* #66: the privacy page reads like a document: bullets, space between paragraphs, and
+   links in the accent that stay readable in every mode */
+.doc ul { list-style: disc; padding-left: 22px; }
+.doc ul li::marker { color: var(--muted); }
+.doc p + p, .doc p + ul, .doc ul + p { margin-top: 0.8em; }
+.doc a:not(.logo) { color: var(--accent); text-decoration-color: color-mix(in srgb, var(--accent) 45%, transparent); }
+:root[data-look="glyph"] .doc a:not(.logo), :root[data-look="minimal"] .doc a:not(.logo) { color: var(--text); text-decoration-color: currentColor; }
