@@ -170,3 +170,35 @@ export function wrongPileLink(subject: string, sender: string, pile: string) {
   const q = new URLSearchParams({ title: `Wrong pile: ${subject}`.slice(0, 120), labels: "sorting", body });
   return `https://github.com/pranavvehmid/delt/issues/new?${q.toString()}`;
 }
+
+// ---------- loading more than one page (issue #11) ----------
+export const PAGE_SIZE = 200;
+const newestFirst = (a: Mail, b: Mail) => Date.parse(b.received_at) - Date.parse(a.received_at);
+
+/** A fresh first page replaces the newest part of what's loaded; older pages already loaded stay. */
+export function mergeFresh<T extends Mail>(loaded: T[], page: T[], more: boolean): T[] {
+  if (!more || page.length === 0) return page; // the page is everything there is
+  const edge = Math.min(...page.map((m) => Date.parse(m.received_at)));
+  const ids = new Set(page.map((m) => m.id));
+  return [...page, ...loaded.filter((m) => Date.parse(m.received_at) < edge && !ids.has(m.id))].sort(newestFirst);
+}
+
+/** Adds an older page (or search results) without duplicates. Mail already loaded wins, so
+ *  a change made on screen isn't undone by an older copy. */
+export function mergeMore<T extends Mail>(loaded: T[], extra: T[]): T[] {
+  const byId = new Map(loaded.map((m) => [m.id, m]));
+  for (const m of extra) if (!byId.has(m.id)) byId.set(m.id, m);
+  return [...byId.values()].sort(newestFirst);
+}
+
+/** Where the next older page starts: the oldest loaded mail. */
+export const oldestReceived = (mails: Mail[]) =>
+  mails.length ? mails.reduce((o, m) => (Date.parse(m.received_at) < Date.parse(o) ? m.received_at : o), mails[0].received_at) : null;
+
+/** Search words made safe for the database filter: no commas, brackets, quotes or wildcards.
+ *  Words are joined by "%" so "b tech" also finds "B.Tech". Empty means no server search. */
+export function searchPattern(q: string): string {
+  const words = q.replace(/[%_*,()\\"'.:;]/g, " ").trim().split(/\s+/).filter(Boolean).slice(0, 6);
+  const text = words.join("%").slice(0, 80);
+  return text.length >= 2 ? `%${text}%` : "";
+}

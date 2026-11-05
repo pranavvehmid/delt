@@ -128,3 +128,47 @@ test("wrong-pile report link carries subject, sender and pile, nothing else", as
   assert.match(body, /public/);
   assert.doesNotMatch(body, /@/);
 });
+
+// ---------- issue #11: more than one page ----------
+import { mergeFresh, mergeMore, oldestReceived, searchPattern } from "../src/lib/inbox";
+const at = (id: string, hoursAgo: number, extra: Partial<Mail> = {}) =>
+  ({ id, from_name: "S", from_address: "s@vit.ac.in", subject: id, summary: "", snippet: "", received_at: new Date(Date.parse("2026-11-05T12:00:00Z") - hoursAgo * 3600_000).toISOString(), priority: "later", category: "other", deadline: null, is_done: false, unread: false, ...extra }) as Mail;
+
+test("a fresh first page keeps older pages that were already loaded", () => {
+  const loaded = [at("n2", 0.5), at("n1", 1), at("o1", 50), at("o2", 60)];
+  const page = [at("new", 0), at("n1", 1, { unread: true })];
+  const out = mergeFresh(loaded, page, true);
+  assert.deepEqual(out.map((m) => m.id), ["new", "n1", "o1", "o2"]);
+  assert.equal(out[1].unread, true, "the fresh copy wins in the newest part");
+  // n2 is newer than the page edge but not in the page: it was deleted, so it goes
+  assert.ok(!out.some((m) => m.id === "n2"));
+});
+
+test("when the first page is everything, it replaces the list", () => {
+  assert.deepEqual(mergeFresh([at("x", 90)], [at("a", 1)], false).map((m) => m.id), ["a"]);
+  assert.deepEqual(mergeFresh([at("x", 90)], [], false), []);
+});
+
+test("older pages and search hits never duplicate mail or undo a change on screen", () => {
+  const loaded = [at("a", 1, { is_done: true }), at("b", 5)];
+  const out = mergeMore(loaded, [at("a", 1), at("c", 100), at("b", 5)]);
+  assert.deepEqual(out.map((m) => m.id), ["a", "b", "c"]);
+  assert.equal(out[0].is_done, true);
+});
+
+test("the next page starts at the oldest loaded mail", () => {
+  assert.equal(oldestReceived([at("a", 1), at("b", 70), at("c", 5)]), at("b", 70).received_at);
+  assert.equal(oldestReceived([]), null);
+});
+
+test("search text is made safe for the database filter", () => {
+  assert.equal(searchPattern("CAT-1"), "%CAT-1%");
+  assert.equal(searchPattern("b.tech"), "%b%tech%");
+  assert.equal(searchPattern("  register   by "), "%register%by%");
+  for (const evil of ["a,subject.eq.x", "x)or(true", "%%%", "_", "a'b\"c", "a*b"]) {
+    assert.doesNotMatch(searchPattern(evil).slice(1, -1), /[,()'"*_]|%%/, evil);
+  }
+  assert.equal(searchPattern(""), "");
+  assert.equal(searchPattern("a"), "");
+  assert.ok(searchPattern("x".repeat(500)).length <= 82);
+});
