@@ -13,6 +13,11 @@ concurrency:
   group: sync
   cancel-in-progress: false
 
+# Lets the job re-enable itself (see the last step).
+permissions:
+  actions: write
+  contents: read
+
 jobs:
   sync:
     runs-on: ubuntu-latest
@@ -33,3 +38,14 @@ jobs:
             if echo "$out" | jq -e '.error' > /dev/null; then echo "$out"; exit 1; fi
             [ "$remaining" -eq 0 ] && break
           done
+
+      # GitHub switches off scheduled workflows after 60 days with no commits. Re-enabling the
+      # workflow resets that clock, so background sync and notifications never stop silently (#36, #37).
+      - name: Keep this schedule alive
+        if: always() && github.event_name == 'schedule' # even if a sync round failed
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ "$(date -u +%d%H%M | cut -c1-4)" = "0100" ]; then
+            gh api -X PUT "repos/${{ github.repository }}/actions/workflows/sync.yml/enable" && echo "Schedule kept alive"
+          fi

@@ -133,7 +133,7 @@ Create the tables by running [`supabase/schema.sql`](supabase/schema.sql) in the
 
 Open tasks are in [Issues](https://github.com/pranavvehmid/delt/issues). Ones marked [good first issue](https://github.com/pranavvehmid/delt/labels/good%20first%20issue) are small. If you're a VIT student, the most useful thing is trying it on your own inbox: see [docs/TESTING.md](docs/TESTING.md).
 
-Setup steps and rules for pull requests are in [CONTRIBUTING.md](CONTRIBUTING.md).
+Setup steps and rules for pull requests are in [CONTRIBUTING.md](CONTRIBUTING.md). Running DELT, its secrets, and handing it over: [docs/OPERATIONS.md](docs/OPERATIONS.md).
 
 ## More
 
