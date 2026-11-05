@@ -950,3 +950,6 @@ body { min-height: 100dvh; }
 
 /* #23: the "Needs you" section at the top of All */
 .day.needs .dayhead { color: var(--due-soon); }
+
+/* #32: the hidden-images note above a mail */
+.mv-remote { margin: 0 0 10px; font-size: 13px; display: flex; gap: 8px; flex-wrap: wrap; align-items: baseline; }

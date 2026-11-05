@@ -19,10 +19,19 @@ const DARK_MAIL_KEY = "delt-mail-original";
 const KEEP = "img,video,picture,svg,canvas,iframe,[style*='background-image']";
 
 // The mail runs in a sandbox with no scripts at all; links open outside DELT.
-function frameDoc(m: FullMessage, darkBg: string | null) {
-  const body = m.html ?? `<pre>${linkify(esc(m.text ?? "(This mail has no readable text.)"))}</pre>`;
+// #32: a mail can't redirect the frame (meta refresh) or change where its links point (<base>).
+export const cleanMailHtml = (html: string) =>
+  html.replace(/<meta[^>]*http-equiv\s*=\s*["']?refresh[^>]*>/gi, "").replace(/<base\b[^>]*>/gi, "");
+/** Does the mail load anything from the internet (images, stylesheets, backgrounds)? */
+export const hasRemoteContent = (html: string | null) => !!html && /(src|href|background)\s*=\s*["']?\s*(https?:)?\/\/|url\(\s*["']?\s*(https?:)?\/\//i.test(html);
+
+// #32: by default nothing is fetched from the sender's servers (no tracking pixels, no IP or
+// read-time leak). "Load images" allows images only, never scripts or connections.
+function frameDoc(m: FullMessage, darkBg: string | null, remote: boolean) {
+  const body = m.html ? cleanMailHtml(m.html) : `<pre>${linkify(esc(m.text ?? "(This mail has no readable text.)"))}</pre>`;
+  const img = remote ? "img-src data: cid: https: http:" : "img-src data: cid:";
   return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="script-src 'none'; object-src 'none'; frame-src 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; ${img}; style-src 'unsafe-inline'; font-src data:; script-src 'none'; object-src 'none'; frame-src 'none'; form-action 'none'; connect-src 'none'; media-src 'none'">
 <base target="_blank">
 <style>
   html,body{margin:0;background:#fff;color:#1d1b22}
@@ -55,6 +64,7 @@ export default function MailView({
   // dark mail in dark themes, unless the student asked for the original colours
   const [darkTheme, setDarkTheme] = useState(false);
   const [original, setOriginal] = useState(false);
+  const [remote, setRemote] = useState(false); // #32: images load only when asked
   const [darkBg, setDarkBg] = useState<string | null>(null);
   useEffect(() => {
     const read = () => {
@@ -85,6 +95,7 @@ export default function MailView({
     let alive = true;
     setMsg(null);
     setError("");
+    setRemote(false);
     fetch(`/api/emails/${encodeURIComponent(id)}`)
       .then(async (r) => {
         const d = await r.json().catch(() => ({}));
@@ -221,6 +232,14 @@ export default function MailView({
               </div>
             ) : (
               <>
+              {!remote && hasRemoteContent(msg.html) && (
+                <p className="mv-remote">
+                  <span className="muted">Images are hidden so the sender can&apos;t tell you opened this.</span>{" "}
+                  <button className="link" onClick={() => setRemote(true)}>
+                    Load images
+                  </button>
+                </p>
+              )}
               {darkTheme && (
                 <button className="mv-colours link" onClick={toggleOriginal} aria-pressed={original}>
                   {original ? "Show dark" : "Original colours"}
@@ -233,7 +252,7 @@ export default function MailView({
                 // same-origin only so the height can be measured; no allow-scripts, so nothing in the mail can run
                 sandbox="allow-same-origin allow-popups allow-popups-to-escape-sandbox"
                 referrerPolicy="no-referrer"
-                srcDoc={frameDoc(msg, dimMail ? darkBg : null)}
+                srcDoc={frameDoc(msg, dimMail ? darkBg : null, remote)}
                 onLoad={fit}
                 style={{ height }}
               />

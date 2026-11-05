@@ -291,3 +291,18 @@ test("All starts with what needs you: due soon first, then unread urgent; not sh
   await page.getByRole("textbox", { name: "Search mail" }).fill("hostel");
   await expect(needs).toHaveCount(0);
 });
+
+test("a mail fetches nothing from the sender until Load images, and can't redirect itself (#32)", async ({ page }) => {
+  await mockApi(page, smallInbox());
+  const hits: string[] = [];
+  await page.route("https://tracker.example/**", (r) => (hits.push(r.request().url()), r.fulfill({ contentType: "image/gif", body: Buffer.from("R0lGODlhAQABAAAAACw=", "base64") })));
+  await page.route("https://phish.example/**", (r) => (hits.push(r.request().url()), r.fulfill({ body: "phish" })));
+  await page.goto("/e2e");
+  await page.locator(row("webinar")).locator(".row-main").click();
+  await expect(page.frameLocator(".mv-frame").getByText("Join us online.")).toBeVisible();
+  await page.waitForTimeout(800);
+  expect(hits).toEqual([]);
+  await page.getByRole("button", { name: "Load images" }).click();
+  await expect.poll(() => hits.filter((h) => h.includes("tracker")).length).toBeGreaterThan(0);
+  expect(hits.some((h) => h.includes("phish"))).toBe(false);
+});

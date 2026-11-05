@@ -140,7 +140,7 @@ export async function mockApi(page: Page, mails: FakeMail[], opts: { reauth?: bo
       const m = api.mails.find((x) => x.id === id);
       if (!m) return route.fulfill(json({ error: "Not found" }, 404));
       return route.fulfill(
-        json({ subject: m.subject, from: m.from_name, to: ME, cc: "", date: m.received_at, html: /newsletter/i.test(m.subject) ? Array.from({ length: 40 }, (_, i) => `<p>Paragraph ${i + 1} of a long newsletter.</p>`).join("") : `<p>Full text of <b>${m.subject}</b>.</p>`, text: null, attachments: [], unsubscribe: null }),
+        json({ subject: m.subject, from: m.from_name, to: ME, cc: "", date: m.received_at, html: /webinar/i.test(m.subject) ? `<p>Join us online.</p><img src="https://tracker.example/pixel.gif" alt=""><meta http-equiv="refresh" content="0;url=https://phish.example/">` : /newsletter/i.test(m.subject) ? Array.from({ length: 40 }, (_, i) => `<p>Paragraph ${i + 1} of a long newsletter.</p>`).join("") : `<p>Full text of <b>${m.subject}</b>.</p>`, text: null, attachments: [], unsubscribe: null }),
       );
     }
 
