@@ -39,6 +39,17 @@ export default function InboxApp({ email, name, signOutAction, signInAction }: P
   const [searching, setSearching] = useState(false);
   const [due, setDue] = useState<EmailRow[]>([]);
   const [reauth, setReauth] = useState(false);
+  // #48: wide screens read mail in a pane beside the list
+  const [wide, setWide] = useState(false);
+  const wideRef = useRef(false);
+  wideRef.current = wide;
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 1000px)");
+    const on = () => setWide(mq.matches);
+    on();
+    mq.addEventListener("change", on);
+    return () => mq.removeEventListener("change", on);
+  }, []);
   const [syncProblem, setSyncProblem] = useState<string | null>(null); // #40
   // #31: null = not asked yet, so the app asks once; undefined = unknown (older database)
   const [aiConsent, setAiConsent] = useState<boolean | null | undefined>(undefined);
@@ -87,7 +98,9 @@ export default function InboxApp({ email, name, signOutAction, signInAction }: P
     location.hash = `#/mail/${encodeURIComponent(m.id)}`;
     if (m.unread) patch(m.id, { read: true }, true);
   };
-  const closeMail = () => (history.length > 1 && route.mailId ? history.back() : (location.hash = `#/${route.tab}`));
+  // On a phone, closing goes Back (so the phone's Back button and ours agree). In the wide-screen
+  // pane you may have clicked through several mails, so closing goes straight to the list (#48).
+  const closeMail = () => (!wideRef.current && history.length > 1 && route.mailId ? history.back() : (location.hash = `#/${route.tab}`));
 
   // ---------- data + sync ----------
   const mailsRef = useRef<EmailRow[] | null>(null);
@@ -396,7 +409,7 @@ export default function InboxApp({ email, name, signOutAction, signInAction }: P
   const gmailLink = (m: EmailRow) => `https://mail.google.com/mail/?authuser=${encodeURIComponent(email)}#all/${m.thread_id ?? m.id}`;
 
   return (
-    <div className="shell">
+    <div className={`shell ${route.mailId && wide ? "reading" : ""}`}>
       {/* ---------- top bar ---------- */}
       <header className="appbar">
         <a href="#/inbox" className="logo" onClick={() => goTab("inbox")} aria-label="DELT inbox">
@@ -586,7 +599,7 @@ export default function InboxApp({ email, name, signOutAction, signInAction }: P
                 </h2>
                 <ul className="rows">
                   {pinned.map((m) => (
-                    <MailRow key={m.id} m={m} now={now} pos={posOf.get(m.id) ?? 0} leaderAt={leaderAt} on={rowActions} />
+                    <MailRow key={m.id} m={m} now={now} pos={posOf.get(m.id) ?? 0} leaderAt={leaderAt} on={rowActions} current={route.mailId === m.id} />
                   ))}
                 </ul>
               </section>
@@ -601,7 +614,7 @@ export default function InboxApp({ email, name, signOutAction, signInAction }: P
                 </h2>
                 <ul className="rows">
                   {d.mails.map((m) => (
-                    <MailRow key={m.id} m={m} now={now} pos={posOf.get(m.id) ?? 0} leaderAt={leaderAt} on={rowActions} />
+                    <MailRow key={m.id} m={m} now={now} pos={posOf.get(m.id) ?? 0} leaderAt={leaderAt} on={rowActions} current={route.mailId === m.id} />
                   ))}
                 </ul>
               </section>
@@ -703,6 +716,7 @@ export default function InboxApp({ email, name, signOutAction, signInAction }: P
       {/* ---------- full-screen mail ---------- */}
       {route.mailId && (
         <MailView
+          pane={wide}
           id={route.mailId}
           row={open}
           now={now}
@@ -762,7 +776,7 @@ function apply(m: EmailRow, p: { read?: boolean; is_done?: boolean; priority?: P
 type RowActions = { open: (m: EmailRow) => void; read: (m: EmailRow) => void; done: (m: EmailRow) => void };
 
 // memo: a row re-renders only when its own mail, position, gap or the minute changes (#20)
-const MailRow = memo(function MailRow({ m, now, pos = 0, leaderAt = "", on }: { m: EmailRow; now: number; pos?: number; leaderAt?: string; on: RowActions }) {
+const MailRow = memo(function MailRow({ m, now, pos = 0, leaderAt = "", on, current = false }: { m: EmailRow; now: number; pos?: number; leaderAt?: string; on: RowActions; current?: boolean }) {
   const onOpen = () => on.open(m), onRead = () => on.read(m), onDone = () => on.done(m);
   const [dx, setDx] = useState(0);
   const drag = useRef<{ x: number; y: number; on: boolean; moved: boolean; dx: number } | null>(null);
@@ -818,7 +832,7 @@ const MailRow = memo(function MailRow({ m, now, pos = 0, leaderAt = "", on }: { 
         <span>{dx > 0 ? (m.unread ? "Read" : "Unread") : m.is_done ? "Not done" : "Done"}</span>
       </div>
       <div className="row-slide" style={{ transform: dx ? `translateX(${dx}px)` : undefined }} onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={up}>
-        <button className="row-main" onClick={() => !moved.current && onOpen()} aria-label={label} aria-describedby={m.summary || m.snippet ? `sum-${m.id}` : undefined}>
+        <button className="row-main" onClick={() => !moved.current && onOpen()} aria-current={current || undefined} aria-label={label} aria-describedby={m.summary || m.snippet ? `sum-${m.id}` : undefined}>
           <span className={`avatar p-${m.priority}`} aria-hidden="true">
             {initials(sender)}
           </span>

@@ -335,3 +335,27 @@ test("a sync problem is shown in the header, not hidden (#40)", async ({ page })
   await expect(btn).toContainText("Last check had a problem");
   await expect(btn).toHaveAttribute("title", "Gmail /messages failed (500). Tap to try again.");
 });
+
+test("on a wide screen a mail opens beside the list, and you can click straight through (#48)", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 860 });
+  await mockApi(page, smallInbox());
+  await page.goto("/e2e");
+  await page.locator(row("cat1")).locator(".row-main").click();
+  const pane = page.locator(".mailview.pane");
+  await expect(pane).toBeVisible();
+  await expect(page.locator(row("fee"))).toBeVisible(); // the list is still there
+  expect((await pane.boundingBox())!.x).toBeGreaterThan(400);
+  await expect(page.locator(row("cat1")).locator(".row-main")).toHaveAttribute("aria-current", "true");
+  await page.locator(row("fee")).locator(".row-main").click();
+  await expect(page.locator("#mv-title")).toHaveText("Hostel fee payment: last date");
+  await page.keyboard.press("Escape");
+  await expect(pane).toHaveCount(0);
+});
+
+test("on a phone a mail still covers the screen", async ({ page, isMobile }) => {
+  test.skip(!isMobile, "phone only");
+  await mockApi(page, smallInbox());
+  await page.goto("/e2e");
+  await page.locator(row("cat1")).locator(".row-main").click();
+  await expect(page.locator(".mailview:not(.pane)")).toBeVisible();
+});

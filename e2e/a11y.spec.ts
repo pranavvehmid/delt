@@ -51,6 +51,7 @@ test.describe("keyboard only", () => {
   test.skip(({ isMobile }) => !!isMobile, "keyboard tests run on the desktop layout");
 
   test("open a mail with Enter, act on it, close with Esc, and land back on the same row", async ({ page }) => {
+    await page.setViewportSize({ width: 900, height: 860 }); // full-screen mail; wide screens use a pane (#48)
     const api = await mockApi(page, smallInbox());
     await page.goto("/e2e");
     const first = page.locator('li.row[data-mail="cat1"] .row-main');

@@ -44,7 +44,7 @@ ${darkBg ? `html,body{background:${darkBg}!important} ${KEEP}{filter:invert(1) h
 }
 
 export default function MailView({
-  id, row, now, gmailLink, onClose, onPatch, onReauth, restoreFocus,
+  id, row, now, gmailLink, onClose, onPatch, onReauth, restoreFocus, pane = false,
 }: {
   id: string;
   row: EmailRow | null;
@@ -54,6 +54,8 @@ export default function MailView({
   onPatch: (p: { read?: boolean; is_done?: boolean; priority?: Priority }) => void;
   onReauth?: () => void;
   restoreFocus?: () => HTMLElement | null;
+  /** #48: on wide screens the mail sits beside the list instead of covering it */
+  pane?: boolean;
 }) {
   const [msg, setMsg] = useState<FullMessage | null>(null);
   const [error, setError] = useState("");
@@ -89,7 +91,14 @@ export default function MailView({
       return !o;
     });
   };
-  useDialog(box, true, onClose, restoreFocus);
+  // A full-screen mail is a modal dialog; a reading pane isn't (the list stays usable), but Esc still closes it.
+  useDialog(box, !pane, onClose, restoreFocus);
+  useEffect(() => {
+    if (!pane) return;
+    const k = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+    window.addEventListener("keydown", k);
+    return () => window.removeEventListener("keydown", k);
+  }, [pane, onClose]);
 
   useEffect(() => {
     let alive = true;
@@ -115,9 +124,10 @@ export default function MailView({
 
   // Lock the page behind (Esc and focus are handled by useDialog).
   useEffect(() => {
+    if (pane) return; // the list beside a reading pane keeps scrolling
     document.documentElement.classList.add("locked");
     return () => document.documentElement.classList.remove("locked");
-  }, []);
+  }, [pane]);
 
   // Grow the frame to the mail's own height, so the whole mail scrolls as one page.
   function fit() {
@@ -135,7 +145,7 @@ export default function MailView({
   const sender = msg?.from || cleanSender(row?.from_name ?? null);
 
   return (
-    <div className={`mailview ${row ? `p-${row.priority}` : ""}`} role="dialog" aria-modal="true" aria-labelledby="mv-title" ref={box}>
+    <div className={`mailview ${pane ? "pane" : ""} ${row ? `p-${row.priority}` : ""}`} role="dialog" aria-modal={pane ? undefined : true} aria-labelledby="mv-title" ref={box}>
       <header className="mv-bar">
         <button className="iconbtn" onClick={onClose} aria-label="Back to list" title="Back">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" /></svg>

@@ -956,3 +956,10 @@ body { min-height: 100dvh; }
 
 /* #40: a sync problem is said, not hidden */
 .sync.warn { color: var(--due-soon); }
+
+/* #48: reading pane on wide screens. The list keeps a fixed column on the left. */
+@media (min-width: 1000px) {
+  .shell.reading { max-width: 460px; margin: 0; }
+  .mailview.pane { left: 460px; border-left: 1px solid var(--line); view-transition-name: mail; }
+  .shell.reading li.row:has(.row-main[aria-current="true"]) .row-slide { background: var(--surface); box-shadow: -10px 0 0 var(--surface), -13px 0 0 var(--accent); }
+}
