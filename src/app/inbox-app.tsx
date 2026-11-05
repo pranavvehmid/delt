@@ -507,8 +507,17 @@ export default function InboxApp({ email, name, signOutAction, signInAction }: P
                 >
                   Sorting rules
                 </button>
+                <a className="menu-item" href={`https://mail.google.com/mail/?authuser=${encodeURIComponent(email)}`} target="_blank" rel="noreferrer">
+                  Open Gmail ↗
+                </a>
+                {/* #53: everyday items, then signing out, then the one that can't be undone, kept apart */}
+                <hr className="menu-sep" />
+                <form action={signOutAction} onSubmit={() => void clearOffline()}>
+                  <button className="menu-item">Sign out</button>
+                </form>
+                <hr className="menu-sep" />
                 <button
-                  className="menu-item"
+                  className="menu-item danger"
                   onClick={() => {
                     setMenu(false);
                     setSettingsSection("data");
@@ -517,12 +526,6 @@ export default function InboxApp({ email, name, signOutAction, signInAction }: P
                 >
                   Delete my data
                 </button>
-                <a className="menu-item" href={`https://mail.google.com/mail/?authuser=${encodeURIComponent(email)}`} target="_blank" rel="noreferrer">
-                  Open Gmail ↗
-                </a>
-                <form action={signOutAction} onSubmit={() => void clearOffline()}>
-                  <button className="menu-item">Sign out</button>
-                </form>
               </div>
             )}
           </div>

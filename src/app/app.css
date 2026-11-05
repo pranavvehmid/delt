@@ -985,3 +985,7 @@ body { min-height: 100dvh; }
 /* #52: in Minimal, unread mail is marked, not just slightly bolder */
 :root[data-look="minimal"] .row.unread .subj::before { content: ""; display: inline-block; width: 7px; height: 7px; margin: 0 9px 0 0; vertical-align: 0.18em; background: rgb(var(--ink)); }
 :root[data-look="minimal"] .row.unread.ink-very_important .subj::before { background: var(--accent); }
+
+/* #53: account menu groups */
+.menu-sep { border: 0; border-top: 1px solid var(--line); margin: 4px 0; }
+.menu-item.danger { color: var(--due-soon); }

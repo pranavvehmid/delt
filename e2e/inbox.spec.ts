@@ -406,3 +406,12 @@ test("Minimal marks unread mail with a square, and read mail without (#52)", asy
   expect(await mark("hack")).toBe('""');
   expect(await mark("notice")).toBe("none");
 });
+
+test("the account menu keeps Delete my data apart, last (#53)", async ({ page }) => {
+  await mockApi(page, smallInbox());
+  await page.goto("/e2e");
+  await page.getByRole("button", { name: "Account" }).click();
+  const items = await page.locator("#acct-menu .menu-item").allTextContents();
+  expect(items.map((x) => x.trim())).toEqual(["Settings", "Sorting rules", "Open Gmail ↗", "Sign out", "Delete my data"]);
+  await expect(page.locator("#acct-menu .menu-sep")).toHaveCount(2);
+});
