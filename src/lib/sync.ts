@@ -15,9 +15,9 @@ import type { Classification, Correction } from "./types";
 import { profileFromName, type StudentProfile } from "./profile";
 import { COOLDOWN_MS, bumpUsage, planAI } from "./ai-quota";
 import { needsReseal, open, openToken, seal } from "./secret";
+import { BATCH, LIST_MAX, isGone, nextSyncedAt, planSync } from "./sync-plan";
 
 const FIRST_SYNC_DAYS = 14;
-const MAX_PER_SYNC = 150;
 const PARALLEL = 5;
 // Gemini's free tier allows only a few requests per minute, so AI calls are
 // spaced out and stop once this much of the run has passed.
@@ -32,6 +32,8 @@ export type SyncResult = {
   sortedByAI: number;
   rechecked: number;
   labeled: number;
+  /** New mail still to download; the app and the background job sync again until it's 0 (#28). */
+  backlog: number;
   errors: string[];
 };
 
@@ -39,7 +41,7 @@ const RANK = { very_important: 0, priority: 1, later: 2, noise: 3 } as const;
 
 export async function syncUser(email: string): Promise<SyncResult> {
   const started = Date.now();
-  const result: SyncResult = { email, fetched: 0, sorted: 0, sortedByAI: 0, rechecked: 0, labeled: 0, errors: [] };
+  const result: SyncResult = { email, fetched: 0, sorted: 0, sortedByAI: 0, rechecked: 0, labeled: 0, backlog: 0, errors: [] };
 
   const { data: user, error } = await db.from("users").select("*").eq("email", email).single();
   if (error || !user) throw new Error(`No saved Google account for ${email}. Sign in again.`);
@@ -64,14 +66,18 @@ export async function syncUser(email: string): Promise<SyncResult> {
     : Math.floor(Date.now() / 1000) - FIRST_SYNC_DAYS * 86400;
   const startedAt = new Date().toISOString();
 
-  const ids = await listMessageIds(token, `after:${since} -in:sent -in:drafts -in:chats`, MAX_PER_SYNC);
-  result.fetched = ids.length;
-
-  const { data: known } = ids.length
-    ? await db.from("emails").select("id").eq("user_email", email).in("id", ids)
-    : { data: [] as { id: string }[] };
-  const knownIds = new Set((known ?? []).map((r) => r.id));
-  const todo = ids.filter((id) => !knownIds.has(id));
+  // List every new id in the window (cheap), then download at most BATCH of the ones not saved yet.
+  const ids = await listMessageIds(token, `after:${since} -in:sent -in:drafts -in:chats`, LIST_MAX);
+  const knownIds = new Set<string>();
+  for (let i = 0; i < ids.length; i += 200) {
+    const { data: known } = await db.from("emails").select("id").eq("user_email", email).in("id", ids.slice(i, i + 200));
+    for (const r of known ?? []) knownIds.add(r.id);
+  }
+  const mailPlan = planSync(ids, knownIds, BATCH);
+  const todo = mailPlan.batch;
+  result.backlog = mailPlan.left;
+  if (mailPlan.listCapped) result.errors.push(`More than ${LIST_MAX} new mails at once; the oldest may be missing.`);
+  let failed = 0;
 
   // Your manual corrections teach both sorters.
   const { data: corrected } = await db
@@ -97,7 +103,9 @@ export async function syncUser(email: string): Promise<SyncResult> {
           const rules = classifyByRules(msg, corrections, profile);
           items.push({ msg, c: rules, rules, byAI: false });
         } catch (e) {
-          result.errors.push(`${id}: ${(e as Error).message}`);
+          const message = (e as Error).message;
+          if (!isGone(message)) failed++; // deleted since it was listed: nothing to save
+          result.errors.push(`${id}: ${message}`);
         }
       }),
     );
@@ -171,7 +179,10 @@ export async function syncUser(email: string): Promise<SyncResult> {
           unread: msg.unread,
           gmail_labeled: false,
         }, { onConflict: "user_email,id" }); // one row per student per mail
-        if (insertError) result.errors.push(`${msg.id}: ${insertError.message}`);
+        if (insertError) {
+          failed++;
+          result.errors.push(`${msg.id}: ${insertError.message}`);
+        }
         else result.sorted++;
       }),
     );
@@ -244,7 +255,10 @@ export async function syncUser(email: string): Promise<SyncResult> {
     result.errors.push(`Unread refresh: ${(e as Error).message}`);
   }
 
-  await db.from("users").update({ last_synced_at: startedAt }).eq("email", email);
+  // Only close the window when everything in it was saved (#28); otherwise the next run carries on.
+  result.fetched = result.sorted; // what the app reports as "N new mails"
+  const syncedAt = nextSyncedAt({ previous: user.last_synced_at ?? null, startedAt, left: mailPlan.left, failed });
+  if (syncedAt !== (user.last_synced_at ?? null)) await db.from("users").update({ last_synced_at: syncedAt }).eq("email", email);
   // Separate write, so a database without the usage columns yet can't block the sync time.
   if (!plan.own && aiUsed > 0) await db.from("users").update(bumpUsage(user.ai_day ?? null, user.ai_calls ?? 0, aiUsed, Date.now())).eq("email", email);
   return result;

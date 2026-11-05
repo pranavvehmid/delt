@@ -68,7 +68,7 @@ export async function listMessageIds(token: string, query: string, max = 100): P
   const ids: string[] = [];
   let pageToken: string | undefined;
   do {
-    const params = new URLSearchParams({ q: query, maxResults: String(Math.min(max - ids.length, 100)) });
+    const params = new URLSearchParams({ q: query, maxResults: String(Math.min(max - ids.length, 500)) });
     if (pageToken) params.set("pageToken", pageToken);
     const data = await gmail<{ messages?: { id: string }[]; nextPageToken?: string }>(
       token,

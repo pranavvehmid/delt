@@ -138,6 +138,8 @@ export default function InboxApp({ email, name, signOutAction, signInAction }: P
         if (d.reauth) setReauth(true);
         if (!(await load())) throw new Error("offline");
         setSyncedAt(Date.now());
+        // A big first sync comes in batches (#28): fetch the rest straight away.
+        if (d.backlog > 0) setTimeout(() => sync(), 1500);
         if (!d.reauth && (loud || d.fetched > 0)) setToast({ text: d.fetched > 0 ? `${d.fetched} new mail${d.fetched > 1 ? "s" : ""}` : "No new mail" });
       } catch {
         if (!navigator.onLine) setOffline(true);
