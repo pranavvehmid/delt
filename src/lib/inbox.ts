@@ -128,9 +128,12 @@ export function dueText(iso: string, now: number) {
   const t = Date.parse(iso);
   if (t < now) return "overdue";
   const days = Math.round((Date.parse(istDay(t)) - Date.parse(istDay(now))) / DAY);
-  const time = F.time.format(t).replace(":00", "");
-  if (days === 0) return `today ${time}`;
-  if (days === 1) return `tomorrow ${time}`;
+  // #54: one style everywhere: lowercase am/pm, no ":00", and no time at all for end-of-day deadlines
+  const hm = F.time.format(t).toLowerCase().replace(":00", "");
+  const endOfDay = /^(12 am|11:59 pm)$/.test(hm);
+  const time = endOfDay ? "" : ` ${hm}`;
+  if (days === 0) return `today${time}`;
+  if (days === 1) return `tomorrow${time}`;
   if (days < 7) return `in ${days} days`;
   return F.dayMonth.format(t);
 }

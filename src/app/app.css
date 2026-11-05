@@ -989,3 +989,6 @@ body { min-height: 100dvh; }
 /* #53: account menu groups */
 .menu-sep { border: 0; border-top: 1px solid var(--line); margin: 4px 0; }
 .menu-item.danger { color: var(--due-soon); }
+
+/* #54: due dates read like the rest of the app (lowercase am/pm), not in shouted capitals */
+:root:not([data-look="glyph"]) :is(.due, .donemark) { text-transform: none; letter-spacing: 0.01em; font-size: 12.5px; }

@@ -241,3 +241,11 @@ test("needs you: unread urgent and soon-due mail, due soonest first, nothing don
   assert.deepEqual(needsYou(mails, NOW_).map((m) => m.id), ["due-10h", "due-30h", "urgent-unread"]);
   assert.equal(needsYou(mails, NOW_, 2).length, 2);
 });
+
+test("due times: lowercase, no :00, and no time for end-of-day deadlines (#54)", () => {
+  const N = Date.parse("2026-11-05T10:00:00+05:30");
+  assert.equal(dueText("2026-11-05T18:00:00+05:30", N), "today 6 pm");
+  assert.equal(dueText("2026-11-06T09:30:00+05:30", N), "tomorrow 9:30 am");
+  assert.equal(dueText("2026-11-06T23:59:00+05:30", N), "tomorrow");
+  assert.equal(dueText("2026-11-07T00:00:00+05:30", N), "in 2 days");
+});
