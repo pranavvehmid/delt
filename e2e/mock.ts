@@ -86,7 +86,9 @@ export type Api = {
 };
 
 /** Answers every /api call from `mails`. Returns the fake server's state for assertions. */
-export async function mockApi(page: Page, mails: FakeMail[], opts: { reauth?: boolean; aiConsent?: boolean | null; syncProblem?: string } = {}): Promise<Api> {
+export async function mockApi(page: Page, mails: FakeMail[], opts: { reauth?: boolean; aiConsent?: boolean | null; syncProblem?: string; welcome?: boolean } = {}): Promise<Api> {
+  // the one-time welcome panel (#56) would cover every test; it has its own test
+  if (!opts.welcome) await page.addInitScript(() => localStorage.setItem("delt-welcomed", "1"));
   let consent = opts.aiConsent === undefined ? true : opts.aiConsent;
   const api: Api = {
     mails,

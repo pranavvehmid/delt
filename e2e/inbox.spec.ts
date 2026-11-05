@@ -429,3 +429,16 @@ test("deadlines say only what the heading doesn't, label their icons, and a wron
   await page.getByRole("button", { name: "Back to list" }).click();
   await expect(page.locator('li.row[data-mail="fee"]')).toHaveCount(0);
 });
+
+test("a first-time student gets a short welcome, once (#56)", async ({ page }) => {
+  await mockApi(page, smallInbox(), { welcome: true });
+  await page.goto("/e2e");
+  const w = page.getByRole("dialog", { name: "Welcome to DELT" });
+  await expect(w).toBeVisible();
+  await expect(w.getByText("Moving a mail teaches DELT.")).toBeVisible();
+  await w.getByRole("button", { name: "Got it" }).click();
+  await expect(w).toHaveCount(0);
+  await page.reload();
+  await expect(page.locator(row("cat1"))).toBeVisible();
+  await expect(page.getByRole("dialog", { name: "Welcome to DELT" })).toHaveCount(0);
+});

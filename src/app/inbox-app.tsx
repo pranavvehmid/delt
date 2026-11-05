@@ -14,6 +14,7 @@ import { cacheKey, clearOffline, isInstalledApp, packCache, unpackCache } from "
 import MailView from "./mail-view";
 import Appearance from "./appearance";
 import Settings from "./settings";
+import Welcome from "./welcome";
 import { transition } from "./motion";
 import { APK_URL, checkAppUpdate, snoozeAppUpdate } from "@/lib/app-update";
 
@@ -39,6 +40,7 @@ export default function InboxApp({ email, name, signOutAction, signInAction }: P
   const [searching, setSearching] = useState(false);
   const [due, setDue] = useState<EmailRow[]>([]);
   const [reauth, setReauth] = useState(false);
+  const [backlog, setBacklog] = useState(0); // #56: a big first sync is still bringing in older mail
   // #51: pull down at the top of the list to check for mail (touch screens)
   const [pull, setPull] = useState(0);
   const PULL_AT = 72;
@@ -205,6 +207,7 @@ export default function InboxApp({ email, name, signOutAction, signInAction }: P
             .then((x) => x?.resorted > 0 && load())
             .catch(() => {});
         // A big first sync comes in batches (#28): fetch the rest once the 10 s gap has passed.
+        setBacklog(d.backlog ?? 0);
         if (d.backlog > 0) setTimeout(() => sync(false, true), 11_000);
         if (!d.reauth && (loud || d.fetched > 0)) setToast({ text: d.fetched > 0 ? `${d.fetched} new mail${d.fetched > 1 ? "s" : ""}` : "No new mail" });
       } catch {
@@ -481,7 +484,7 @@ export default function InboxApp({ email, name, signOutAction, signInAction }: P
             <i />
             <i />
           </span>
-          <span>{syncing ? "Checking…" : syncProblem ? "Last check had a problem" : syncedAt ? `Updated ${ago(syncedAt, now)}` : "Check for mail"}</span>
+          <span>{backlog > 0 ? "Bringing in older mail…" : syncing ? "Checking…" : syncProblem ? "Last check had a problem" : syncedAt ? `Updated ${ago(syncedAt, now)}` : "Check for mail"}</span>
         </button>
         <div className="appbar-r">
           <Appearance />
@@ -818,6 +821,7 @@ export default function InboxApp({ email, name, signOutAction, signInAction }: P
         />
       )}
 
+      <Welcome ready={mails !== null && mails.length > 0} />
       <Settings open={settingsOpen} section={settingsSection} onClose={() => transition(() => setSettingsOpen(false))} onToast={(text) => setToast({ text })} />
 
       {toast && (
