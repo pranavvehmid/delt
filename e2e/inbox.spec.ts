@@ -155,3 +155,30 @@ test("sorting rules: moving a mail adds a rule for that sender, and it can be re
   await expect(dialog.getByText("None yet.")).toBeVisible();
   expect(api.forgotten).toEqual(["no-reply@coursera.org"]);
 });
+
+test("offline: the saved inbox shows, marked offline, and changes are paused (#14)", async ({ page, context }) => {
+  await mockApi(page, smallInbox());
+  await page.goto("/e2e");
+  await expect(page.locator(row("cat1"))).toBeVisible();
+  await page.waitForTimeout(1200); // the copy is saved shortly after the list loads
+
+  // a fresh start with no connection to the API: the saved list appears straight away
+  await page.unroute("**/api/**");
+  await page.route("**/api/**", (r) => r.abort("internetdisconnected"));
+  await page.reload();
+  await expect(page.locator(row("cat1"))).toBeVisible();
+  await expect(page.getByRole("status").filter({ hasText: "You're offline" })).toBeVisible();
+
+  await page.locator(row("hack")).locator(".row-main").focus();
+  await page.keyboard.press("Tab");
+  await page.keyboard.press("Enter");
+  await expect(page.getByText("Changes are paused until you're back online.").last()).toBeVisible();
+  await expect(page.locator(row("hack"))).toHaveClass(/unread/);
+
+  // back online: the banner goes
+  await page.unroute("**/api/**");
+  await mockApi(page, smallInbox());
+  await context.setOffline(true);
+  await context.setOffline(false);
+  await expect(page.getByRole("status").filter({ hasText: "You're offline" })).toHaveCount(0);
+});

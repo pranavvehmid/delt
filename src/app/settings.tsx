@@ -5,6 +5,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useDialog } from "./use-dialog";
+import { clearOffline } from "@/lib/offline";
 import { pileLabel, type SenderRule } from "@/lib/inbox";
 
 const REPO = "https://github.com/pranavvehmid/delt";
@@ -79,6 +80,7 @@ export default function Settings({ open, onClose, onToast, section }: { open: bo
       setDeleting(false);
       return onToast("Couldn't delete. Try again in a minute.");
     }
+    await clearOffline(); // the inbox saved on this phone goes too
     location.href = "/?deleted=1";
   }
 

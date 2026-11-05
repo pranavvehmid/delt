@@ -10,6 +10,7 @@ import {
   openDeadlines, pileCounts, pileLabel, shortTime,
 } from "@/lib/inbox";
 import { calendarLink } from "@/lib/insights";
+import { cacheKey, clearOffline, packCache, unpackCache } from "@/lib/offline";
 import MailView from "./mail-view";
 import Appearance from "./appearance";
 import Settings from "./settings";
@@ -36,6 +37,9 @@ export default function InboxApp({ email, name, signOutAction, signInAction }: P
   const [searching, setSearching] = useState(false);
   const [due, setDue] = useState<EmailRow[]>([]);
   const [reauth, setReauth] = useState(false);
+  // Offline (issue #14): the last inbox saved on this phone, and when it was saved.
+  const [offline, setOffline] = useState(false);
+  const [savedAt, setSavedAt] = useState<number | null>(null);
   const [settingsSection, setSettingsSection] = useState<"data" | "rules" | undefined>();
   const [route, setRoute] = useState<Route>({ tab: "inbox", mailId: null });
   const [pile, setPile] = useState<Priority | "all">("all");
@@ -75,8 +79,18 @@ export default function InboxApp({ email, name, signOutAction, signInAction }: P
   mailsRef.current = mails;
   const pagedOlder = useRef(false);
   const load = useCallback(async () => {
-    const [r, d] = await Promise.all([fetch(`/api/emails?limit=${PAGE_SIZE}`), fetch("/api/emails?due=1&limit=300")]);
-    if (r.status === 401) return location.reload();
+    let r: Response, d: Response;
+    try {
+      [r, d] = await Promise.all([fetch(`/api/emails?limit=${PAGE_SIZE}`), fetch("/api/emails?due=1&limit=300")]);
+    } catch {
+      setOffline(true); // no connection: keep showing the saved inbox
+      return false;
+    }
+    if (r.status === 401) {
+      location.reload();
+      return false;
+    }
+    setOffline(false);
     if (r.ok) {
       const j = await r.json();
       const page: EmailRow[] = j.emails ?? [];
@@ -86,6 +100,8 @@ export default function InboxApp({ email, name, signOutAction, signInAction }: P
       setReauth(!!j.reauth);
     }
     if (d.ok) setDue((await d.json()).emails ?? []);
+    if (r.ok) setSavedAt(Date.now());
+    return r.ok;
   }, []);
   // Scrolling near the end loads the next older page (issue #11).
   const olderBusy = useRef(false);
@@ -120,19 +136,60 @@ export default function InboxApp({ email, name, signOutAction, signInAction }: P
         const r = await fetch("/api/sync", { method: "POST" });
         const d = await r.json().catch(() => ({}));
         if (d.reauth) setReauth(true);
-        await load();
+        if (!(await load())) throw new Error("offline");
         setSyncedAt(Date.now());
         if (!d.reauth && (loud || d.fetched > 0)) setToast({ text: d.fetched > 0 ? `${d.fetched} new mail${d.fetched > 1 ? "s" : ""}` : "No new mail" });
       } catch {
-        if (loud) setToast({ text: "Couldn't reach Gmail" });
+        if (!navigator.onLine) setOffline(true);
+        if (loud) setToast({ text: navigator.onLine ? "Couldn't reach Gmail" : "You're offline" });
       }
       syncing$.current = false;
       setSyncing(false);
     },
     [load],
   );
+  // Show the saved inbox at once, then fetch the real one.
   useEffect(() => {
-    load().then(() => sync());
+    try {
+      const c = unpackCache<EmailRow>(localStorage.getItem(cacheKey(email)), Date.now());
+      if (c) {
+        setMails((l) => l ?? c.mails);
+        setDue((l) => (l.length ? l : c.due));
+        setSavedAt(c.at);
+      }
+    } catch {}
+    if ("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js", { scope: "/" }).catch(() => {});
+  }, [email]);
+  // Keep the saved copy up to date with what's on screen (read, done, moved).
+  useEffect(() => {
+    if (!mails || offline) return;
+    const t = setTimeout(() => {
+      try {
+        localStorage.setItem(cacheKey(email), packCache(mails, due, savedAt ?? Date.now()));
+      } catch {}
+    }, 800);
+    return () => clearTimeout(t);
+  }, [mails, due, offline, savedAt, email]);
+  useEffect(() => {
+    const down = () => setOffline(true);
+    const up = () => {
+      setOffline(false);
+      load().then((ok) => {
+      if (ok) sync();
+    });
+    };
+    window.addEventListener("offline", down);
+    window.addEventListener("online", up);
+    return () => {
+      window.removeEventListener("offline", down);
+      window.removeEventListener("online", up);
+    };
+  }, [load, sync]);
+
+  useEffect(() => {
+    load().then((ok) => {
+      if (ok) sync();
+    });
     const tick = setInterval(() => setNow(Date.now()), 30_000);
     const auto = setInterval(() => document.visibilityState === "visible" && sync(), SYNC_EVERY);
     const back = () => {
@@ -187,7 +244,13 @@ export default function InboxApp({ email, name, signOutAction, signInAction }: P
     setDue((l) => l.map(fn));
   };
   type Patch = { read?: boolean; is_done?: boolean; priority?: Priority };
+  const blockedOffline = () => {
+    if (!offline) return false;
+    setToast({ text: "You're offline. Changes are paused until you're back online." });
+    return true;
+  };
   function patch(id: string, p: Patch, quiet = false) {
+    if (blockedOffline()) return;
     const before = findMail(id);
     updateAll((m) => (m.id === id ? apply(m, p) : m));
     fetch("/api/emails", { method: "PATCH", body: JSON.stringify({ id, ...p }) }).then((r) => !r.ok && setToast({ text: "Couldn't save that change" }));
@@ -198,6 +261,7 @@ export default function InboxApp({ email, name, signOutAction, signInAction }: P
     setToast({ text, undo });
   }
   async function markAllRead(ids: string[]) {
+    if (blockedOffline()) return;
     const set = new Set(ids);
     updateAll((m) => (set.has(m.id) ? { ...m, unread: false } : m));
     setToast({ text: `${ids.length} marked read` });
@@ -306,7 +370,7 @@ export default function InboxApp({ email, name, signOutAction, signInAction }: P
                 <a className="menu-item" href={`https://mail.google.com/mail/?authuser=${encodeURIComponent(email)}`} target="_blank" rel="noreferrer">
                   Open Gmail ↗
                 </a>
-                <form action={signOutAction}>
+                <form action={signOutAction} onSubmit={() => void clearOffline()}>
                   <button className="menu-item">Sign out</button>
                 </form>
               </div>
@@ -315,6 +379,13 @@ export default function InboxApp({ email, name, signOutAction, signInAction }: P
         </div>
       </header>
 
+      {offline && (
+        <div className="banner offline" role="status">
+          <span>
+            <b>You&apos;re offline.</b> {savedAt ? `Showing your inbox from ${ago(savedAt, now)}.` : "Nothing saved on this phone yet."} Changes are paused until you&apos;re back online.
+          </span>
+        </div>
+      )}
       {reauth && (
         <div className="banner" role="alert">
           <span>
