@@ -92,10 +92,12 @@ export default function InboxApp({ email, name, signOutAction, signInAction }: P
     window.scrollTo({ top: 0 });
   };
   const openedFrom = useRef<string | null>(null);
-  const openMail = (m: EmailRow) => {
+  const openMail = (m: EmailRow, step = false) => {
     openedFrom.current = m.id;
     sessionStorage.setItem("delt-tab", route.tab);
-    location.hash = `#/mail/${encodeURIComponent(m.id)}`;
+    // stepping to the next/previous mail replaces the entry, so Back still returns to the list (#49)
+    if (step) location.replace(`#/mail/${encodeURIComponent(m.id)}`);
+    else location.hash = `#/mail/${encodeURIComponent(m.id)}`;
     if (m.unread) patch(m.id, { read: true }, true);
   };
   // On a phone, closing goes Back (so the phone's Back button and ours agree). In the wide-screen
@@ -717,6 +719,18 @@ export default function InboxApp({ email, name, signOutAction, signInAction }: P
       {route.mailId && (
         <MailView
           pane={wide}
+          onStep={(dir) => {
+            const order = route.tab === "deadlines" ? BUCKETS.flatMap((b) => buckets[b]) : [...pinned, ...rest];
+            const i = order.findIndex((m) => m.id === route.mailId);
+            const to = i < 0 ? null : order[i + dir];
+            if (to) openMail(to, true);
+            return !!to;
+          }}
+          position={(() => {
+            const order = route.tab === "deadlines" ? BUCKETS.flatMap((b) => buckets[b]) : [...pinned, ...rest];
+            const i = order.findIndex((m) => m.id === route.mailId);
+            return i < 0 ? null : { index: i, total: order.length };
+          })()}
           id={route.mailId}
           row={open}
           now={now}

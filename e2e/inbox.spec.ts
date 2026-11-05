@@ -359,3 +359,19 @@ test("on a phone a mail still covers the screen", async ({ page, isMobile }) => 
   await page.locator(row("cat1")).locator(".row-main").click();
   await expect(page.locator(".mailview:not(.pane)")).toBeVisible();
 });
+
+test("next and previous mail from inside a mail, by button and J/K; Back still goes to the list (#49)", async ({ page }) => {
+  await mockApi(page, smallInbox());
+  await page.goto("/e2e");
+  await page.getByRole("navigation", { name: "Filter by pile" }).getByRole("button", { name: /^Priority/ }).click();
+  await page.locator(row("hack")).locator(".row-main").click();
+  await expect(page.locator("#mv-title")).toHaveText("Hackathon registrations open");
+  await expect(page.getByRole("button", { name: "Previous mail" })).toBeDisabled();
+  await page.getByRole("button", { name: "Next mail" }).click();
+  await expect(page.locator("#mv-title")).toHaveText("Library timings this week");
+  await expect(page.getByRole("button", { name: "Next mail" })).toBeDisabled();
+  await page.locator("body").press("k");
+  await expect(page.locator("#mv-title")).toHaveText("Hackathon registrations open");
+  await page.goBack();
+  await expect(page.locator(".mailview")).toHaveCount(0);
+});

@@ -44,7 +44,7 @@ ${darkBg ? `html,body{background:${darkBg}!important} ${KEEP}{filter:invert(1) h
 }
 
 export default function MailView({
-  id, row, now, gmailLink, onClose, onPatch, onReauth, restoreFocus, pane = false,
+  id, row, now, gmailLink, onClose, onPatch, onReauth, restoreFocus, pane = false, onStep, position,
 }: {
   id: string;
   row: EmailRow | null;
@@ -56,6 +56,9 @@ export default function MailView({
   restoreFocus?: () => HTMLElement | null;
   /** #48: on wide screens the mail sits beside the list instead of covering it */
   pane?: boolean;
+  /** #49: go to the next (1) or previous (-1) mail in the list; false when there isn't one */
+  onStep?: (dir: 1 | -1) => boolean;
+  position?: { index: number; total: number } | null;
 }) {
   const [msg, setMsg] = useState<FullMessage | null>(null);
   const [error, setError] = useState("");
@@ -93,7 +96,20 @@ export default function MailView({
   };
   // A full-screen mail is a modal dialog; a reading pane isn't (the list stays usable), but Esc still closes it.
   useDialog(box, !pane, onClose, restoreFocus);
+  // J / K: next / previous mail (#49); not while typing in a box
+  const step = useRef(onStep);
+  step.current = onStep;
   useEffect(() => {
+    const k = (e: KeyboardEvent) => {
+      const t = e.target as HTMLElement | null;
+      if (e.ctrlKey || e.metaKey || e.altKey || t?.closest("input, textarea, [contenteditable]")) return;
+      if (e.key === "j" || e.key === "J") step.current?.(1);
+      if (e.key === "k" || e.key === "K") step.current?.(-1);
+    };
+    window.addEventListener("keydown", k);
+    return () => window.removeEventListener("keydown", k);
+  }, []);
+    useEffect(() => {
     if (!pane) return;
     const k = (e: KeyboardEvent) => e.key === "Escape" && onClose();
     window.addEventListener("keydown", k);
@@ -150,6 +166,16 @@ export default function MailView({
         <button className="iconbtn" onClick={onClose} aria-label="Back to list" title="Back">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" /></svg>
         </button>
+        {onStep && position && (
+          <span className="mv-step">
+            <button className="iconbtn" onClick={() => onStep(-1)} disabled={position.index === 0} aria-label="Previous mail" title="Previous (K)">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 15l6-6 6 6" /></svg>
+            </button>
+            <button className="iconbtn" onClick={() => onStep(1)} disabled={position.index >= position.total - 1} aria-label="Next mail" title="Next (J)">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6" /></svg>
+            </button>
+          </span>
+        )}
         <div className="mv-acts">
           {row && (
             <>

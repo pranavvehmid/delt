@@ -963,3 +963,7 @@ body { min-height: 100dvh; }
   .mailview.pane { left: 460px; border-left: 1px solid var(--line); view-transition-name: mail; }
   .shell.reading li.row:has(.row-main[aria-current="true"]) .row-slide { background: var(--surface); box-shadow: -10px 0 0 var(--surface), -13px 0 0 var(--accent); }
 }
+
+/* #49: previous / next mail */
+.mv-step { display: inline-flex; margin-right: auto; }
+.mv-step .iconbtn:disabled { opacity: 0.35; }
