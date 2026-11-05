@@ -138,13 +138,13 @@ export async function mockApi(page: Page, mails: FakeMail[], opts: { reauth?: bo
     }
 
     if (path === "/api/emails" && method === "PATCH") {
-      const p = req.postDataJSON() as { id: string; read?: boolean; is_done?: boolean; priority?: FakeMail["priority"] };
+      const p = req.postDataJSON() as { id: string; read?: boolean; is_done?: boolean; priority?: FakeMail["priority"]; teach?: boolean };
       api.patches.push(p);
       const m = api.mails.find((x) => x.id === p.id);
       if (m) {
         if (p.read !== undefined) m.unread = !p.read;
         if (p.is_done !== undefined) m.is_done = p.is_done;
-        if (p.priority) Object.assign(m, { priority: p.priority, user_corrected: true });
+        if (p.priority) Object.assign(m, { priority: p.priority, user_corrected: p.teach !== false });
       }
       return route.fulfill(json({ ok: true }));
     }

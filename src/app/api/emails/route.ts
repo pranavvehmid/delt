@@ -62,6 +62,8 @@ const Patch = z.object({
   category: z.enum(CATEGORIES).optional(),
   is_done: z.boolean().optional(),
   read: z.boolean().optional(),
+  /** false = move only this mail, don't make a rule for the sender (#46) */
+  teach: z.boolean().optional(),
 });
 
 // PATCH: move a mail or recategorise it (teaches the sorter), mark it done,
@@ -74,10 +76,10 @@ export async function PATCH(req: NextRequest) {
 
   const parsed = Patch.safeParse(await req.json());
   if (!parsed.success) return NextResponse.json({ error: "Bad request" }, { status: 400 });
-  const { id, priority, category, is_done, read } = parsed.data;
+  const { id, priority, category, is_done, read, teach } = parsed.data;
 
   const update: Record<string, unknown> = {};
-  if (priority) Object.assign(update, { priority, user_corrected: true });
+  if (priority) Object.assign(update, teach === false ? { priority, user_corrected: false, sorted_by: "manual" } : { priority, user_corrected: true });
   if (category) Object.assign(update, { category, user_corrected: true });
   if (is_done !== undefined) update.is_done = is_done;
   if (read !== undefined) update.unread = !read;

@@ -30,7 +30,8 @@ async function main() {
       .from("emails")
       .select("id, priority, subject")
       .eq("user_email", user.email)
-      .eq("user_corrected", false);
+      .eq("user_corrected", false)
+      .neq("sorted_by", "manual"); // moved by hand without a rule (#46)
     if (rulesOnly) rq = rq.eq("sorted_by", "rules");
     const { data: rows } = await rq.order("received_at", { ascending: false });
 

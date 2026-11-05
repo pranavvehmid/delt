@@ -32,7 +32,8 @@ export type EmailRow = {
   user_corrected: boolean;
   is_done: boolean;
   gmail_labeled: boolean;
-  sorted_by: "rules" | "ai";
+  /** "manual": moved by the student without teaching a rule (#46); never re-sorted. */
+  sorted_by: "rules" | "ai" | "manual";
   unread: boolean;
   deadline_choice: "tracked" | "skipped" | null;
 };

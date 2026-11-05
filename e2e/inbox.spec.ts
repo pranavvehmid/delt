@@ -68,7 +68,7 @@ test("move a mail to another pile, then find it under that pile and under All", 
   await page.locator(row("cat1")).locator(".row-main").click();
   await page.getByRole("radio", { name: "Noise" }).click();
   await expect(page.getByRole("radio", { name: "Noise" })).toHaveAttribute("aria-checked", "true");
-  await expect(page.getByRole("status").filter({ hasText: "Moved to Noise" })).toBeVisible();
+  await expect(page.getByRole("status").filter({ hasText: "Moved to Noise. New mail from COE will go there too." })).toBeVisible();
   expect(api.patches).toContainEqual({ id: "cat1", priority: "noise" });
   await page.getByRole("button", { name: "Back to list" }).click();
 
@@ -246,4 +246,20 @@ test("the mail frame fits the mail: short mail, short box; long mail, all of it 
   await page.locator(row("news")).locator(".row-main").click();
   await expect(page.frameLocator(".mv-frame").getByText("Paragraph 40 of")).toBeAttached();
   await expect.poll(async () => (await page.locator(".mv-frame").boundingBox())!.height).toBeGreaterThan(900);
+});
+
+test("moving a mail says it makes a rule, and 'Just this one' moves it without one (#46)", async ({ page }) => {
+  const api = await mockApi(page, smallInbox());
+  await page.goto("/e2e");
+  await page.locator(row("promo")).locator(".row-main").click();
+  await page.getByRole("radio", { name: "Later" }).click();
+  const toast = page.getByRole("status").filter({ hasText: "New mail from Coursera will go there too." });
+  await expect(toast).toBeVisible();
+  await toast.getByRole("button", { name: "Just this one" }).click();
+  await expect(page.getByRole("status").filter({ hasText: "no rule for Coursera" })).toBeVisible();
+  expect(api.patches.at(-1)).toEqual({ id: "promo", priority: "later", teach: false });
+  await page.getByRole("button", { name: "Back to list" }).click();
+  await page.getByRole("button", { name: "Account" }).click();
+  await page.getByRole("button", { name: "Sorting rules" }).click();
+  await expect(page.getByRole("dialog", { name: "Settings" }).getByText("None yet.")).toBeVisible();
 });

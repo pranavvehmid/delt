@@ -57,7 +57,7 @@ export default function InboxApp({ email, name, signOutAction, signInAction }: P
   const [syncing, setSyncing] = useState(false);
   const [syncedAt, setSyncedAt] = useState<number | null>(null);
   const [now, setNow] = useState(() => Date.now());
-  const [toast, setToast] = useState<{ text: string; undo?: () => void } | null>(null);
+  const [toast, setToast] = useState<{ text: string; undo?: () => void; alt?: { label: string; run: () => void } } | null>(null);
   const [menu, setMenu] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [showDone, setShowDone] = useState(false);
@@ -239,7 +239,7 @@ export default function InboxApp({ email, name, signOutAction, signInAction }: P
   }, [load, sync]);
   useEffect(() => {
     if (!toast) return;
-    const t = setTimeout(() => setToast(null), toast.undo ? 5000 : 2600);
+    const t = setTimeout(() => setToast(null), toast.alt ? 8000 : toast.undo ? 5000 : 2600);
     return () => clearTimeout(t);
   }, [toast]);
 
@@ -273,7 +273,7 @@ export default function InboxApp({ email, name, signOutAction, signInAction }: P
     setHits((l) => l?.map(fn) ?? null);
     setDue((l) => l.map(fn));
   };
-  type Patch = { read?: boolean; is_done?: boolean; priority?: Priority };
+  type Patch = { read?: boolean; is_done?: boolean; priority?: Priority; teach?: boolean };
   async function answerAi(consent: boolean) {
     setAiConsent(consent);
     setToast({ text: consent ? "AI sorting on. Change it in Settings." : "Rules only. Change it in Settings." });
@@ -292,6 +292,19 @@ export default function InboxApp({ email, name, signOutAction, signInAction }: P
     fetch("/api/emails", { method: "PATCH", body: JSON.stringify({ id, ...p }) }).then((r) => !r.ok && setToast({ text: "Couldn't save that change" }));
     if (quiet || !before) return;
     const undo = () => patch(id, { read: p.read !== undefined ? !before.unread : undefined, is_done: p.is_done !== undefined ? before.is_done : undefined, priority: p.priority ? before.priority : undefined }, true);
+    // Moving a mail also teaches DELT where that sender's mail goes: say so, and offer a one-off move (#46).
+    if (p.priority && p.teach !== false) {
+      const sender = cleanSender(before.from_name);
+      const to = pileLabel(p.priority);
+      return setToast({
+        text: `Moved to ${to}. New mail from ${sender} will go there too.`,
+        undo,
+        alt: { label: "Just this one", run: () => {
+          patch(id, { priority: p.priority, teach: false }, true);
+          setToast({ text: `Moved to ${to}, no rule for ${sender}` });
+        } },
+      });
+    }
     const text =
       p.priority ? `Moved to ${pileLabel(p.priority)}` : p.is_done !== undefined ? (p.is_done ? "Marked done" : "Not done") : p.read ? "Marked read" : "Marked unread";
     setToast({ text, undo });
@@ -660,11 +673,22 @@ export default function InboxApp({ email, name, signOutAction, signInAction }: P
       <Settings open={settingsOpen} section={settingsSection} onClose={() => transition(() => setSettingsOpen(false))} onToast={(text) => setToast({ text })} />
 
       {toast && (
-        <div className="toast" role="status" aria-live="polite" key={toast.text} style={{ "--life": `${toast.undo ? 5000 : 2600}ms` } as React.CSSProperties}>
+        <div className="toast" role="status" aria-live="polite" key={toast.text} style={{ "--life": `${toast.alt ? 8000 : toast.undo ? 5000 : 2600}ms` } as React.CSSProperties}>
           <b className="rc" aria-hidden="true">
             Race control
           </b>
           <span>{toast.text}</span>
+          {toast.alt && (
+            <button
+              onClick={() => {
+                const run = toast.alt!.run;
+                setToast(null);
+                run();
+              }}
+            >
+              {toast.alt.label}
+            </button>
+          )}
           {toast.undo && (
             <button
               onClick={() => {
@@ -681,12 +705,12 @@ export default function InboxApp({ email, name, signOutAction, signInAction }: P
   );
 }
 
-function apply(m: EmailRow, p: { read?: boolean; is_done?: boolean; priority?: Priority }): EmailRow {
+function apply(m: EmailRow, p: { read?: boolean; is_done?: boolean; priority?: Priority; teach?: boolean }): EmailRow {
   return {
     ...m,
     ...(p.read !== undefined ? { unread: !p.read } : {}),
     ...(p.is_done !== undefined ? { is_done: p.is_done } : {}),
-    ...(p.priority ? { priority: p.priority, user_corrected: true } : {}),
+    ...(p.priority ? { priority: p.priority, user_corrected: p.teach !== false } : {}),
   };
 }
 

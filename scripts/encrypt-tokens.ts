@@ -13,12 +13,17 @@ async function main() {
     const update: Record<string, string> = {};
     if (u.refresh_token && needsReseal(u.refresh_token)) {
       const plain = openToken(u.refresh_token);
-      if (plain) (update.refresh_token = seal(plain)), tokens++;
-      else lost++;
+      if (plain) {
+        update.refresh_token = seal(plain);
+        tokens++;
+      } else lost++;
     }
     if (u.gemini_key_enc && needsReseal(u.gemini_key_enc)) {
       const plain = open(u.gemini_key_enc);
-      if (plain) (update.gemini_key_enc = seal(plain)), keys++;
+      if (plain) {
+        update.gemini_key_enc = seal(plain);
+        keys++;
+      }
     }
     if (apply && Object.keys(update).length) {
       const { error: e } = await db.from("users").update(update).eq("email", u.email);
