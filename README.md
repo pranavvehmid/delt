@@ -36,9 +36,15 @@ DELT reads your VIT Gmail and sorts every mail into four piles, so exams, regist
 
 Your register number (for example `26BCE…`) is in your Google name, so DELT knows your batch. Mail meant for other batches or seniors goes to Later.
 
-If you move a mail to a different pile, DELT does the same for that sender from then on.
+If you move a mail to a different pile, DELT does the same for that sender from then on. You can see and remove these rules under **Account menu → Sorting rules**.
 
 Most mail is sorted by simple rules. When the rules aren't sure, Google Gemini's free tier takes a second look.
+
+## Who can sign in
+
+- **VIT students** with an `@vitstudent.ac.in` Google account: yes.
+- **VIT staff** (`@vit.ac.in`): not yet confirmed. DELT allows the address, but its Google sign-in is set to "Internal" inside the student Google organisation, and staff accounts are probably a separate organisation that Google blocks. If you have a staff account, please try it and comment on [#15](https://github.com/pranavvehmid/delt/issues/15).
+- Personal Gmail and other colleges: no.
 
 ## Using it
 
@@ -46,11 +52,12 @@ Most mail is sorted by simple rules. When the rules aren't sure, Google Gemini's
   <img src="assets/tabs.svg" alt="Inbox and Deadlines" width="100%">
 </p>
 
-- **Inbox** has every mail from the last 60 days, newest first. Filter by pile, show unread only, or search.
+- **Inbox** has all your mail in DELT, newest first. Older mail loads as you scroll. Filter by pile, show unread only, or search (search covers older mail too).
 - **Tap a mail** to read the whole thing inside DELT. You can move it to another pile, add its deadline to Google Calendar, or mark it done.
 - **Deadlines** lists the due dates found in your mail: overdue, today, tomorrow, this week, later.
 - On a phone, swipe right to mark read, swipe left to mark done. You can undo either.
 - **Wrong pile?** Each open mail has a link that starts a GitHub issue with the subject and pile filled in.
+- **Offline**, DELT shows the last inbox it loaded and pauses changes until you're back online.
 
 New mail is checked when you open the app and every 5 minutes while it's open. In the background, a free GitHub Actions job checks students who used DELT this week about every 15 minutes, and everyone else at least once a day.
 
@@ -59,6 +66,8 @@ New mail is checked when you open the app and every 5 minutes while it's open. I
 Account menu → Settings:
 
 - **Notifications:** a phone alert for new urgent mail, and a reminder for any deadline due within a day.
+- **Sorting rules:** the senders you moved, and where their mail goes. Remove any you don't want.
+- **Your data:** delete everything DELT keeps about you.
 - **AI sorting:** DELT shares one free Gemini key between students, with a daily allowance each. You can add your own free key from [Google AI Studio](https://aistudio.google.com/apikey); it's stored encrypted and only used for your mail.
 
 ### Appearance
