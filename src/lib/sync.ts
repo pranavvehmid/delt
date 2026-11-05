@@ -14,7 +14,7 @@ import {
 import type { Classification, Correction } from "./types";
 import { profileFromName, type StudentProfile } from "./profile";
 import { COOLDOWN_MS, bumpUsage, planAI } from "./ai-quota";
-import { open } from "./secret";
+import { needsReseal, open, openToken, seal } from "./secret";
 
 const FIRST_SYNC_DAYS = 14;
 const MAX_PER_SYNC = 150;
@@ -47,6 +47,11 @@ export async function syncUser(email: string): Promise<SyncResult> {
   let token: string;
   try {
     token = await getAccessToken(user.refresh_token);
+    // Rows saved before #27 (plain text), or with an old key: re-encrypt now, on the server that owns the key.
+    if (needsReseal(user.refresh_token)) {
+      const plain = openToken(user.refresh_token);
+      if (plain) await db.from("users").update({ refresh_token: seal(plain) }).eq("email", email);
+    }
   } catch (e) {
     if (e instanceof AccessRevoked) await markRevoked(email);
     throw e;

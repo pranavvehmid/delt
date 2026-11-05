@@ -1,6 +1,7 @@
 import NextAuth from "next-auth";
 import Google from "next-auth/providers/google";
 import { db } from "@/lib/supabase";
+import { seal } from "@/lib/secret";
 
 // gmail.modify = read mail + add labels. It cannot delete mail permanently.
 const SCOPES = [
@@ -38,7 +39,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (account?.refresh_token && token.email) {
         const { error } = await db.from("users").upsert({
           email: token.email.toLowerCase(),
-          refresh_token: account.refresh_token,
+          refresh_token: seal(account.refresh_token), // encrypted at rest (#27)
           // VIT names carry the register number (e.g. "26BCE0001"), used to know year and branch.
           name: token.name ?? null,
         });

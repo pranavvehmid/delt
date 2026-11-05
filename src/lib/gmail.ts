@@ -1,6 +1,7 @@
 import "server-only";
 import type { Priority } from "./supabase";
 import { parseUnsubscribe } from "./insights";
+import { openToken } from "./secret";
 
 const API = "https://gmail.googleapis.com/gmail/v1/users/me";
 
@@ -14,7 +15,10 @@ export class AccessRevoked extends Error {
 /** Google's answer to a refresh token that no longer works. */
 export const isRevokedAnswer = (status: number, body: string) => (status === 400 || status === 401) && /invalid_grant|unauthorized_client/.test(body);
 
-export async function getAccessToken(refreshToken: string, attempt = 0): Promise<string> {
+/** Takes the refresh token as stored in the database (encrypted, #27) and returns a short-lived access token. */
+export async function getAccessToken(stored: string, attempt = 0): Promise<string> {
+  const refreshToken = openToken(stored);
+  if (!refreshToken) throw new AccessRevoked(); // key lost or row tampered with: ask the student to sign in again
   const res = await fetch("https://oauth2.googleapis.com/token", {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -29,7 +33,7 @@ export async function getAccessToken(refreshToken: string, attempt = 0): Promise
     // Google sometimes answers 5xx or 429 for a moment: wait and try again.
     if ((res.status >= 500 || res.status === 429) && attempt < 3) {
       await new Promise((r) => setTimeout(r, 800 * 2 ** attempt));
-      return getAccessToken(refreshToken, attempt + 1);
+      return getAccessToken(stored, attempt + 1);
     }
     const body = await res.text();
     if (isRevokedAnswer(res.status, body)) throw new AccessRevoked();
@@ -294,7 +298,9 @@ export async function removeDeltLabels(token: string): Promise<number> {
 }
 
 /** Tells Google to cancel DELT's access for this student. */
-export async function revokeGoogleToken(token: string): Promise<boolean> {
+export async function revokeGoogleToken(stored: string): Promise<boolean> {
+  const token = openToken(stored);
+  if (!token) return false;
   const res = await fetch("https://oauth2.googleapis.com/revoke", {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },

@@ -10,7 +10,13 @@ cd "$(dirname "$0")/.."
 
 get() { grep "^$1=" .env.local | head -1 | cut -d= -f2- | tr -d '\r"'; }
 
-for k in VAPID_PUBLIC_KEY VAPID_PRIVATE_KEY; do
+# #27: a separate key for encrypting refresh tokens. Created in .env.local the first time.
+if [ -z "$(get TOKEN_ENCRYPTION_KEY)" ]; then
+  echo "TOKEN_ENCRYPTION_KEY=$(node -e "console.log(require('crypto').randomBytes(32).toString('base64'))")" >> .env.local
+  echo "Created TOKEN_ENCRYPTION_KEY in .env.local. Back it up: losing it signs every student out."
+fi
+
+for k in VAPID_PUBLIC_KEY VAPID_PRIVATE_KEY TOKEN_ENCRYPTION_KEY; do
   v="$(get "$k")"
   if [ -z "$v" ]; then echo "$k is missing in .env.local (npx web-push generate-vapid-keys)"; exit 1; fi
   echo "Vercel: setting $k ..."
