@@ -317,7 +317,9 @@ svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width:
 /* =========================================================
    Minimal look, Swiss (International Typographic) style.
    - One typeface (IBM Plex Sans) at light / regular / medium; never bold.
-   - Importance is ink: Urgent 100%, Priority 72%, Later 48%, Noise 30%.
+   - Importance is ink, size and weight: Urgent is full ink, each pile below is lighter,
+     a little smaller and thinner. Ink never drops below --floor, the lowest level that
+     still reads at 4.5:1 on this background (checked in tests/contrast.test.ts).
    - One accent (Swiss red, the DELT dot) for signals only: urgent, due soon.
    - No cards, pills or dividers: an 8px grid and whitespace do the grouping.
    - Square corners. Sections are a typographic masthead, not a tab bar.
@@ -329,7 +331,7 @@ svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width:
   --surface: #f5f5f4;
   --surface2: #e7e5e4;
   --text: rgb(var(--ink));
-  --muted: rgb(var(--ink) / 0.5);
+  --muted: rgb(var(--ink) / var(--floor));
   --line: rgb(var(--ink) / 0.08);
   --accent: #c8102e;
   --on-accent: #fff;
@@ -338,8 +340,12 @@ svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width:
   --font: var(--font-plex), system-ui, -apple-system, "Segoe UI", sans-serif;
   --head: var(--font);
   --shadow: 0 1px 0 rgb(var(--ink) / 0.06);
+  --floor: 0.64; /* 4.5:1 for small text on --bg */
+  --floor-lg: 0.5; /* 3:1, only for text 24px and up */
 }
 :root:not([data-look="glyph"])[data-theme="dark"] {
+  --floor: 0.54;
+  --floor-lg: 0.4;
   --ink: 245 244 242;
   --bg: #161412;
   --surface: #211e1b;
@@ -360,8 +366,8 @@ svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width:
 
 /* masthead: the two sections as type */
 :root:not([data-look="glyph"]) .mast { display: flex; gap: 22px; padding: 6px 16px 2px; }
-:root:not([data-look="glyph"]) .mast button { font: 300 34px/1.1 var(--font); letter-spacing: -0.025em; color: rgb(var(--ink) / 0.22); transition: color 0.3s var(--ease); }
-:root:not([data-look="glyph"]) .mast button:hover { color: rgb(var(--ink) / 0.5); }
+:root:not([data-look="glyph"]) .mast button { font: 300 34px/1.1 var(--font); letter-spacing: -0.025em; color: rgb(var(--ink) / var(--floor-lg)); transition: color 0.3s var(--ease); }
+:root:not([data-look="glyph"]) .mast button:hover { color: rgb(var(--ink) / 0.8); }
 :root:not([data-look="glyph"]) .mast button.on { color: rgb(var(--ink)); }
 :root:not([data-look="glyph"]) .mast sup { font-size: 11.5px; font-weight: 500; letter-spacing: 0.02em; margin-left: 4px; vertical-align: top; position: relative; top: 0.5em; line-height: 1; font-variant-numeric: tabular-nums; }
 
@@ -372,41 +378,43 @@ svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width:
 
 /* filters: words, underlined when chosen */
 :root:not([data-look="glyph"]) .chips { gap: 20px; margin-top: 14px; margin-bottom: 0; }
-:root:not([data-look="glyph"]) .fchip { background: none !important; border: 0 !important; padding: 0; height: 34px; font-size: 14px; font-weight: 400; color: rgb(var(--ink) / 0.4); }
-:root:not([data-look="glyph"]) .fchip:hover { color: rgb(var(--ink) / 0.7); }
+:root:not([data-look="glyph"]) .fchip { background: none !important; border: 0 !important; padding: 0; height: 34px; font-size: 14px; font-weight: 400; color: rgb(var(--ink) / var(--floor)); }
+:root:not([data-look="glyph"]) .fchip:hover { color: rgb(var(--ink) / 0.85); }
 :root:not([data-look="glyph"]) .fchip.on { color: rgb(var(--ink)); box-shadow: inset 0 -2px 0 rgb(var(--ink)); }
 :root:not([data-look="glyph"]) .listbar { margin-top: 6px; }
-:root:not([data-look="glyph"]) .toggle { font-size: 13px; color: rgb(var(--ink) / 0.6); }
+:root:not([data-look="glyph"]) .toggle { font-size: 13px; color: rgb(var(--ink) / max(0.7, var(--floor))); }
 :root:not([data-look="glyph"]) .toggle .knob { width: 28px; height: 14px; background: rgb(var(--ink) / 0.14); }
 :root:not([data-look="glyph"]) .toggle .knob::after { width: 10px; height: 10px; box-shadow: none; }
 :root:not([data-look="glyph"]) .toggle input:checked + .knob { background: rgb(var(--ink)); }
 :root:not([data-look="glyph"]) .link { color: rgb(var(--ink)); font-size: 13px; font-weight: 400; text-decoration: underline; text-underline-offset: 3px; text-decoration-thickness: 1px; }
 
 /* day labels: small capitals */
-:root:not([data-look="glyph"]) .dayhead { position: static; font: 500 11px/1 var(--font); text-transform: uppercase; letter-spacing: 0.12em; color: rgb(var(--ink) / 0.42); padding-top: 30px; padding-bottom: 6px; background: none; }
+:root:not([data-look="glyph"]) .dayhead { position: static; font: 500 11px/1 var(--font); text-transform: uppercase; letter-spacing: 0.12em; color: rgb(var(--ink) / var(--floor)); padding-top: 30px; padding-bottom: 6px; background: none; }
 
 /* rows on a two-column grid: time | mail */
 :root:not([data-look="glyph"]) .rows { display: flex; flex-direction: column; gap: 4px; }
 :root:not([data-look="glyph"]) .row-slide { background: var(--bg); }
 :root:not([data-look="glyph"]) .row-main { grid-template-columns: 52px minmax(0, 1fr); gap: 14px; padding: 12px 0; border-bottom: 0; }
 :root:not([data-look="glyph"]) .row-acts { border-bottom: 0; }
-:root:not([data-look="glyph"]) .row { --a: 1; }
-:root:not([data-look="glyph"]) .ink-priority { --a: 0.72; }
-:root:not([data-look="glyph"]) .ink-later { --a: 0.48; }
-:root:not([data-look="glyph"]) .ink-noise { --a: 0.3; }
-:root:not([data-look="glyph"]) .when { display: block; padding-top: 2px; font-size: 11.5px; letter-spacing: 0.02em; font-variant-numeric: tabular-nums; color: rgb(var(--ink) / calc(var(--a) * 0.55)); white-space: nowrap; }
+/* --lv: 1 Urgent, 0.6 Priority, 0.3 Later, 0 Noise. --a is the main ink, --a2 the quieter lines. */
+:root:not([data-look="glyph"]) .row { --lv: 1; --a: calc(var(--floor) + (1 - var(--floor)) * var(--lv)); --a2: calc(var(--floor) + (1 - var(--floor)) * var(--lv) * 0.45); --subj: 17px; --w: 400; }
+:root:not([data-look="glyph"]) .ink-priority { --lv: 0.6; }
+:root:not([data-look="glyph"]) .ink-later { --lv: 0.3; --subj: 16px; }
+:root:not([data-look="glyph"]) .ink-noise { --lv: 0; --subj: 15px; --w: 300; }
+:root:not([data-look="glyph"]) .when { display: block; padding-top: 2px; font-size: 11.5px; letter-spacing: 0.02em; font-variant-numeric: tabular-nums; color: rgb(var(--ink) / var(--a2)); white-space: nowrap; }
 :root:not([data-look="glyph"]) .when::before { content: ""; display: block; width: 14px; height: 2px; margin-bottom: 7px; background: transparent; }
 :root:not([data-look="glyph"]) .ink-very_important .when::before { background: var(--accent); }
 :root:not([data-look="glyph"]) .row.unread .when { color: rgb(var(--ink) / var(--a)); font-weight: 500; }
-:root:not([data-look="glyph"]) .from { font-size: 11px; font-weight: 400; text-transform: uppercase; letter-spacing: 0.08em; color: rgb(var(--ink) / calc(var(--a) * 0.6)); }
-:root:not([data-look="glyph"]) .subj { font-size: 17px; line-height: 1.3; font-weight: 400; letter-spacing: -0.012em; color: rgb(var(--ink) / var(--a)); margin-top: 3px; white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
-:root:not([data-look="glyph"]) .sum { font-size: 13.5px; font-weight: 300; color: rgb(var(--ink) / calc(var(--a) * 0.6)); margin-top: 2px; }
+:root:not([data-look="glyph"]) .from { font-size: 11px; font-weight: 400; text-transform: uppercase; letter-spacing: 0.08em; color: rgb(var(--ink) / var(--a2)); }
+:root:not([data-look="glyph"]) .subj { font-size: var(--subj); line-height: 1.3; font-weight: var(--w); letter-spacing: -0.012em; color: rgb(var(--ink) / var(--a)); margin-top: 3px; white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+:root:not([data-look="glyph"]) .sum { font-size: 13.5px; font-weight: 300; color: rgb(var(--ink) / var(--a2)); margin-top: 2px; }
 :root:not([data-look="glyph"]) .row.unread :is(.subj, .from) { font-weight: 500; }
 :root:not([data-look="glyph"]) .meta { margin-top: 6px; }
 :root:not([data-look="glyph"]) .row-text > .meta:not(:has(.due, .donemark)) { display: none; }
-:root:not([data-look="glyph"]) :is(.due, .donemark) { background: none !important; padding: 0; height: auto; font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.08em; color: rgb(var(--ink) / 0.55); }
+:root:not([data-look="glyph"]) :is(.due, .donemark) { background: none !important; padding: 0; height: auto; font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.08em; color: rgb(var(--ink) / max(0.7, var(--floor))); }
 :root:not([data-look="glyph"]) .due:is(.lv-over, .lv-soon) { color: var(--accent); }
-:root:not([data-look="glyph"]) .row.done .row-main { opacity: 0.4; }
+:root:not([data-look="glyph"]) .row.done { --lv: 0; }
+:root:not([data-look="glyph"]) .row.done .subj { text-decoration: line-through; text-decoration-thickness: 1px; }
 :root:not([data-look="glyph"]) .swipe-bg.r { background: rgb(var(--ink)); color: var(--bg); }
 :root:not([data-look="glyph"]) .swipe-bg.l { background: rgb(var(--ink) / 0.5); color: var(--bg); }
 :root:not([data-look="glyph"]) .foot { font-size: 11px; letter-spacing: 0.04em; padding-top: 36px; }
@@ -417,7 +425,7 @@ svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width:
 :root:not([data-look="glyph"]) .due-row .row-main { grid-template-columns: 52px minmax(0, 1fr); align-items: start; }
 :root:not([data-look="glyph"]) .datebox { width: auto; height: auto; align-items: flex-start; background: none !important; color: rgb(var(--ink)); }
 :root:not([data-look="glyph"]) .datebox b { font: 300 34px/0.9 var(--font); letter-spacing: -0.04em; font-variant-numeric: tabular-nums; }
-:root:not([data-look="glyph"]) .datebox small { font-size: 10.5px; letter-spacing: 0.12em; color: rgb(var(--ink) / 0.45); margin-top: 4px; }
+:root:not([data-look="glyph"]) .datebox small { font-size: 10.5px; letter-spacing: 0.12em; color: rgb(var(--ink) / var(--floor)); margin-top: 4px; }
 :root:not([data-look="glyph"]) .datebox:is(.lv-over, .lv-soon) b { color: var(--accent); }
 :root:not([data-look="glyph"]) .datebox.lv-week { color: rgb(var(--ink)); }
 :root:not([data-look="glyph"]) .due-row .subj { font-size: 16px; -webkit-line-clamp: 2; }
@@ -435,7 +443,7 @@ svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width:
 :root:not([data-look="glyph"]) .mv-from b { font-weight: 500; }
 :root:not([data-look="glyph"]) .lbl { font-size: 10.5px; font-weight: 500; letter-spacing: 0.12em; }
 :root:not([data-look="glyph"]) .mv-pile { gap: 0; margin-top: 22px; }
-:root:not([data-look="glyph"]) .pchip { border: 0; background: none !important; padding: 0; margin-right: 16px; height: 28px; font-size: 14px; color: rgb(var(--ink) / 0.4); }
+:root:not([data-look="glyph"]) .pchip { border: 0; background: none !important; padding: 0; margin-right: 16px; height: 28px; font-size: 14px; color: rgb(var(--ink) / var(--floor)); }
 :root:not([data-look="glyph"]) .pchip.on { color: rgb(var(--ink)); font-weight: 500; box-shadow: inset 0 -2px 0 currentColor; }
 :root:not([data-look="glyph"]) .pchip.on.p-very_important { color: var(--accent); }
 :root:not([data-look="glyph"]) :is(.mv-due, .mv-sum) { background: none; border-radius: 0; padding: 2px 0 2px 14px; margin-top: 18px; border-left: 2px solid rgb(var(--ink) / 0.14); }
@@ -488,7 +496,7 @@ svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width:
   --t-priority: #ffe6a1;
   --t-later: #b9a2ff;
   --t-noise: #e3dff0;
-  --due-soon: #ff5a63;
+  --due-soon: #ff7a82; /* 4.5:1 on its own tint (issue #7) */
   --due-week: #ffb84d;
   --ink: #0b0716;
   --head: var(--font-dot), monospace;
@@ -503,8 +511,8 @@ svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width:
   --line: #1b1238;
   --accent: #1b1238;
   --on-accent: #f5c842;
-  --due-soon: #d71921;
-  --due-week: #a35a00;
+  --due-soon: #b0141b;
+  --due-week: #8a4b00;
   --ink: #1b1238;
 }
 :root[data-look="glyph"] body { background: var(--bg) radial-gradient(color-mix(in srgb, var(--gold) 14%, transparent) 1.4px, transparent 1.5px) 0 0 / 22px 22px; }
@@ -602,3 +610,35 @@ svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width:
 :root:not([data-look="glyph"]) .settings b { font-weight: 500; }
 :root:not([data-look="glyph"]) .settings .keyform input { border-radius: 0; background: none; border: 0; border-bottom: 1px solid rgb(var(--ink) / 0.2); padding: 0; }
 .mv-report { display: inline-block; margin-top: 8px; font-size: 12.5px; text-decoration: underline; text-underline-offset: 3px; }
+
+/* =========================================================
+   Accessibility and new pieces (issues #8 to #11)
+   ========================================================= */
+.sr-only { position: absolute !important; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+/* row buttons show when a keyboard reaches them, not only on hover */
+.row:focus-within .row-acts.hover-only { opacity: 1; pointer-events: auto; }
+.row:focus-within .time { visibility: hidden; }
+[data-autofocus]:focus { outline: none; }
+/* long lists: the browser skips drawing days that are off screen */
+.day { content-visibility: auto; contain-intrinsic-size: auto 480px; }
+.foot .link { font-size: 13px; padding: 8px 4px; }
+.foot .link:disabled { text-decoration: none; opacity: 0.8; }
+
+/* "Sign in again" (#10) */
+.banner { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin: 8px 16px 4px; padding: 12px 14px; border-radius: 14px; background: var(--surface); font-size: 14px; line-height: 1.45; border-left: 3px solid var(--accent); }
+.banner span { flex: 1 1 240px; }
+.banner form { flex: none; }
+:root:not([data-look="glyph"]) .banner { border-radius: 0; background: none; border-left: 2px solid var(--accent); padding: 4px 0 4px 14px; }
+:root[data-look="glyph"] .banner { border: 2.5px solid var(--ink); box-shadow: 3px 3px 0 var(--ink); }
+
+/* "Delete my data" (#9) */
+.set-block.danger .confirm { display: flex; flex-direction: column; gap: 10px; }
+.set-block.danger .confirm p { margin: 0; font-size: 13.5px; }
+.set-block.danger .confirm div { display: flex; gap: 8px; flex-wrap: wrap; }
+.check { display: flex; gap: 10px; align-items: flex-start; font-size: 14px; }
+.check input { width: 18px; height: 18px; margin: 1px 0 0; accent-color: var(--accent); flex: none; }
+.signin .note { margin: 0; padding: 10px 12px; border-left: 2px solid var(--accent); font-size: 14px; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
+}

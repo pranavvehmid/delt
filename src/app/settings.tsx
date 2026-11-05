@@ -1,8 +1,10 @@
 "use client";
 
-// Settings sheet: phone notifications (#6), AI sorting key (#3), and help links (#1).
-import { useCallback, useEffect, useState } from "react";
+// Settings sheet: phone notifications (#6), AI sorting key (#3), help links (#1),
+// and deleting everything DELT keeps about you (#9).
+import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { useDialog } from "./use-dialog";
 
 const REPO = "https://github.com/pranavvehmid/delt";
 
@@ -15,11 +17,17 @@ function b64ToBytes(b64: string) {
   return Uint8Array.from(raw, (c) => c.charCodeAt(0));
 }
 
-export default function Settings({ open, onClose, onToast }: { open: boolean; onClose: () => void; onToast: (t: string) => void }) {
+export default function Settings({ open, onClose, onToast, section }: { open: boolean; onClose: () => void; onToast: (t: string) => void; section?: "data" }) {
   const [push, setPush] = useState<PushState>("busy");
   const [ai, setAi] = useState<AiInfo | null>(null);
   const [key, setKey] = useState("");
   const [saving, setSaving] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [dropLabels, setDropLabels] = useState(true);
+  const [deleting, setDeleting] = useState(false);
+  const box = useRef<HTMLElement>(null);
+  const dataBlock = useRef<HTMLDivElement>(null);
+  useDialog(box, open, onClose);
 
   const loadPush = useCallback(async () => {
     if (!("serviceWorker" in navigator) || !("PushManager" in window) || !("Notification" in window)) return setPush("unsupported");
@@ -37,10 +45,24 @@ export default function Settings({ open, onClose, onToast }: { open: boolean; on
     if (!open) return;
     loadPush();
     loadAi();
-    const k = (e: KeyboardEvent) => e.key === "Escape" && onClose();
-    window.addEventListener("keydown", k);
-    return () => window.removeEventListener("keydown", k);
-  }, [open, loadPush, loadAi, onClose]);
+    setConfirmDelete(false);
+    if (section === "data") requestAnimationFrame(() => dataBlock.current?.scrollIntoView({ block: "center" }));
+  }, [open, loadPush, loadAi, section]);
+
+  async function deleteEverything() {
+    setDeleting(true);
+    try {
+      // turn off this phone's notifications too
+      const reg = await navigator.serviceWorker?.getRegistration("/");
+      await (await reg?.pushManager.getSubscription())?.unsubscribe();
+    } catch {}
+    const r = await fetch("/api/account", { method: "DELETE", body: JSON.stringify({ removeLabels: dropLabels }) });
+    if (!r.ok) {
+      setDeleting(false);
+      return onToast("Couldn't delete. Try again in a minute.");
+    }
+    location.href = "/?deleted=1";
+  }
 
   async function turnOn() {
     setPush("busy");
@@ -96,10 +118,12 @@ export default function Settings({ open, onClose, onToast }: { open: boolean; on
   return createPortal(
     <>
       <div className="veil" onClick={onClose} />
-      <section className="sheet settings" role="dialog" aria-modal="true" aria-label="Settings">
+      <section className="sheet settings" role="dialog" aria-modal="true" aria-labelledby="set-title" ref={box}>
         <div className="sheet-grip" aria-hidden="true" />
         <header className="sheet-head">
-          <h2>Settings</h2>
+          <h2 id="set-title" tabIndex={-1} data-autofocus>
+            Settings
+          </h2>
           <button className="link" onClick={onClose}>
             Done
           </button>
@@ -119,7 +143,7 @@ export default function Settings({ open, onClose, onToast }: { open: boolean; on
             </span>
             {(push === "on" || push === "off" || push === "busy") && (
               <label className="toggle">
-                <input type="checkbox" checked={push === "on"} disabled={push === "busy"} onChange={(e) => (e.target.checked ? turnOn() : turnOff())} />
+                <input type="checkbox" aria-label="Notifications" checked={push === "on"} disabled={push === "busy"} onChange={(e) => (e.target.checked ? turnOn() : turnOff())} />
                 <span className="knob" aria-hidden="true" />
               </label>
             )}
@@ -181,6 +205,35 @@ export default function Settings({ open, onClose, onToast }: { open: boolean; on
           <a className="set-link" href={REPO} target="_blank" rel="noreferrer">
             Source code ↗
           </a>
+        </div>
+
+        <div className="set-block danger" ref={dataBlock}>
+          <b>Your data</b>
+          <small className="muted">
+            DELT keeps your Google sign-in token and a short preview of each mail (sender, subject, a line of text). Deleting removes all of it, signs you out and
+            cancels DELT&apos;s access to your Gmail. Your mail itself stays in Gmail.
+          </small>
+          {!confirmDelete ? (
+            <button className="pillbtn" onClick={() => setConfirmDelete(true)}>
+              Delete my data
+            </button>
+          ) : (
+            <div className="confirm" role="group" aria-label="Confirm delete">
+              <label className="check">
+                <input type="checkbox" checked={dropLabels} onChange={(e) => setDropLabels(e.target.checked)} />
+                Also remove the MailSort labels from Gmail
+              </label>
+              <p>This can&apos;t be undone.</p>
+              <div>
+                <button className="pillbtn on" onClick={deleteEverything} disabled={deleting}>
+                  {deleting ? "Deleting…" : "Delete everything"}
+                </button>
+                <button className="pillbtn" onClick={() => setConfirmDelete(false)} disabled={deleting}>
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </section>
     </>,

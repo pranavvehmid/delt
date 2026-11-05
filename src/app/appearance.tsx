@@ -2,9 +2,10 @@
 
 // Appearance panel: look (Minimal or Glyph), light/dark/auto, accent colour,
 // text size and spacing. Saved on this device; applied as data-* on <html>.
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { DEFAULTS, KEY, parsePrefs, toDataset, type Prefs } from "@/lib/prefs";
+import { useDialog } from "./use-dialog";
 
 const ACCENTS: { key: Prefs["accent"]; label: string; color: string }[] = [
   {
@@ -56,12 +57,8 @@ export default function Appearance() {
     mq.addEventListener("change", on);
     return () => mq.removeEventListener("change", on);
   }, []);
-  useEffect(() => {
-    if (!open) return;
-    const k = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
-    window.addEventListener("keydown", k);
-    return () => window.removeEventListener("keydown", k);
-  }, [open]);
+  const box = useRef<HTMLElement>(null);
+  useDialog(box, open, () => setOpen(false));
 
   function set<K extends keyof Prefs>(k: K, v: Prefs[K]) {
     const next = { ...p, [k]: v };
@@ -107,6 +104,7 @@ export default function Appearance() {
         className="iconbtn"
         onClick={() => setOpen(true)}
         aria-label="Appearance"
+        aria-haspopup="dialog"
         title="Appearance"
       >
         <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -122,11 +120,12 @@ export default function Appearance() {
               className="sheet"
               role="dialog"
               aria-modal="true"
-              aria-label="Appearance"
+              aria-labelledby="ap-title"
+              ref={box}
             >
               <div className="sheet-grip" aria-hidden="true" />
               <header className="sheet-head">
-                <h2>Appearance</h2>
+                <h2 id="ap-title" tabIndex={-1} data-autofocus>Appearance</h2>
                 <button className="link" onClick={() => setOpen(false)}>
                   Done
                 </button>

@@ -7,6 +7,7 @@ import type { EmailRow, Priority } from "@/lib/supabase";
 import type { FullMessage } from "@/lib/gmail";
 import { PILES, cleanSender, cleanSubject, dueLevel, dueText, pileLabel, wrongPileLink } from "@/lib/inbox";
 import { calendarLink } from "@/lib/insights";
+import { useDialog } from "./use-dialog";
 
 const esc = (s: string) => s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
 const linkify = (s: string) => s.replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1">$1</a>');
@@ -28,7 +29,7 @@ function frameDoc(m: FullMessage) {
 }
 
 export default function MailView({
-  id, row, now, gmailLink, onClose, onPatch,
+  id, row, now, gmailLink, onClose, onPatch, onReauth, restoreFocus,
 }: {
   id: string;
   row: EmailRow | null;
@@ -36,12 +37,16 @@ export default function MailView({
   gmailLink: string;
   onClose: () => void;
   onPatch: (p: { read?: boolean; is_done?: boolean; priority?: Priority }) => void;
+  onReauth?: () => void;
+  restoreFocus?: () => HTMLElement | null;
 }) {
   const [msg, setMsg] = useState<FullMessage | null>(null);
   const [error, setError] = useState("");
   const [tries, setTries] = useState(0);
   const [height, setHeight] = useState(240);
   const frame = useRef<HTMLIFrameElement>(null);
+  const box = useRef<HTMLDivElement>(null);
+  useDialog(box, true, onClose, restoreFocus);
 
   useEffect(() => {
     let alive = true;
@@ -52,24 +57,23 @@ export default function MailView({
         const d = await r.json().catch(() => ({}));
         if (!alive) return;
         if (r.ok) setMsg(d);
-        else setError(r.status === 401 ? "You've been signed out. Reload and sign in again." : d.error ?? "Gmail didn't return this mail.");
+        else {
+          if (d.reauth) onReauth?.();
+          setError(r.status === 401 ? "You've been signed out. Reload and sign in again." : d.error ?? "Gmail didn't return this mail.");
+        }
       })
       .catch(() => alive && setError("You're offline."));
     return () => {
       alive = false;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, tries]);
 
-  // Esc closes; lock the page behind.
+  // Lock the page behind (Esc and focus are handled by useDialog).
   useEffect(() => {
-    const k = (e: KeyboardEvent) => e.key === "Escape" && onClose();
-    window.addEventListener("keydown", k);
     document.documentElement.classList.add("locked");
-    return () => {
-      window.removeEventListener("keydown", k);
-      document.documentElement.classList.remove("locked");
-    };
-  }, [onClose]);
+    return () => document.documentElement.classList.remove("locked");
+  }, []);
 
   // Grow the frame to the mail's own height, so the whole mail scrolls as one page.
   function fit() {
@@ -83,7 +87,7 @@ export default function MailView({
   const sender = msg?.from || cleanSender(row?.from_name ?? null);
 
   return (
-    <div className="mailview" role="dialog" aria-modal="true" aria-label={subject}>
+    <div className="mailview" role="dialog" aria-modal="true" aria-labelledby="mv-title" ref={box}>
       <header className="mv-bar">
         <button className="iconbtn" onClick={onClose} aria-label="Back to list" title="Back">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" /></svg>
@@ -91,19 +95,21 @@ export default function MailView({
         <div className="mv-acts">
           {row && (
             <>
-              <button className="pillbtn" onClick={() => onPatch({ read: false })}>Mark unread</button>
-              <button className={`pillbtn ${row.is_done ? "on" : ""}`} onClick={() => onPatch({ is_done: !row.is_done })}>
+              <button className="pillbtn" onClick={() => onPatch({ read: !row.unread })}>{row.unread ? "Mark read" : "Mark unread"}</button>
+              <button className={`pillbtn ${row.is_done ? "on" : ""}`} aria-pressed={row.is_done} onClick={() => onPatch({ is_done: !row.is_done })}>
                 {row.is_done ? "✓ Done" : "Done"}
               </button>
             </>
           )}
-          <a className="pillbtn" href={gmailLink} target="_blank" rel="noreferrer">Gmail ↗</a>
+          <a className="pillbtn" href={gmailLink} target="_blank" rel="noreferrer" aria-label="Open in Gmail (new tab)">Gmail ↗</a>
         </div>
       </header>
 
       <div className="mv-scroll">
         <article className="mv-page">
-          <h1 className="mv-subj">{subject}</h1>
+          <h1 className="mv-subj" id="mv-title" tabIndex={-1} data-autofocus>
+            {subject}
+          </h1>
           <div className="mv-from">
             <b>{sender}</b>
             <span className="muted">
@@ -161,7 +167,7 @@ export default function MailView({
 
           <div className="mv-body">
             {error ? (
-              <div className="mv-err">
+              <div className="mv-err" role="alert">
                 <b>Couldn&apos;t load this mail</b>
                 <span className="muted">{error}</span>
                 <div>
@@ -170,7 +176,7 @@ export default function MailView({
                 </div>
               </div>
             ) : !msg ? (
-              <div className="mv-loading">
+              <div className="mv-loading" aria-label="Loading the mail" role="status">
                 <span className="sk" style={{ width: "90%" }} />
                 <span className="sk" style={{ width: "75%" }} />
                 <span className="sk" style={{ width: "82%" }} />

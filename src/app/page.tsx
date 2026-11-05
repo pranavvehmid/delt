@@ -1,13 +1,19 @@
 import { auth, signIn, signOut } from "@/auth";
 import InboxApp from "./inbox-app";
 
-export default async function Home() {
+export default async function Home({ searchParams }: { searchParams: Promise<{ deleted?: string }> }) {
   const session = await auth();
+  const { deleted } = await searchParams;
 
   if (!session?.user?.email) {
     return (
       <main className="signin">
         <div className="signin-card">
+          {deleted && (
+            <p className="note" role="status">
+              Your DELT data is deleted and its access to your Gmail is cancelled.
+            </p>
+          )}
           <span className="logo">
             <span>DELT</span>
             <i />
@@ -44,6 +50,10 @@ export default async function Home() {
       signOutAction={async () => {
         "use server";
         await signOut();
+      }}
+      signInAction={async () => {
+        "use server";
+        await signIn("google");
       }}
     />
   );

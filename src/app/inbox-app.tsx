@@ -6,7 +6,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type PointerEvent as RPointerEvent } from "react";
 import type { EmailRow, Priority } from "@/lib/supabase";
 import {
-  PILES, BUCKETS, ago, cleanSender, cleanSubject, deadlineBuckets, dueLevel, dueText, filterMail, groupByDay, initials, openDeadlines, pileCounts, pileLabel, shortTime,
+  PAGE_SIZE, PILES, BUCKETS, ago, cleanSender, cleanSubject, deadlineBuckets, dueLevel, dueText, filterMail, groupByDay, initials, mergeFresh, mergeMore, oldestReceived,
+  openDeadlines, pileCounts, pileLabel, shortTime,
 } from "@/lib/inbox";
 import { calendarLink } from "@/lib/insights";
 import MailView from "./mail-view";
@@ -23,8 +24,19 @@ function readRoute(): Route {
   return { tab: h.startsWith("#/deadlines") ? "deadlines" : "inbox", mailId: null };
 }
 
-export default function InboxApp({ email, name, signOutAction }: { email: string; name: string; signOutAction: () => Promise<void> }) {
+type Props = { email: string; name: string; signOutAction: () => Promise<void>; signInAction?: () => Promise<void> };
+
+export default function InboxApp({ email, name, signOutAction, signInAction }: Props) {
+  // mails: newest pages, loaded as you scroll. hits: server search results. due: mail with a
+  // deadline, however old, so the Deadlines tab doesn't depend on how far you scrolled.
   const [mails, setMails] = useState<EmailRow[] | null>(null);
+  const [more, setMore] = useState(false);
+  const [loadingOlder, setLoadingOlder] = useState(false);
+  const [hits, setHits] = useState<EmailRow[] | null>(null);
+  const [searching, setSearching] = useState(false);
+  const [due, setDue] = useState<EmailRow[]>([]);
+  const [reauth, setReauth] = useState(false);
+  const [settingsSection, setSettingsSection] = useState<"data" | undefined>();
   const [route, setRoute] = useState<Route>({ tab: "inbox", mailId: null });
   const [pile, setPile] = useState<Priority | "all">("all");
   const [unreadOnly, setUnreadOnly] = useState(false);
@@ -49,7 +61,9 @@ export default function InboxApp({ email, name, signOutAction }: { email: string
     location.hash = `#/${tab}`;
     window.scrollTo({ top: 0 });
   };
+  const openedFrom = useRef<string | null>(null);
   const openMail = (m: EmailRow) => {
+    openedFrom.current = m.id;
     sessionStorage.setItem("delt-tab", route.tab);
     location.hash = `#/mail/${encodeURIComponent(m.id)}`;
     if (m.unread) patch(m.id, { read: true }, true);
@@ -57,10 +71,44 @@ export default function InboxApp({ email, name, signOutAction }: { email: string
   const closeMail = () => (history.length > 1 && route.mailId ? history.back() : (location.hash = `#/${route.tab}`));
 
   // ---------- data + sync ----------
+  const mailsRef = useRef<EmailRow[] | null>(null);
+  mailsRef.current = mails;
+  const pagedOlder = useRef(false);
   const load = useCallback(async () => {
-    const r = await fetch("/api/emails?days=60");
-    if (r.ok) setMails((await r.json()).emails ?? []);
-    else if (r.status === 401) location.reload();
+    const [r, d] = await Promise.all([fetch(`/api/emails?limit=${PAGE_SIZE}`), fetch("/api/emails?due=1&limit=300")]);
+    if (r.status === 401) return location.reload();
+    if (r.ok) {
+      const j = await r.json();
+      const page: EmailRow[] = j.emails ?? [];
+      setMails((l) => (l && pagedOlder.current ? mergeFresh(l, page, j.more) : page));
+      if (!pagedOlder.current || !j.more) setMore(!!j.more);
+      if (!j.more) pagedOlder.current = false;
+      setReauth(!!j.reauth);
+    }
+    if (d.ok) setDue((await d.json()).emails ?? []);
+  }, []);
+  // Scrolling near the end loads the next older page (issue #11).
+  const olderBusy = useRef(false);
+  const loadOlder = useCallback(async () => {
+    const cursor = oldestReceived(mailsRef.current ?? []);
+    if (olderBusy.current || !cursor) return;
+    olderBusy.current = true;
+    setLoadingOlder(true);
+    try {
+      const r = await fetch(`/api/emails?before=${encodeURIComponent(cursor)}&limit=${PAGE_SIZE}`);
+      if (r.ok) {
+        const j = await r.json();
+        const page: EmailRow[] = j.emails ?? [];
+        const have = new Set((mailsRef.current ?? []).map((m) => m.id));
+        const added = page.filter((m) => !have.has(m.id)).length;
+        pagedOlder.current = true;
+        setMails((l) => mergeMore(l ?? [], page));
+        setMore(!!j.more && added > 0);
+      }
+    } finally {
+      olderBusy.current = false;
+      setLoadingOlder(false);
+    }
   }, []);
   const syncing$ = useRef(false);
   const sync = useCallback(
@@ -71,9 +119,10 @@ export default function InboxApp({ email, name, signOutAction }: { email: string
       try {
         const r = await fetch("/api/sync", { method: "POST" });
         const d = await r.json().catch(() => ({}));
+        if (d.reauth) setReauth(true);
         await load();
         setSyncedAt(Date.now());
-        if (loud || d.fetched > 0) setToast({ text: d.fetched > 0 ? `${d.fetched} new mail${d.fetched > 1 ? "s" : ""}` : "No new mail" });
+        if (!d.reauth && (loud || d.fetched > 0)) setToast({ text: d.fetched > 0 ? `${d.fetched} new mail${d.fetched > 1 ? "s" : ""}` : "No new mail" });
       } catch {
         if (loud) setToast({ text: "Couldn't reach Gmail" });
       }
@@ -107,11 +156,40 @@ export default function InboxApp({ email, name, signOutAction }: { email: string
     return () => clearTimeout(t);
   }, [toast]);
 
+  // Search covers all stored mail on the server, not only the loaded pages (issue #11).
+  useEffect(() => {
+    const q = query.trim();
+    if (q.length < 2) {
+      setHits(null);
+      setSearching(false);
+      return;
+    }
+    let alive = true;
+    setSearching(true);
+    const t = setTimeout(async () => {
+      try {
+        const r = await fetch(`/api/emails?q=${encodeURIComponent(q)}&limit=200`);
+        if (alive && r.ok) setHits((await r.json()).emails ?? []);
+      } catch {}
+      if (alive) setSearching(false);
+    }, 300);
+    return () => {
+      alive = false;
+      clearTimeout(t);
+    };
+  }, [query]);
+
   // ---------- actions (instant on screen, then saved + mirrored to Gmail) ----------
+  const findMail = (id: string) => mails?.find((m) => m.id === id) ?? hits?.find((m) => m.id === id) ?? due.find((m) => m.id === id) ?? null;
+  const updateAll = (fn: (m: EmailRow) => EmailRow) => {
+    setMails((l) => l?.map(fn) ?? null);
+    setHits((l) => l?.map(fn) ?? null);
+    setDue((l) => l.map(fn));
+  };
   type Patch = { read?: boolean; is_done?: boolean; priority?: Priority };
   function patch(id: string, p: Patch, quiet = false) {
-    const before = mails?.find((m) => m.id === id);
-    setMails((l) => l?.map((m) => (m.id === id ? apply(m, p) : m)) ?? null);
+    const before = findMail(id);
+    updateAll((m) => (m.id === id ? apply(m, p) : m));
     fetch("/api/emails", { method: "PATCH", body: JSON.stringify({ id, ...p }) }).then((r) => !r.ok && setToast({ text: "Couldn't save that change" }));
     if (quiet || !before) return;
     const undo = () => patch(id, { read: p.read !== undefined ? !before.unread : undefined, is_done: p.is_done !== undefined ? before.is_done : undefined, priority: p.priority ? before.priority : undefined }, true);
@@ -121,7 +199,7 @@ export default function InboxApp({ email, name, signOutAction }: { email: string
   }
   async function markAllRead(ids: string[]) {
     const set = new Set(ids);
-    setMails((l) => l?.map((m) => (set.has(m.id) ? { ...m, unread: false } : m)) ?? null);
+    updateAll((m) => (set.has(m.id) ? { ...m, unread: false } : m));
     setToast({ text: `${ids.length} marked read` });
     const r = await fetch("/api/emails/bulk", { method: "POST", body: JSON.stringify({ ids, read: true }) });
     if (!r.ok) setToast({ text: "Couldn't update Gmail" });
@@ -130,11 +208,44 @@ export default function InboxApp({ email, name, signOutAction }: { email: string
   // ---------- derived ----------
   const all = useMemo(() => mails ?? [], [mails]);
   const counts = useMemo(() => pileCounts(all), [all]);
-  const shown = useMemo(() => filterMail(all, { pile, unreadOnly, query }), [all, pile, unreadOnly, query]);
+  const searchable = useMemo(() => (hits ? mergeMore(all, hits) : all), [all, hits]);
+  const shown = useMemo(() => filterMail(searchable, { pile, unreadOnly, query }), [searchable, pile, unreadOnly, query]);
   const days = useMemo(() => groupByDay(shown, now), [shown, now]);
-  const buckets = useMemo(() => deadlineBuckets(all, now), [all, now]);
+  const buckets = useMemo(() => deadlineBuckets(mergeMore(all, due), now), [all, due, now]);
   const dueCount = openDeadlines(buckets);
-  const open = route.mailId ? all.find((m) => m.id === route.mailId) ?? null : null;
+  const open = route.mailId ? findMail(route.mailId) : null;
+
+  // load the next page when the end of the list comes near
+  const sentinel = useRef<HTMLDivElement>(null);
+  const canLoadOlder = route.tab === "inbox" && !query.trim() && more && mails !== null;
+  useEffect(() => {
+    const el = sentinel.current;
+    if (!canLoadOlder || !el || typeof IntersectionObserver === "undefined") return;
+    const io = new IntersectionObserver((es) => es[0]?.isIntersecting && loadOlder(), { rootMargin: "900px 0px" });
+    io.observe(el);
+    return () => io.disconnect();
+  }, [canLoadOlder, loadOlder, mails?.length]);
+
+  // account menu: Esc or a click/tab outside closes it (issue #8)
+  const acct = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!menu) return;
+    acct.current?.querySelector<HTMLElement>(".menu-item")?.focus();
+    const key = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      setMenu(false);
+      acct.current?.querySelector<HTMLElement>(".avatar")?.focus();
+    };
+    const out = (e: Event) => !acct.current?.contains(e.target as Node) && setMenu(false);
+    document.addEventListener("keydown", key);
+    document.addEventListener("pointerdown", out);
+    document.addEventListener("focusin", out);
+    return () => {
+      document.removeEventListener("keydown", key);
+      document.removeEventListener("pointerdown", out);
+      document.removeEventListener("focusin", out);
+    };
+  }, [menu]);
   const unreadShown = shown.filter((m) => m.unread).map((m) => m.id);
   const gmailLink = (m: EmailRow) => `https://mail.google.com/mail/?authuser=${encodeURIComponent(email)}#all/${m.thread_id ?? m.id}`;
 
@@ -152,12 +263,12 @@ export default function InboxApp({ email, name, signOutAction }: { email: string
         </button>
         <div className="appbar-r">
           <Appearance />
-          <div className="acct">
-            <button className="avatar me" onClick={() => setMenu((m) => !m)} aria-label="Account" aria-expanded={menu}>
+          <div className="acct" ref={acct}>
+            <button className="avatar me" onClick={() => setMenu((m) => !m)} aria-label="Account" aria-expanded={menu} aria-controls="acct-menu">
               {initials(name)}
             </button>
             {menu && (
-              <div className="menu" onMouseLeave={() => setMenu(false)}>
+              <div className="menu" id="acct-menu">
                 <div className="menu-who">
                   <b>{name}</b>
                   <small>{email}</small>
@@ -166,10 +277,21 @@ export default function InboxApp({ email, name, signOutAction }: { email: string
                   className="menu-item"
                   onClick={() => {
                     setMenu(false);
+                    setSettingsSection(undefined);
                     setSettingsOpen(true);
                   }}
                 >
                   Settings
+                </button>
+                <button
+                  className="menu-item"
+                  onClick={() => {
+                    setMenu(false);
+                    setSettingsSection("data");
+                    setSettingsOpen(true);
+                  }}
+                >
+                  Delete my data
                 </button>
                 <a className="menu-item" href={`https://mail.google.com/mail/?authuser=${encodeURIComponent(email)}`} target="_blank" rel="noreferrer">
                   Open Gmail ↗
@@ -183,12 +305,25 @@ export default function InboxApp({ email, name, signOutAction }: { email: string
         </div>
       </header>
 
+      {reauth && (
+        <div className="banner" role="alert">
+          <span>
+            <b>DELT can&apos;t reach your Gmail.</b> Its access was removed in your Google account, so new mail won&apos;t show up. Sign in again to fix it.
+          </span>
+          {signInAction && (
+            <form action={signInAction}>
+              <button className="pillbtn on">Sign in again</button>
+            </form>
+          )}
+        </div>
+      )}
+
       <nav className="mast" aria-label="Sections">
         <button className={route.tab === "inbox" ? "on" : ""} onClick={() => goTab("inbox")} aria-current={route.tab === "inbox" ? "page" : undefined}>
-          Inbox{counts.all.unread > 0 && <sup>{counts.all.unread > 99 ? "99+" : counts.all.unread}</sup>}
+          Inbox{counts.all.unread > 0 && <sup><span className="sr-only">, </span>{counts.all.unread > 99 ? "99+" : counts.all.unread}<span className="sr-only"> unread</span></sup>}
         </button>
         <button className={route.tab === "deadlines" ? "on" : ""} onClick={() => goTab("deadlines")} aria-current={route.tab === "deadlines" ? "page" : undefined}>
-          Deadlines{dueCount > 0 && <sup>{dueCount}</sup>}
+          Deadlines{dueCount > 0 && <sup><span className="sr-only">, </span>{dueCount}<span className="sr-only"> open</span></sup>}
         </button>
       </nav>
 
@@ -228,8 +363,8 @@ export default function InboxApp({ email, name, signOutAction }: { email: string
             <Skeleton />
           ) : shown.length === 0 ? (
             <Empty
-              title={query ? "No results" : unreadOnly ? "No unread mail" : "No mail here"}
-              hint={query ? "Try a sender or a word from the subject." : ""}
+              title={query && searching ? "Searching…" : query ? "No results" : unreadOnly ? "No unread mail" : "No mail here"}
+              hint={query && !searching ? "Try a sender or a word from the subject." : ""}
             />
           ) : (
             days.map((d) => (
@@ -248,7 +383,22 @@ export default function InboxApp({ email, name, signOutAction }: { email: string
               </section>
             ))
           )}
-          <p className="foot muted">Last 60 days</p>
+          {mails !== null && !query.trim() && (
+            <div ref={sentinel} className="foot muted" aria-live="polite">
+              {more ? (
+                <button className="link" onClick={loadOlder} disabled={loadingOlder}>
+                  {loadingOlder ? "Loading older mail…" : "Load older mail"}
+                </button>
+              ) : (
+                <>That&apos;s all your mail in DELT</>
+              )}
+            </div>
+          )}
+          {query.trim() && shown.length > 0 && (
+            <p className="foot muted" aria-live="polite">
+              {searching ? "Searching all your mail…" : `${shown.length} result${shown.length === 1 ? "" : "s"}`}
+            </p>
+          )}
         </main>
       )}
 
@@ -278,7 +428,7 @@ export default function InboxApp({ email, name, signOutAction }: { email: string
                 {(b !== "Done" || showDone) && (
                   <ul className="rows">
                     {buckets[b].map((m) => (
-                      <li key={m.id} className={`row due-row ${m.is_done ? "done" : ""}`}>
+                      <li key={m.id} className={`row due-row ${m.is_done ? "done" : ""}`} data-mail={m.id}>
                         <button className="row-main" onClick={() => openMail(m)}>
                           <span className={`datebox lv-${dueLevel(m.deadline!, now)}`}>
                             <b>{new Date(m.deadline!).toLocaleDateString("en-IN", { day: "numeric", timeZone: "Asia/Kolkata" })}</b>
@@ -334,13 +484,15 @@ export default function InboxApp({ email, name, signOutAction }: { email: string
           gmailLink={open ? gmailLink(open) : `https://mail.google.com/mail/?authuser=${encodeURIComponent(email)}`}
           onClose={closeMail}
           onPatch={(p) => patch(route.mailId!, p)}
+          onReauth={() => setReauth(true)}
+          restoreFocus={() => (openedFrom.current ? document.querySelector<HTMLElement>(`[data-mail="${CSS.escape(openedFrom.current)}"] .row-main`) : null)}
         />
       )}
 
-      <Settings open={settingsOpen} onClose={() => setSettingsOpen(false)} onToast={(text) => setToast({ text })} />
+      <Settings open={settingsOpen} section={settingsSection} onClose={() => setSettingsOpen(false)} onToast={(text) => setToast({ text })} />
 
       {toast && (
-        <div className="toast" role="status">
+        <div className="toast" role="status" aria-live="polite">
           <span>{toast.text}</span>
           {toast.undo && (
             <button
@@ -408,14 +560,22 @@ function MailRow({ m, now, onOpen, onRead, onDone }: { m: EmailRow; now: number;
     }
   };
   const sender = cleanSender(m.from_name);
+  // What a screen reader says for the row (the time and pile are only shown visually).
+  const label = [
+    m.unread ? "Unread." : "",
+    `${sender}: ${cleanSubject(m.subject)}.`,
+    `${pileLabel(m.priority)}, ${shortTime(m.received_at, now)}.`,
+    m.deadline && !m.is_done ? `Due ${dueText(m.deadline, now)}.` : "",
+    m.is_done ? "Done." : "",
+  ].filter(Boolean).join(" ");
 
   return (
-    <li className={`row ink-${m.priority} ${m.unread ? "unread" : ""} ${m.is_done ? "done" : ""} ${dx ? "dragging" : ""}`}>
+    <li className={`row ink-${m.priority} ${m.unread ? "unread" : ""} ${m.is_done ? "done" : ""} ${dx ? "dragging" : ""}`} data-mail={m.id}>
       <div className={`swipe-bg ${dx > 0 ? "r" : "l"} ${Math.abs(dx) > LIMIT ? "armed" : ""}`} aria-hidden="true">
         <span>{dx > 0 ? (m.unread ? "Read" : "Unread") : m.is_done ? "Not done" : "Done"}</span>
       </div>
       <div className="row-slide" style={{ transform: dx ? `translateX(${dx}px)` : undefined }} onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={up}>
-        <button className="row-main" onClick={() => !moved.current && onOpen()}>
+        <button className="row-main" onClick={() => !moved.current && onOpen()} aria-label={label} aria-describedby={m.summary || m.snippet ? `sum-${m.id}` : undefined}>
           <span className={`avatar p-${m.priority}`} aria-hidden="true">
             {initials(sender)}
           </span>
@@ -429,7 +589,9 @@ function MailRow({ m, now, onOpen, onRead, onDone }: { m: EmailRow; now: number;
               <span className="time">{shortTime(m.received_at, now)}</span>
             </span>
             <span className="subj ell">{cleanSubject(m.subject)}</span>
-            <span className="sum ell">{m.summary || m.snippet}</span>
+            <span className="sum ell" id={`sum-${m.id}`}>
+              {m.summary || m.snippet}
+            </span>
             <span className="meta">
               <span className={`tag p-${m.priority}`}>
                 <i className="tagdot" />
@@ -448,7 +610,7 @@ function MailRow({ m, now, onOpen, onRead, onDone }: { m: EmailRow; now: number;
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 5 5 9-10" /></svg>
           </button>
         </div>
-        {m.unread && <i className="unread-dot" aria-label="Unread" />}
+        {m.unread && <i className="unread-dot" aria-hidden="true" />}
       </div>
     </li>
   );
