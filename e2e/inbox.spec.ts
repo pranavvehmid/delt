@@ -263,3 +263,16 @@ test("moving a mail says it makes a rule, and 'Just this one' moves it without o
   await page.getByRole("button", { name: "Sorting rules" }).click();
   await expect(page.getByRole("dialog", { name: "Settings" }).getByText("None yet.")).toBeVisible();
 });
+
+test("Mark all read can be undone (#47)", async ({ page }) => {
+  const api = await mockApi(page, smallInbox());
+  await page.goto("/e2e");
+  await expect(page.locator("li.row.unread")).toHaveCount(4);
+  await page.getByRole("button", { name: "Mark all read" }).click();
+  await expect(page.locator("li.row.unread")).toHaveCount(0);
+  await page.getByRole("status").filter({ hasText: "4 marked read" }).getByRole("button", { name: "Undo" }).click();
+  await expect(page.locator("li.row.unread")).toHaveCount(4);
+  await expect.poll(() => api.bulk.length).toBe(2);
+  expect(api.bulk[1].read).toBe(false);
+  expect(new Set(api.bulk[1].ids)).toEqual(new Set(api.bulk[0].ids));
+});

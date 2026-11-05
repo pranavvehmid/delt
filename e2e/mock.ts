@@ -81,6 +81,7 @@ export type Api = {
   deleted: unknown[];
   emailRequests: string[];
   forgotten: string[];
+  bulk: { ids: string[]; read?: boolean }[];
   sync: { status: number; body: Record<string, unknown> };
 };
 
@@ -93,6 +94,7 @@ export async function mockApi(page: Page, mails: FakeMail[], opts: { reauth?: bo
     deleted: [],
     emailRequests: [],
     forgotten: [],
+    bulk: [],
     sync: opts.reauth ? { status: 409, body: { error: "Google access was removed.", reauth: true } } : { status: 200, body: { fetched: 0 } },
   };
   const json = (body: unknown, status = 200) => ({ status, contentType: "application/json", body: JSON.stringify(body) });
@@ -112,7 +114,12 @@ export async function mockApi(page: Page, mails: FakeMail[], opts: { reauth?: bo
       api.deleted.push(req.postDataJSON());
       return route.fulfill(json({ ok: true }));
     }
-    if (path === "/api/emails/bulk") return route.fulfill(json({ ok: true }));
+    if (path === "/api/emails/bulk") {
+      const b = req.postDataJSON() as { ids: string[]; read?: boolean };
+      api.bulk.push(b);
+      for (const x of api.mails) if (b.ids.includes(x.id) && b.read !== undefined) x.unread = !b.read;
+      return route.fulfill(json({ ok: true }));
+    }
     if (path === "/api/rules") {
       if (method === "DELETE") {
         const from = url.searchParams.get("from") ?? "";

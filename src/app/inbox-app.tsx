@@ -313,7 +313,12 @@ export default function InboxApp({ email, name, signOutAction, signInAction }: P
     if (blockedOffline()) return;
     const set = new Set(ids);
     updateAll((m) => (set.has(m.id) ? { ...m, unread: false } : m));
-    setToast({ text: `${ids.length} marked read` });
+    // Undo puts back exactly these, in DELT and in Gmail (#47)
+    const undo = () => {
+      updateAll((m) => (set.has(m.id) ? { ...m, unread: true } : m));
+      fetch("/api/emails/bulk", { method: "POST", body: JSON.stringify({ ids, read: false }) }).then((r) => !r.ok && setToast({ text: "Couldn't update Gmail" }));
+    };
+    setToast({ text: `${ids.length} marked read`, undo });
     const r = await fetch("/api/emails/bulk", { method: "POST", body: JSON.stringify({ ids, read: true }) });
     if (!r.ok) setToast({ text: "Couldn't update Gmail" });
   }
