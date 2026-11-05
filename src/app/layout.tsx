@@ -13,6 +13,7 @@ const plex = localFont({
     { path: "./fonts/plex/plex-300-normal.woff2", weight: "300", style: "normal" },
     { path: "./fonts/plex/plex-400-normal.woff2", weight: "400", style: "normal" },
     { path: "./fonts/plex/plex-500-normal.woff2", weight: "500", style: "normal" },
+    { path: "./fonts/plex/plex-700-normal.woff2", weight: "700", style: "normal" }, // the DELT wordmark
   ],
 });
 // Glyph and Extra dark: Doto dot-matrix (variable, with a ROND axis).

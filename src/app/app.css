@@ -78,8 +78,12 @@ svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width:
   padding: calc(10px + env(safe-area-inset-top)) 16px 10px;
   background: color-mix(in srgb, var(--bg) 88%, transparent); backdrop-filter: blur(14px);
 }
-.logo { display: inline-flex; align-items: baseline; gap: 3px; font: 800 22px/1 var(--head); letter-spacing: -0.03em; }
-.logo i { width: 7px; height: 7px; border-radius: 50%; background: var(--t-urgent); display: inline-block; }
+/* The DELT wordmark: the same in every look and theme (Plex Bold, tight, the red dot).
+   Only its colour follows the theme so it stays readable. Don't restyle it per look. */
+:root { --brand-red: #c8102e; }
+:root[data-theme="dark"] { --brand-red: #ff3b4e; }
+.logo { display: inline-flex; align-items: baseline; gap: 2px; font: 700 21px/1 var(--font-plex), system-ui, sans-serif; letter-spacing: -0.05em; color: var(--text); font-style: normal; text-transform: none; }
+.logo i { width: 6px; height: 6px; border-radius: 50%; background: var(--brand-red); display: inline-block; flex: none; }
 .sync { display: inline-flex; align-items: center; gap: 6px; margin-right: auto; font-size: 12.5px; color: var(--muted); padding: 6px 10px; border-radius: 99px; transition: background-color 0.2s; }
 .sync:hover { background: var(--surface); }
 .sync .spin { display: inline-block; animation: spin 0.9s linear infinite; }
@@ -296,8 +300,8 @@ svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width:
 /* ---------- sign-in ---------- */
 .signin { min-height: 100vh; display: grid; place-items: center; padding: 24px 16px; }
 .signin-card { width: 100%; max-width: 420px; display: flex; flex-direction: column; gap: 18px; }
-.signin .logo { font-size: 56px; }
-.signin .logo i { width: 14px; height: 14px; }
+.signin .logo { font-size: 64px; letter-spacing: -0.055em; gap: 4px; }
+.signin .logo i { width: 13px; height: 13px; }
 .signin h1 { margin: 0; font: 700 24px/1.25 var(--head); letter-spacing: -0.02em; }
 .signin ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
 .signin li { display: flex; align-items: center; gap: 10px; font-size: 15px; }
@@ -360,7 +364,6 @@ svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width:
 
 /* top bar: the brand mark stays heavy (the one bold thing on screen) */
 :root:not([data-look="glyph"]) .appbar { background: var(--bg); backdrop-filter: none; padding-bottom: 4px; }
-:root:not([data-look="glyph"]) .logo { font-weight: 800; letter-spacing: -0.05em; font-size: 21px; }
 :root:not([data-look="glyph"]) .sync { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; padding: 6px 8px; border-radius: 0; }
 :root:not([data-look="glyph"]) .avatar.me { background: rgb(var(--ink)); color: var(--bg); font-weight: 500; }
 
@@ -516,8 +519,7 @@ svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width:
   --ink: #1b1238;
 }
 :root[data-look="glyph"] body { background: var(--bg) radial-gradient(color-mix(in srgb, var(--gold) 14%, transparent) 1.4px, transparent 1.5px) 0 0 / 22px 22px; }
-:root[data-look="glyph"] :is(.logo, .dayhead, .pagehead h1, .mv-subj, .datebox b) { font-family: var(--font-dot), monospace; font-weight: 900; font-variation-settings: "ROND" 100; letter-spacing: 0.01em; }
-:root[data-look="glyph"] .logo { background: var(--gold); color: #1b1238; padding: 5px 12px 7px; border: 2.5px solid var(--ink); border-radius: 12px; box-shadow: 3px 3px 0 var(--ink); }
+:root[data-look="glyph"] :is(.dayhead, .pagehead h1, .mv-subj, .datebox b) { font-family: var(--font-dot), monospace; font-weight: 900; font-variation-settings: "ROND" 100; letter-spacing: 0.01em; }
 :root[data-look="glyph"] .appbar { background: transparent; backdrop-filter: none; }
 :root[data-look="glyph"] .dayhead { background: transparent; position: static; font-size: 17px; padding-top: 18px; }
 :root[data-look="glyph"] .rows { display: flex; flex-direction: column; gap: 10px; }
@@ -540,7 +542,6 @@ svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width:
 :root[data-look="glyph"] .mv-frame { border: 2.5px solid var(--ink); box-shadow: 4px 4px 0 var(--ink); }
 :root[data-look="glyph"] :is(.menu, .sheet, .look-card) { border: 2.5px solid var(--ink); box-shadow: 5px 5px 0 var(--ink); }
 :root[data-look="glyph"] .cta { border: 3px solid var(--ink); box-shadow: 4px 4px 0 var(--ink); background: var(--gold); color: #1b1238; }
-:root[data-look="glyph"] .signin .logo { font-size: 48px; }
 
 /* =========================================================
    Extra dark (Nothing OS style): pure black, white ink, red signal.
@@ -591,8 +592,6 @@ svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width:
 }
 
 /* sign-in in Minimal: the big mark, and pile dots as ink (red only for Urgent) */
-:root:not([data-look="glyph"]) .signin .logo { font-size: 64px; letter-spacing: -0.055em; }
-:root:not([data-look="glyph"]) .signin .logo i { width: 13px; height: 13px; }
 :root:not([data-look="glyph"]) .signin .p-priority .tagdot { background: rgb(var(--ink) / 0.72); }
 :root:not([data-look="glyph"]) .signin .p-later .tagdot { background: rgb(var(--ink) / 0.48); }
 :root:not([data-look="glyph"]) .signin .p-noise .tagdot { background: rgb(var(--ink) / 0.3); }
@@ -679,7 +678,6 @@ body { min-height: 100dvh; }
 :root[data-look="minimal"][data-tone="black"] .mast sup { font-family: var(--font); color: var(--accent); }
 :root[data-look="minimal"][data-tone="black"] :is(.dayhead, .from, .sync, .lbl, .ap-lbl) { font-family: var(--font-mono), ui-monospace, monospace; }
 :root[data-look="minimal"][data-tone="black"] .toggle input:checked + .knob { background: var(--accent); }
-:root[data-look="minimal"][data-tone="black"] .logo i { box-shadow: 0 0 10px rgb(255 46 62 / 0.55); }
 :root[data-tone="black"] .mv-frame { box-shadow: 0 0 0 1px #262626; }
 
 /* dark mail in dark themes */
@@ -747,8 +745,6 @@ body { min-height: 100dvh; }
 /* top bar with a kerb */
 :root[data-look="grid"] .appbar { background: color-mix(in srgb, var(--bg) 94%, transparent); padding-bottom: 12px; }
 :root[data-look="grid"] .appbar::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: repeating-linear-gradient(90deg, var(--accent) 0 18px, #ededed 18px 36px); }
-:root[data-look="grid"] .logo { font: italic 900 25px/1 var(--font); letter-spacing: -0.01em; }
-:root[data-look="grid"] .logo i { width: 13px; height: 5px; border-radius: 0; background: var(--accent); transform: skewX(-28deg); margin-left: 4px; }
 :root[data-look="grid"] .sync { font: italic 700 11px/1 var(--font); letter-spacing: 0.14em; }
 :root[data-look="grid"] .sync:not(:disabled) > span:first-child { display: none; }
 :root[data-look="grid"] .sync:not(:disabled)::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--flag-green); box-shadow: 0 0 8px var(--flag-green); animation: live 2.4s ease-in-out infinite; }

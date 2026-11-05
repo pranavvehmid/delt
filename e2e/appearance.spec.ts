@@ -139,3 +139,23 @@ test("Grid (F1-inspired): always dark, its own driver colours, and back to Minim
   await expect(html(page)).toHaveAttribute("data-look", "minimal");
   await expect(html(page)).toHaveAttribute("data-accent", "auto");
 });
+
+test("the DELT logo is the same Minimal wordmark in every look and theme", async ({ page }) => {
+  await mockApi(page, smallInbox());
+  await page.goto("/e2e");
+  const shape = () =>
+    page.locator("header .logo").evaluate((el) => {
+      const s = getComputedStyle(el), dot = getComputedStyle(el.querySelector("i")!);
+      return { font: s.fontFamily.split(",")[0], weight: s.fontWeight, style: s.fontStyle, size: s.fontSize, spacing: s.letterSpacing, bg: s.backgroundColor, dot: dot.borderRadius, dotW: dot.width };
+    });
+  const reference = await shape();
+  expect(reference.weight).toBe("700");
+  const panel = await openPanel(page);
+  for (const look of ["Glyph", "Grid", "Minimal"]) {
+    await panel.getByRole("radio", { name: new RegExp(look) }).click();
+    for (const theme of look === "Grid" ? ["Dark", "Extra dark"] : ["Light", "Dark", "Extra dark"]) {
+      await panel.getByRole("radio", { name: theme, exact: true }).click();
+      expect(await shape(), `${look} ${theme}`).toEqual(reference);
+    }
+  }
+});
