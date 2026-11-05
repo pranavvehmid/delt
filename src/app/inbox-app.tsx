@@ -663,11 +663,11 @@ export default function InboxApp({ email, name, signOutAction, signInAction }: P
       {/* ======================= INBOX ======================= */}
       {route.tab === "inbox" && (
         <main className="page" key="inbox">
-          <div className="searchbar">
+          <label className="searchbar">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 18a7 7 0 1 1 0-14 7 7 0 0 1 0 14Zm5-2 5 5" /></svg>
             <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search mail" aria-label="Search mail" />
             {query && <button onClick={() => setQuery("")} aria-label="Clear search">✕</button>}
-          </div>
+          </label>
 
           <nav className="chips" aria-label="Filter by pile" ref={chipsMount} onScroll={chipsMore}>
             {(["all", ...PILES.map((p) => p.key)] as const).map((k) => (

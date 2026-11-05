@@ -110,3 +110,32 @@ test.describe("keyboard only", () => {
     await expect(page.getByRole("button", { name: /Hostel fee payment: last date\. Urgent, .*Due / })).toBeVisible();
   });
 });
+
+// #62: on a touch screen every control can be hit with a finger: at least 44 x 44 px,
+// counting the invisible ::after that widens small words and chips.
+for (const look of ["minimal", "glyph", "grid"] as const) {
+  test(`every control in the ${look} inbox and deadlines is at least 44 px to tap (#62)`, async ({ page }, info) => {
+    test.skip(info.project.name !== "phone", "touch screens only");
+    await page.addInitScript((l) => localStorage.setItem("delt-prefs", JSON.stringify({ look: l, mode: "light", accent: "auto", size: "normal", density: "comfortable" })), look);
+    await mockApi(page, smallInbox());
+    for (const tab of ["", "#/deadlines"]) {
+      await page.goto("/e2e" + tab);
+      await expect(page.locator("li.row").first()).toBeVisible();
+      const small = await page.evaluate(() => {
+        const out: string[] = [];
+        for (const el of document.querySelectorAll<HTMLElement>("a, button, input, select, label, [role=button]")) {
+          const r = el.getBoundingClientRect();
+          if (!r.width || !r.height || getComputedStyle(el).visibility === "hidden") continue;
+          if (el.closest("label") && el.tagName === "INPUT") continue; // the label is the target
+          if (el.closest(".row-main") && !el.matches(".row-main")) continue;
+          const a = getComputedStyle(el, "::after");
+          const hit = a.position === "absolute" && a.content !== "none" ? { w: parseFloat(a.width), h: parseFloat(a.height) } : { w: 0, h: 0 };
+          const w = Math.max(r.width, hit.w), h = Math.max(r.height, hit.h);
+          if (w < 43.5 || h < 43.5) out.push(`${el.tagName} ${(el.getAttribute("aria-label") || el.textContent || "").trim().slice(0, 20)} ${Math.round(w)}x${Math.round(h)}`);
+        }
+        return out;
+      });
+      expect(small, tab || "inbox").toEqual([]);
+    }
+  });
+}

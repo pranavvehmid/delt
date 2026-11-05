@@ -1038,3 +1038,18 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 @media (min-width: 1000px) { .shell.reading ~ .toast, body:has(.shell.reading) .toast { left: 230px; } }
 /* Glyph: a fade says there are more chips to the right */
 :root[data-look="glyph"] .chips[data-more="true"] { mask-image: linear-gradient(to right, #000 calc(100% - 40px), transparent); }
+
+/* #62: every control on a touch screen is at least 44 x 44 px to tap. Small words and
+   chips keep their look; an invisible ::after widens what a finger can hit. */
+.searchbar { cursor: text; }
+.searchbar input { align-self: stretch; }
+@media (pointer: coarse) {
+  .iconbtn { width: 44px; height: 44px; }
+  .sync, .mast button { min-height: 44px; }
+  .chips { padding-top: 5px; padding-bottom: 5px; }
+  :is(.logo, .avatar.me, .fchip, .toggle, .link) { position: relative; }
+  :is(.logo, .avatar.me, .fchip, .toggle, .link)::after {
+    content: ""; position: absolute; left: 50%; top: 50%; width: max(100%, 44px); height: max(100%, 44px); transform: translate(-50%, -50%);
+  }
+}
+.swipe-hint .link { white-space: nowrap; }
