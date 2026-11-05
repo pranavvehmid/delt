@@ -54,3 +54,8 @@ android/app/build/
 android/build/
 android/local.properties
 *.apk
+
+# playwright
+/test-results/
+/playwright-report/
+/blob-report/
