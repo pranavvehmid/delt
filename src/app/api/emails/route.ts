@@ -46,12 +46,14 @@ export async function GET(req: NextRequest) {
 
   // Opening the app marks the student as active, so background sync checks them more often.
   let reauth = false;
+  let aiConsent: boolean | null | undefined;
   if (!before && !pattern && !due) {
     await db.from("users").update({ last_seen_at: new Date().toISOString() }).eq("email", email);
-    const { data: u } = await db.from("users").select("access_revoked").eq("email", email).maybeSingle();
+    const { data: u } = await db.from("users").select("access_revoked, ai_consent").eq("email", email).maybeSingle();
     reauth = !!u?.access_revoked; // issue #10
+    aiConsent = u ? (u.ai_consent ?? null) : undefined; // #31: null = not asked yet
   }
-  return NextResponse.json({ emails: (data ?? []).slice(0, limit), more, reauth });
+  return NextResponse.json({ emails: (data ?? []).slice(0, limit), more, reauth, aiConsent });
 }
 
 const Patch = z.object({

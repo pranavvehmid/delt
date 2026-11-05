@@ -18,9 +18,10 @@ export async function GET() {
   if (!email) return NextResponse.json({ error: "Not signed in" }, { status: 401 });
   const tooMany = limited(email, "settings");
   if (tooMany) return tooMany;
-  const { data: user } = await db.from("users").select("gemini_key_enc, ai_day, ai_calls").eq("email", email).maybeSingle();
+  const { data: user } = await db.from("users").select("gemini_key_enc, ai_day, ai_calls, ai_consent").eq("email", email).maybeSingle();
   const { data: state } = await db.from("app_state").select("value").eq("key", "gemini_cooldown_until").maybeSingle();
   const plan = planAI({
+    consent: user?.ai_consent ?? null,
     ownKey: open(user?.gemini_key_enc),
     sharedKey: process.env.GEMINI_API_KEY,
     sharedCooldownUntil: Number((state?.value as { until?: number } | undefined)?.until) || null,
@@ -29,7 +30,8 @@ export async function GET() {
     now: Date.now(),
   });
   return NextResponse.json({
-    ownKey: plan.own,
+    consent: user?.ai_consent ?? null,
+    ownKey: !!open(user?.gemini_key_enc),
     sharedAvailable: !!process.env.GEMINI_API_KEY,
     leftToday: plan.own ? null : plan.allowance,
     perDay: SHARED_DAILY_PER_STUDENT,
@@ -38,14 +40,23 @@ export async function GET() {
 }
 
 const Body = z.object({ key: z.string().trim().min(1).max(200) });
+const Consent = z.object({ consent: z.boolean() });
 
-// POST: save the student's own key, after checking it works.
+// POST { consent }: the student's answer to "Let AI check unclear mail?" (#31).
+// POST { key }: save the student's own key, after checking it works (adding one is a yes).
 export async function POST(req: NextRequest) {
   const email = await currentUser();
   if (!email) return NextResponse.json({ error: "Not signed in" }, { status: 401 });
   const tooMany = limited(email, "ai");
   if (tooMany) return tooMany;
-  const parsed = Body.safeParse(await req.json().catch(() => null));
+  const body = await req.json().catch(() => null);
+  const choice = Consent.safeParse(body);
+  if (choice.success) {
+    const { error } = await db.from("users").update({ ai_consent: choice.data.consent }).eq("email", email);
+    if (error) return NextResponse.json({ error: "Couldn't save that" }, { status: 500 });
+    return NextResponse.json({ ok: true, consent: choice.data.consent });
+  }
+  const parsed = Body.safeParse(body);
   if (!parsed.success || !looksLikeGeminiKey(parsed.data.key)) return NextResponse.json({ error: "That doesn't look like a Gemini API key" }, { status: 400 });
 
   const check = await fetch("https://generativelanguage.googleapis.com/v1beta/models?pageSize=1", {
@@ -53,7 +64,7 @@ export async function POST(req: NextRequest) {
   }).catch(() => null);
   if (!check || !check.ok) return NextResponse.json({ error: "Google didn't accept that key" }, { status: 400 });
 
-  const { error } = await db.from("users").update({ gemini_key_enc: seal(parsed.data.key) }).eq("email", email);
+  const { error } = await db.from("users").update({ gemini_key_enc: seal(parsed.data.key), ai_consent: true }).eq("email", email);
   if (error) return NextResponse.json({ error: "Couldn't save the key" }, { status: 500 });
   return NextResponse.json({ ok: true });
 }

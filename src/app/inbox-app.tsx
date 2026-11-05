@@ -37,6 +37,8 @@ export default function InboxApp({ email, name, signOutAction, signInAction }: P
   const [searching, setSearching] = useState(false);
   const [due, setDue] = useState<EmailRow[]>([]);
   const [reauth, setReauth] = useState(false);
+  // #31: null = not asked yet, so the app asks once; undefined = unknown (older database)
+  const [aiConsent, setAiConsent] = useState<boolean | null | undefined>(undefined);
   // Offline (issue #14): the last inbox saved on this phone, and when it was saved.
   const [offline, setOffline] = useState(false);
   const [savedAt, setSavedAt] = useState<number | null>(null);
@@ -98,6 +100,7 @@ export default function InboxApp({ email, name, signOutAction, signInAction }: P
       if (!pagedOlder.current || !j.more) setMore(!!j.more);
       if (!j.more) pagedOlder.current = false;
       setReauth(!!j.reauth);
+      setAiConsent(j.aiConsent);
     }
     if (d.ok) setDue((await d.json()).emails ?? []);
     if (r.ok) setSavedAt(Date.now());
@@ -259,6 +262,12 @@ export default function InboxApp({ email, name, signOutAction, signInAction }: P
     setDue((l) => l.map(fn));
   };
   type Patch = { read?: boolean; is_done?: boolean; priority?: Priority };
+  async function answerAi(consent: boolean) {
+    setAiConsent(consent);
+    setToast({ text: consent ? "AI sorting on. Change it in Settings." : "Rules only. Change it in Settings." });
+    const r = await fetch("/api/settings/ai", { method: "POST", body: JSON.stringify({ consent }) });
+    if (!r.ok) setAiConsent(null);
+  }
   const blockedOffline = () => {
     if (!offline) return false;
     setToast({ text: "You're offline. Changes are paused until you're back online." });
@@ -394,6 +403,25 @@ export default function InboxApp({ email, name, signOutAction, signInAction }: P
         </div>
       </header>
 
+      {aiConsent === null && !offline && (
+        <section className="banner ask" aria-labelledby="ai-ask">
+          <span>
+            <b id="ai-ask">Let AI double-check unclear mail?</b> DELT sorts with simple rules. For mail they aren&apos;t sure about, it can ask Google&apos;s Gemini (free
+            tier), which may use what it&apos;s sent to improve its models.{" "}
+            <a className="link" href="/privacy" target="_blank">
+              Privacy
+            </a>
+          </span>
+          <span className="ask-btns">
+            <button className="pillbtn on" onClick={() => answerAi(true)}>
+              Allow AI
+            </button>
+            <button className="pillbtn" onClick={() => answerAi(false)}>
+              Rules only
+            </button>
+          </span>
+        </section>
+      )}
       {offline && (
         <div className="banner offline" role="status">
           <span>

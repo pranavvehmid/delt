@@ -33,7 +33,10 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ d
           >
             <button className="cta">Sign in with Google</button>
           </form>
-          <p className="fine">For @vitstudent.ac.in accounts. DELT reads and labels your mail. It can&apos;t delete anything.</p>
+          <p className="fine">
+            For @vitstudent.ac.in accounts. DELT reads your mail and adds labels. It never sends, trashes or deletes mail. AI sorting is off until you say yes.{" "}
+            <a href="/privacy">Privacy</a>
+          </p>
         </div>
       </main>
     );

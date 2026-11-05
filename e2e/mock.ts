@@ -85,7 +85,8 @@ export type Api = {
 };
 
 /** Answers every /api call from `mails`. Returns the fake server's state for assertions. */
-export async function mockApi(page: Page, mails: FakeMail[], opts: { reauth?: boolean } = {}): Promise<Api> {
+export async function mockApi(page: Page, mails: FakeMail[], opts: { reauth?: boolean; aiConsent?: boolean | null } = {}): Promise<Api> {
+  let consent = opts.aiConsent === undefined ? true : opts.aiConsent;
   const api: Api = {
     mails,
     patches: [],
@@ -102,7 +103,10 @@ export async function mockApi(page: Page, mails: FakeMail[], opts: { reauth?: bo
     const method = req.method();
 
     if (path === "/api/sync") return route.fulfill(json(api.sync.body, api.sync.status));
-    if (path === "/api/settings/ai") return route.fulfill(json({ ownKey: false, sharedAvailable: true, leftToday: 25, perDay: 25, status: "shared" }));
+    if (path === "/api/settings/ai") {
+      if (method === "POST") consent = (req.postDataJSON() as { consent?: boolean }).consent ?? consent;
+      return route.fulfill(json({ consent, ownKey: false, sharedAvailable: true, leftToday: 25, perDay: 25, status: "shared" }));
+    }
     if (path === "/api/push") return route.fulfill(json({ enabled: false, publicKey: null }));
     if (path === "/api/account" && method === "DELETE") {
       api.deleted.push(req.postDataJSON());
@@ -155,7 +159,7 @@ export async function mockApi(page: Page, mails: FakeMail[], opts: { reauth?: bo
       if (q.get("due") === "1") list = list.filter((m) => m.deadline);
       const words = (q.get("q") ?? "").toLowerCase().split(/\s+/).filter(Boolean);
       if (words.length) list = list.filter((m) => words.every((w) => `${m.subject} ${m.from_name} ${m.from_address} ${m.summary}`.toLowerCase().includes(w)));
-      return route.fulfill(json({ emails: list.slice(0, limit), more: list.length > limit, reauth: !!opts.reauth && !before && !q.get("q") }));
+      return route.fulfill(json({ emails: list.slice(0, limit), more: list.length > limit, reauth: !!opts.reauth && !before && !q.get("q"), aiConsent: consent }));
     }
     return route.fulfill(json({ error: `not mocked: ${method} ${path}` }, 500));
   });

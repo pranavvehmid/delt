@@ -3,7 +3,8 @@ import Google from "next-auth/providers/google";
 import { db } from "@/lib/supabase";
 import { seal } from "@/lib/secret";
 
-// gmail.modify = read mail + add labels. It cannot delete mail permanently.
+// gmail.modify = read mail, change labels, read/unread, move to Trash. It can't delete permanently.
+// DELT itself only reads, labels and marks read/unread (see /privacy).
 const SCOPES = [
   "openid",
   "email",

@@ -114,6 +114,7 @@ export async function syncUser(email: string): Promise<SyncResult> {
   // 2. Ask free Gemini about the new mails that matter most or that the rules weren't sure about.
   // The shared key is split fairly between students (see ai-quota.ts); a student's own key isn't limited.
   const plan = planAI({
+    consent: user.ai_consent ?? null, // nothing goes to Gemini without the student's yes (#31)
     ownKey: open(user.gemini_key_enc),
     sharedKey: process.env.GEMINI_API_KEY,
     sharedCooldownUntil: await sharedCooldownUntil(),

@@ -16,6 +16,8 @@ export type AiPlan = { key: string | null; own: boolean; allowance: number; why:
  * `usedToday` is how many shared-key checks the student made on `usedDay`.
  */
 export function planAI(opts: {
+  /** The student's answer to "Let AI check unclear mail?" (#31). Only true allows AI. */
+  consent?: boolean | null;
   ownKey: string | null;
   sharedKey: string | undefined;
   sharedCooldownUntil: number | null;
@@ -23,7 +25,8 @@ export function planAI(opts: {
   usedToday: number;
   now: number;
 }): AiPlan {
-  const { ownKey, sharedKey, sharedCooldownUntil, usedDay, usedToday, now } = opts;
+  const { consent, ownKey, sharedKey, sharedCooldownUntil, usedDay, usedToday, now } = opts;
+  if (consent !== true) return { key: null, own: false, allowance: 0, why: consent === false ? "rules only, by your choice" : "waiting for your OK" };
   if (ownKey) return { key: ownKey, own: true, allowance: Infinity, why: "own key" };
   if (!sharedKey) return { key: null, own: false, allowance: 0, why: "no AI key set up" };
   if (sharedCooldownUntil && sharedCooldownUntil > now) return { key: null, own: false, allowance: 0, why: "shared AI resting after its free limit" };

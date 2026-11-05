@@ -10,7 +10,7 @@ import { pileLabel, type SenderRule } from "@/lib/inbox";
 
 const REPO = "https://github.com/pranavvehmid/delt";
 
-type AiInfo = { ownKey: boolean; sharedAvailable: boolean; leftToday: number | null; perDay: number; status: string };
+type AiInfo = { consent: boolean | null; ownKey: boolean; sharedAvailable: boolean; leftToday: number | null; perDay: number; status: string };
 type PushState = "unsupported" | "blocked" | "off" | "on" | "busy";
 
 function b64ToBytes(b64: string) {
@@ -128,6 +128,12 @@ export default function Settings({ open, onClose, onToast, section }: { open: bo
     onToast("Using your own key");
     loadAi();
   }
+  async function setConsent(consent: boolean) {
+    setAi((a) => (a ? { ...a, consent } : a));
+    const r = await fetch("/api/settings/ai", { method: "POST", body: JSON.stringify({ consent }) });
+    onToast(r.ok ? (consent ? "AI sorting on" : "Rules only") : "Couldn't save that");
+    loadAi();
+  }
   async function removeKey() {
     await fetch("/api/settings/ai", { method: "DELETE" });
     onToast("Back to the shared AI");
@@ -177,15 +183,31 @@ export default function Settings({ open, onClose, onToast, section }: { open: bo
               <small className="muted">
                 {!ai
                   ? "…"
-                  : ai.ownKey
+                  : ai.consent !== true
+                    ? "Off: rules only. Turn on to let Gemini double-check mail the rules aren't sure about."
+                    : ai.ownKey
                     ? "Using your own Gemini key."
                     : ai.sharedAvailable
                       ? `Using the shared free AI. ${ai.leftToday ?? 0} of ${ai.perDay} checks left today.`
                       : "Rules only. Add a free Gemini key to let AI check unclear mail."}
               </small>
             </span>
+            {ai && (
+              <label className="toggle">
+                <input type="checkbox" aria-label="Use AI for unclear mail" checked={ai.consent === true} onChange={(e) => setConsent(e.target.checked)} />
+                <span className="knob" aria-hidden="true" />
+              </label>
+            )}
           </div>
-          {ai?.ownKey ? (
+          {ai?.consent === true && (
+            <small className="muted">
+              Sender, subject and the start of the text go to Google&apos;s Gemini free tier, which Google may use to improve its models.{" "}
+              <a className="link" href="/privacy" target="_blank">
+                Privacy
+              </a>
+            </small>
+          )}
+          {ai?.consent !== true ? null : ai?.ownKey ? (
             <button className="pillbtn" onClick={removeKey}>
               Remove my key
             </button>
@@ -203,7 +225,7 @@ export default function Settings({ open, onClose, onToast, section }: { open: bo
               </button>
             </form>
           )}
-          {!ai?.ownKey && (
+          {ai?.consent === true && !ai?.ownKey && (
             <small className="muted">
               Free from{" "}
               <a className="link" href="https://aistudio.google.com/apikey" target="_blank" rel="noreferrer">
@@ -249,6 +271,9 @@ export default function Settings({ open, onClose, onToast, section }: { open: bo
           </a>
           <a className="set-link" href={REPO} target="_blank" rel="noreferrer">
             Source code ↗
+          </a>
+          <a className="set-link" href="/privacy" target="_blank">
+            Privacy ↗
           </a>
         </div>
 

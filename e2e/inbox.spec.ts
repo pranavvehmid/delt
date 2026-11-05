@@ -193,3 +193,16 @@ test("iPhone: tapping search doesn't zoom the page, and nothing scrolls sideways
   await page.locator(row("cat1")).locator(".row-main").click();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true);
 });
+
+test("AI is off until the student answers, once (#31)", async ({ page }) => {
+  await mockApi(page, smallInbox(), { aiConsent: null });
+  await page.goto("/e2e");
+  const ask = page.getByRole("region", { name: "Let AI double-check unclear mail?" });
+  await expect(ask).toBeVisible();
+  await expect(ask.getByRole("link", { name: "Privacy" })).toHaveAttribute("href", "/privacy");
+  await ask.getByRole("button", { name: "Rules only" }).click();
+  await expect(ask).toHaveCount(0);
+  await page.getByRole("button", { name: "Account" }).click();
+  await page.getByRole("button", { name: "Settings" }).click();
+  await expect(page.getByRole("checkbox", { name: "Use AI for unclear mail" })).not.toBeChecked();
+});

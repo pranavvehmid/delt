@@ -137,3 +137,6 @@ as $$
 $$;
 revoke all on function claim_sync(text, int, int) from public, anon, authenticated;
 grant execute on function claim_sync(text, int, int) to service_role;
+
+-- ---------- Nov 2026: #31 AI consent ----------
+alter table users add column if not exists ai_consent boolean;

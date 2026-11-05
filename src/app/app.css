@@ -838,3 +838,15 @@ body { min-height: 100dvh; }
 .ap-row:has(.swatch:nth-child(7)) .swatches { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 8px; }
 .ap-row:has(.swatch:nth-child(7)) .swatch { width: auto; }
 :root[data-look="grid"] .swatch { border-radius: 0; transform: skewX(-12deg); }
+
+/* the one-time AI question (#31) */
+.banner.ask { align-items: flex-end; }
+.ask-btns { display: flex; gap: 8px; flex-wrap: wrap; }
+/* /privacy */
+.doc { max-width: 680px; margin: 0 auto; padding: calc(28px + env(safe-area-inset-top)) 20px 64px; line-height: 1.6; font-size: 15.5px; }
+.doc h1 { font-size: 34px; line-height: 1.1; margin: 28px 0 6px; letter-spacing: -0.02em; }
+.doc h2 { font-size: 18px; margin: 30px 0 6px; }
+.doc ul { padding-left: 20px; }
+.doc li { margin: 4px 0; }
+.doc a:not(.logo) { color: inherit; text-decoration: underline; text-underline-offset: 3px; }
+.signin .fine a { color: inherit; text-decoration: underline; text-underline-offset: 3px; }

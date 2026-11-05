@@ -4,7 +4,8 @@ import { bumpUsage, planAI, SHARED_DAILY_PER_STUDENT, COOLDOWN_MS } from "../src
 import { looksLikeGeminiKey, open, seal } from "../src/lib/secret";
 
 const NOW = Date.parse("2026-11-05T12:00:00+05:30");
-const base = { ownKey: null, sharedKey: "shared", sharedCooldownUntil: null, usedDay: null, usedToday: 0, now: NOW };
+const base = {
+  consent: true, ownKey: null, sharedKey: "shared", sharedCooldownUntil: null, usedDay: null, usedToday: 0, now: NOW };
 
 test("a student's own key wins and has no daily cap", () => {
   const p = planAI({ ...base, ownKey: "mine", sharedCooldownUntil: NOW + COOLDOWN_MS, usedDay: "2026-11-05", usedToday: 999 });
@@ -51,4 +52,12 @@ test("key format check", () => {
   assert.ok(looksLikeGeminiKey("AIzaSyExampleExampleExampleExample123"));
   assert.ok(!looksLikeGeminiKey("hello"));
   assert.ok(!looksLikeGeminiKey("AIza Sy with spaces and more text here 12345"));
+});
+
+test("nothing goes to Gemini until the student says yes (#31)", () => {
+  assert.equal(planAI({ ...base, consent: null }).key, null, "not asked yet");
+  assert.equal(planAI({ ...base, consent: false }).key, null, "rules only");
+  assert.equal(planAI({ ...base, consent: false, ownKey: "mine" }).key, null, "even with their own key, if they said no");
+  assert.equal(planAI({ ...base, consent: undefined }).key, null, "database without the column");
+  assert.ok(planAI({ ...base, consent: true }).key);
 });
