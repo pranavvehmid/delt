@@ -165,6 +165,12 @@ export default function InboxApp({ email, name, signOutAction, signInAction }: P
         }
         if (!(await load())) throw new Error("offline");
         setSyncedAt(Date.now());
+        // AI re-checks and Gmail labels run after, without holding up the list (#21)
+        if (!d.reauth && !d.backlog)
+          fetch("/api/sync?phase=later", { method: "POST", keepalive: true })
+            .then((r) => r.json())
+            .then((x) => x?.resorted > 0 && load())
+            .catch(() => {});
         // A big first sync comes in batches (#28): fetch the rest once the 10 s gap has passed.
         if (d.backlog > 0) setTimeout(() => sync(false, true), 11_000);
         if (!d.reauth && (loud || d.fetched > 0)) setToast({ text: d.fetched > 0 ? `${d.fetched} new mail${d.fetched > 1 ? "s" : ""}` : "No new mail" });

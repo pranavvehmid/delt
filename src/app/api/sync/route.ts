@@ -3,23 +3,36 @@ import { auth } from "@/auth";
 import { db } from "@/lib/supabase";
 import { claimSync, finishSync, syncUser } from "@/lib/sync";
 import { AccessRevoked } from "@/lib/gmail";
+import { limited } from "@/lib/rate-limit";
 import { dueForSync } from "@/lib/schedule";
 import { markSeen, notifyStudent } from "@/lib/notify";
 
 export const maxDuration = 120;
 
 // POST: the refresh button and auto-refresh in the app. Syncs the signed-in student.
-export async function POST() {
+export async function POST(req: NextRequest) {
   const session = await auth();
   const email = session?.user?.email?.toLowerCase();
   if (!email) return NextResponse.json({ error: "Not signed in" }, { status: 401 });
+  // #21: the app first runs a quick sync and shows the new mail, then starts ?phase=later
+  // (AI re-checks, Gmail labels) without waiting for it.
+  if (req.nextUrl.searchParams.get("phase") === "later") {
+    const tooMany = limited(email, "ai");
+    if (tooMany) return tooMany;
+    try {
+      const r = await syncUser(email, "later");
+      return NextResponse.json({ resorted: r.rechecked, labeled: r.labeled });
+    } catch (e) {
+      return NextResponse.json({ error: (e as Error).message }, { status: e instanceof AccessRevoked ? 409 : 500 });
+    }
+  }
   // At most one sync per student every 10 s, and never two at once (#30): extra taps and tabs
   // get a quick answer instead of another round of Gmail and AI calls.
   if (!(await claimSync(email, 10))) {
     return NextResponse.json({ busy: true, fetched: 0, backlog: 0, retryAfter: 10 }, { status: 429, headers: { "Retry-After": "10" } });
   }
   try {
-    const result = await syncUser(email);
+    const result = await syncUser(email, "quick");
     await markSeen(email); // they're looking at it, no need to ping their phone
     return NextResponse.json(result);
   } catch (e) {

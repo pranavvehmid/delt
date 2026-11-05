@@ -39,7 +39,12 @@ export type SyncResult = {
 
 const RANK = { very_important: 0, priority: 1, later: 2, noise: 3 } as const;
 
-export async function syncUser(email: string): Promise<SyncResult> {
+/** #21: "quick" = download, sort by rules, save, mirror unread (what the app waits for);
+ *  "later" = AI re-checks and Gmail labels (the app starts it afterwards without waiting);
+ *  "full" = both (background sync). */
+export type SyncMode = "quick" | "later" | "full";
+
+export async function syncUser(email: string, mode: SyncMode = "full"): Promise<SyncResult> {
   const started = Date.now();
   const result: SyncResult = { email, fetched: 0, sorted: 0, sortedByAI: 0, rechecked: 0, labeled: 0, backlog: 0, errors: [] };
 
@@ -67,7 +72,7 @@ export async function syncUser(email: string): Promise<SyncResult> {
   const startedAt = new Date().toISOString();
 
   // List every new id in the window (cheap), then download at most BATCH of the ones not saved yet.
-  const ids = await listMessageIds(token, `after:${since} -in:sent -in:drafts -in:chats`, LIST_MAX);
+  const ids = mode === "later" ? [] : await listMessageIds(token, `after:${since} -in:sent -in:drafts -in:chats`, LIST_MAX);
   const knownIds = new Set<string>();
   for (let i = 0; i < ids.length; i += 200) {
     const { data: known } = await db.from("emails").select("id").eq("user_email", email).in("id", ids.slice(i, i + 200));
@@ -147,7 +152,7 @@ export async function syncUser(email: string): Promise<SyncResult> {
   const candidates = items
     .filter(({ rules }) => rules.confidence < 0.95 && (rules.confidence < 0.6 || RANK[rules.priority] <= 1))
     .sort((a, b) => RANK[a.rules.priority] - RANK[b.rules.priority] || b.msg.receivedAt.getTime() - a.msg.receivedAt.getTime());
-  for (const item of candidates) {
+  for (const item of mode === "full" ? candidates : []) {
     if (!aiTimeLeft()) break;
     try {
       item.c = await askAI(item.msg);
@@ -190,7 +195,7 @@ export async function syncUser(email: string): Promise<SyncResult> {
   }
 
   // 4. Spare AI time: re-check older rules-sorted mail, most important and newest first.
-  if (aiTimeLeft()) {
+  if (mode !== "quick" && aiTimeLeft()) {
     const { data: backlog } = await db
       .from("emails")
       .select("id, priority")
@@ -199,7 +204,7 @@ export async function syncUser(email: string): Promise<SyncResult> {
       .eq("user_corrected", false)
       .in("priority", ["very_important", "priority"])
       .order("received_at", { ascending: false })
-      .limit(10);
+      .limit(mode === "later" ? 25 : 10); // "later" is where new mail gets its AI check now
     for (const row of backlog ?? []) {
       if (!aiTimeLeft()) break;
       try {
@@ -217,7 +222,7 @@ export async function syncUser(email: string): Promise<SyncResult> {
   }
 
   // 5. Put Gmail labels on everything not yet labeled (new mail, re-checked mail, past failures).
-  const { data: unlabeled } = await db
+  const { data: unlabeled } = mode === "quick" ? { data: [] as { id: string; priority: string }[] } : await db
     .from("emails")
     .select("id, priority")
     .eq("user_email", email)
@@ -246,7 +251,7 @@ export async function syncUser(email: string): Promise<SyncResult> {
   }
 
   // 6. Mirror Gmail's unread state, so mail read in Gmail leaves the NEW deck too.
-  try {
+  if (mode !== "later") try {
     const unreadNow = new Set(await listMessageIds(token, "is:unread newer_than:60d -in:sent -in:chats", 300));
     const { data: flagged } = await db.from("emails").select("id").eq("user_email", email).eq("unread", true);
     const nowRead = (flagged ?? []).map((r) => r.id).filter((id) => !unreadNow.has(id));
@@ -258,7 +263,7 @@ export async function syncUser(email: string): Promise<SyncResult> {
 
   // Only close the window when everything in it was saved (#28); otherwise the next run carries on.
   result.fetched = result.sorted; // what the app reports as "N new mails"
-  const syncedAt = nextSyncedAt({ previous: user.last_synced_at ?? null, startedAt, left: mailPlan.left, failed });
+  const syncedAt = mode === "later" ? (user.last_synced_at ?? null) : nextSyncedAt({ previous: user.last_synced_at ?? null, startedAt, left: mailPlan.left, failed });
   if (syncedAt !== (user.last_synced_at ?? null)) await db.from("users").update({ last_synced_at: syncedAt }).eq("email", email);
   // Separate write, so a database without the usage columns yet can't block the sync time.
   if (!plan.own && aiUsed > 0) await db.from("users").update(bumpUsage(user.ai_day ?? null, user.ai_calls ?? 0, aiUsed, Date.now())).eq("email", email);
