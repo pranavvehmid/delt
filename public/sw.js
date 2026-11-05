@@ -1,7 +1,7 @@
 // DELT service worker: phone notifications for urgent mail and close deadlines (#6),
 // and keeping the app itself on the phone so it opens without a connection (#14).
 // Mail data is never cached here: /api is always left to the network.
-const CACHE = "delt-app-v1";
+const CACHE = "delt-app-v2"; // bump to drop old copies (v2: wordmark icon)
 self.addEventListener("install", () => self.skipWaiting());
 self.addEventListener("activate", (e) =>
   e.waitUntil(
@@ -53,7 +53,7 @@ self.addEventListener("push", (event) => {
     self.registration.showNotification(data.title || "DELT", {
       body: data.body || "",
       tag: data.tag,
-      icon: "/icons/192",
+      icon: "/icons/192?v=2",
       badge: "/icons/badge",
       data: { url: data.url || "/#/inbox" },
     }),

@@ -14,7 +14,7 @@ export const metadata: Metadata = {
   title: "DELT",
   description: "Sorts your VIT mail so exams, registrations, fees and deadlines stay at the top.",
   appleWebApp: { capable: true, title: "DELT", statusBarStyle: "default" },
-  icons: { apple: "/icons/192" },
+  icons: { apple: "/icons/192?v=2" },
 };
 
 export const viewport: Viewport = {
