@@ -4,17 +4,17 @@
 #   - Vercel (production): VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY  -> phone notifications
 #   - GitHub repo secret:  CRON_SECRET                          -> background sync job
 # Needs the Vercel CLI (npx vercel) and GitHub CLI (gh), both signed in.
-# Run from the project folder:  bash scripts/push-secrets.sh
+# Run from the project folder (Git Bash):  bash scripts/push-secrets.sh
 set -euo pipefail
+cd "$(dirname "$0")/.."
 
 get() { grep "^$1=" .env.local | head -1 | cut -d= -f2- | tr -d '\r"'; }
 
 for k in VAPID_PUBLIC_KEY VAPID_PRIVATE_KEY; do
   v="$(get "$k")"
   if [ -z "$v" ]; then echo "$k is missing in .env.local (npx web-push generate-vapid-keys)"; exit 1; fi
-  npx vercel env rm "$k" production --yes >/dev/null 2>&1 || true
-  printf '%s' "$v" | npx vercel env add "$k" production >/dev/null
-  echo "Vercel: $k set"
+  echo "Vercel: setting $k ..."
+  printf '%s' "$v" | npx vercel env add "$k" production --force --sensitive
 done
 
 c="$(get CRON_SECRET)"
@@ -22,4 +22,12 @@ if [ -z "$c" ]; then echo "CRON_SECRET is missing in .env.local"; exit 1; fi
 printf '%s' "$c" | gh secret set CRON_SECRET
 echo "GitHub: CRON_SECRET set"
 
-echo "Done. Redeploy the site (npx vercel deploy --prod) so it picks up the new keys."
+echo
+echo "Checking Vercel:"
+if npx vercel env ls production 2>/dev/null | grep -q VAPID_PRIVATE_KEY; then
+  echo "  VAPID keys are on Vercel."
+else
+  echo "  VAPID keys did NOT reach Vercel. Is this folder linked? Try: npx vercel link"
+  exit 1
+fi
+echo "Done. Redeploy so the site picks up the keys: npx vercel deploy --prod"
