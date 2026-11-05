@@ -49,12 +49,18 @@ export async function notifyStudent(email: string, now = Date.now()): Promise<nu
   const plan = planNotifications((data ?? []) as NotifyMail[], now);
   let sent = 0;
   for (const p of plan) {
-    sent += await sendToStudent(email, p);
-    await db
+    // #35: claim first, send second. Only the run whose update flips the flag sends, so two
+    // overlapping runs (background sync, reminders, the daily cron) can't both send it.
+    const flag = p.kind === "urgent" ? "notified" : "reminded";
+    const { data: claimed } = await db
       .from("emails")
-      .update(p.kind === "urgent" ? { notified: true } : { reminded: true })
+      .update({ [flag]: true })
       .eq("id", p.id)
-      .eq("user_email", email);
+      .eq("user_email", email)
+      .eq(flag, false)
+      .select("id");
+    if (!claimed?.length) continue;
+    sent += await sendToStudent(email, p);
   }
   return sent;
 }

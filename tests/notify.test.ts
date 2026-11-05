@@ -68,3 +68,13 @@ test("never more than a few at once", () => {
   const lots = Array.from({ length: 20 }, () => m({ priority: "very_important" }));
   assert.equal(planNotifications(lots, NOW).length, MAX_PER_RUN);
 });
+
+test("a notification is claimed in the database before it's sent, so overlapping runs can't double-send (#35)", async () => {
+  const { readFileSync } = await import("node:fs");
+  const src = readFileSync("src/lib/notify.ts", "utf8");
+  const loop = src.slice(src.indexOf("for (const p of plan)"));
+  const claim = loop.indexOf(".eq(flag, false)");
+  const send = loop.indexOf("sendToStudent(");
+  assert.ok(claim > 0 && send > claim, "the conditional update comes before sending");
+  assert.match(loop, /if \(!claimed\?\.length\) continue;/);
+});
