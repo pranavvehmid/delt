@@ -942,3 +942,8 @@ body { min-height: 100dvh; }
 /* the code says it already ("COE COE"); the white position box already means unread */
 :root[data-look="grid"] .line1[data-same] .from { display: none; }
 :root[data-look="grid"] .row.unread .row-slide::after { display: none; }
+
+/* #43: a switch that's off must still be visible (3:1 against the page, WCAG 1.4.11) */
+.toggle input:not(:checked) + .knob { box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--text) 62%, transparent); }
+.toggle input:not(:checked) + .knob::after { background: color-mix(in srgb, var(--text) 75%, transparent); box-shadow: none; }
+:root:not([data-look="glyph"]) .toggle .knob::after { border-radius: 0; } /* :is() above can't match pseudo-elements */

@@ -131,3 +131,12 @@ test("Grid: text on every driver colour (buttons, counts, toasts) is readable", 
     assert.ok(r >= 4.5, `${key}: ${r.toFixed(2)}:1`);
   }
 });
+
+test("a switch that's off is outlined at 3:1 or more in Minimal light, dark and extra dark (#43)", () => {
+  assert.match(css, /\.toggle input:not\(:checked\) \+ \.knob \{ box-shadow: inset 0 0 0 1\.5px color-mix\(in srgb, var\(--text\) 62%, transparent\); \}/);
+  for (const [name, t] of Object.entries(THEMES)) {
+    const fg = t.ink.split(/\s+/).map(Number) as RGB;
+    const r = ratio(mix(fg, hex(t.bg), 0.62), hex(t.bg));
+    assert.ok(r >= 3, `${name}: ${r.toFixed(2)}:1`);
+  }
+});
