@@ -17,6 +17,11 @@ import { COOLDOWN_MS, bumpUsage, planAI } from "./ai-quota";
 import { needsReseal, open, openToken, seal } from "./secret";
 import { BATCH, LIST_MAX, UNREAD_LIST_MAX, UNREAD_WINDOW_DAYS, isGone, nextSyncedAt, planSync, unreadChanges } from "./sync-plan";
 
+
+/** What sync talks to: the database, Gmail and the AI. Tests swap these for fakes (#39). */
+export const syncDeps = { db, getAccessToken, listMessageIds, getMessage, ensureLabels, setPriorityLabel, classifyWithAI };
+const D = syncDeps;
+
 const FIRST_SYNC_DAYS = 14;
 const PARALLEL = 5;
 // Gemini's free tier allows only a few requests per minute, so AI calls are
@@ -48,16 +53,16 @@ export async function syncUser(email: string, mode: SyncMode = "full"): Promise<
   const started = Date.now();
   const result: SyncResult = { email, fetched: 0, sorted: 0, sortedByAI: 0, rechecked: 0, labeled: 0, backlog: 0, errors: [] };
 
-  const { data: user, error } = await db.from("users").select("*").eq("email", email).single();
+  const { data: user, error } = await D.db.from("users").select("*").eq("email", email).single();
   if (error || !user) throw new Error(`No saved Google account for ${email}. Sign in again.`);
 
   let token: string;
   try {
-    token = await getAccessToken(user.refresh_token);
+    token = await D.getAccessToken(user.refresh_token);
     // Rows saved before #27 (plain text), or with an old key: re-encrypt now, on the server that owns the key.
     if (needsReseal(user.refresh_token)) {
       const plain = openToken(user.refresh_token);
-      if (plain) await db.from("users").update({ refresh_token: seal(plain) }).eq("email", email);
+      if (plain) await D.db.from("users").update({ refresh_token: seal(plain) }).eq("email", email);
     }
   } catch (e) {
     if (e instanceof AccessRevoked) await markRevoked(email);
@@ -72,10 +77,10 @@ export async function syncUser(email: string, mode: SyncMode = "full"): Promise<
   const startedAt = new Date().toISOString();
 
   // List every new id in the window (cheap), then download at most BATCH of the ones not saved yet.
-  const ids = mode === "later" ? [] : await listMessageIds(token, `after:${since} -in:sent -in:drafts -in:chats`, LIST_MAX);
+  const ids = mode === "later" ? [] : await D.listMessageIds(token, `after:${since} -in:sent -in:drafts -in:chats`, LIST_MAX);
   const knownIds = new Set<string>();
   for (let i = 0; i < ids.length; i += 200) {
-    const { data: known } = await db.from("emails").select("id").eq("user_email", email).in("id", ids.slice(i, i + 200));
+    const { data: known } = await D.db.from("emails").select("id").eq("user_email", email).in("id", ids.slice(i, i + 200));
     for (const r of known ?? []) knownIds.add(r.id);
   }
   const mailPlan = planSync(ids, knownIds, BATCH);
@@ -85,7 +90,7 @@ export async function syncUser(email: string, mode: SyncMode = "full"): Promise<
   let failed = 0;
 
   // Your manual corrections teach both sorters.
-  const { data: corrected } = await db
+  const { data: corrected } = await D.db
     .from("emails")
     .select("from_address, subject, priority")
     .eq("user_email", email)
@@ -104,7 +109,7 @@ export async function syncUser(email: string, mode: SyncMode = "full"): Promise<
     await Promise.all(
       todo.slice(i, i + PARALLEL).map(async (id) => {
         try {
-          const msg = await getMessage(token, id);
+          const msg = await D.getMessage(token, id);
           const rules = classifyByRules(msg, corrections, profile);
           items.push({ msg, c: rules, rules, byAI: false });
         } catch (e) {
@@ -135,7 +140,7 @@ export async function syncUser(email: string, mode: SyncMode = "full"): Promise<
     if (wait > 0) await new Promise((r) => setTimeout(r, wait));
     lastAI = Date.now();
     aiUsed++;
-    return classifyWithAI(msg, corrections.slice(0, 30), profile, plan.key ?? undefined);
+    return D.classifyWithAI(msg, corrections.slice(0, 30), profile, plan.key ?? undefined);
   };
   const aiTimeLeft = () => !aiStopped && aiUsed < plan.allowance && Date.now() - started < AI_TIME_BUDGET_MS;
   const onAIError = (id: string, e: unknown) => {
@@ -167,7 +172,7 @@ export async function syncUser(email: string, mode: SyncMode = "full"): Promise<
   for (let i = 0; i < items.length; i += PARALLEL) {
     await Promise.all(
       items.slice(i, i + PARALLEL).map(async ({ msg, c, byAI }) => {
-        const { error: insertError } = await db.from("emails").upsert({
+        const { error: insertError } = await D.db.from("emails").upsert({
           id: msg.id,
           user_email: email,
           thread_id: msg.threadId,
@@ -196,7 +201,7 @@ export async function syncUser(email: string, mode: SyncMode = "full"): Promise<
 
   // 4. Spare AI time: re-check older rules-sorted mail, most important and newest first.
   if (mode !== "quick" && aiTimeLeft()) {
-    const { data: backlog } = await db
+    const { data: backlog } = await D.db
       .from("emails")
       .select("id, priority")
       .eq("user_email", email)
@@ -208,8 +213,8 @@ export async function syncUser(email: string, mode: SyncMode = "full"): Promise<
     for (const row of backlog ?? []) {
       if (!aiTimeLeft()) break;
       try {
-        const c = await askAI(await getMessage(token, row.id));
-        await db
+        const c = await askAI(await D.getMessage(token, row.id));
+        await D.db
           .from("emails")
           .update({ ...c, sorted_by: "ai", gmail_labeled: c.priority === row.priority })
           .eq("id", row.id)
@@ -222,7 +227,7 @@ export async function syncUser(email: string, mode: SyncMode = "full"): Promise<
   }
 
   // 5. Put Gmail labels on everything not yet labeled (new mail, re-checked mail, past failures).
-  const { data: unlabeled } = mode === "quick" ? { data: [] as { id: string; priority: string }[] } : await db
+  const { data: unlabeled } = mode === "quick" ? { data: [] as { id: string; priority: string }[] } : await D.db
     .from("emails")
     .select("id, priority")
     .eq("user_email", email)
@@ -231,13 +236,13 @@ export async function syncUser(email: string, mode: SyncMode = "full"): Promise<
     .limit(LABEL_BACKFILL_MAX);
   if (unlabeled?.length) {
     try {
-      const labelIds = await ensureLabels(token);
+      const labelIds = await D.ensureLabels(token);
       for (let i = 0; i < unlabeled.length; i += PARALLEL) {
         await Promise.all(
           unlabeled.slice(i, i + PARALLEL).map(async (row) => {
             try {
-              await setPriorityLabel(token, row.id, row.priority as Priority, labelIds);
-              await db.from("emails").update({ gmail_labeled: true }).eq("id", row.id).eq("user_email", email);
+              await D.setPriorityLabel(token, row.id, row.priority as Priority, labelIds);
+              await D.db.from("emails").update({ gmail_labeled: true }).eq("id", row.id).eq("user_email", email);
               result.labeled++;
             } catch (e) {
               result.errors.push(`Label ${row.id}: ${(e as Error).message}`);
@@ -253,14 +258,14 @@ export async function syncUser(email: string, mode: SyncMode = "full"): Promise<
   // 6. Mirror Gmail's unread state, so mail read in Gmail leaves the NEW deck too.
   if (mode !== "later") try {
     // #29: up to 2000 unread ids, compared only with rows from the same 60 days
-    const unreadNow = await listMessageIds(token, `is:unread newer_than:${UNREAD_WINDOW_DAYS}d -in:sent -in:chats`, UNREAD_LIST_MAX);
+    const unreadNow = await D.listMessageIds(token, `is:unread newer_than:${UNREAD_WINDOW_DAYS}d -in:sent -in:chats`, UNREAD_LIST_MAX);
     const windowStart = new Date(Date.now() - UNREAD_WINDOW_DAYS * 86400_000).toISOString();
-    const { data: flagged } = await db.from("emails").select("id").eq("user_email", email).eq("unread", true).gte("received_at", windowStart);
+    const { data: flagged } = await D.db.from("emails").select("id").eq("user_email", email).eq("unread", true).gte("received_at", windowStart);
     const change = unreadChanges((flagged ?? []).map((r) => r.id), unreadNow, unreadNow.length >= UNREAD_LIST_MAX);
     for (let i = 0; i < change.markRead.length; i += 200)
-      await db.from("emails").update({ unread: false }).in("id", change.markRead.slice(i, i + 200)).eq("user_email", email);
+      await D.db.from("emails").update({ unread: false }).in("id", change.markRead.slice(i, i + 200)).eq("user_email", email);
     for (let i = 0; i < change.markUnread.length; i += 200)
-      await db.from("emails").update({ unread: true }).in("id", change.markUnread.slice(i, i + 200)).eq("user_email", email).eq("unread", false);
+      await D.db.from("emails").update({ unread: true }).in("id", change.markUnread.slice(i, i + 200)).eq("user_email", email).eq("unread", false);
   } catch (e) {
     result.errors.push(`Unread refresh: ${(e as Error).message}`);
   }
@@ -268,9 +273,9 @@ export async function syncUser(email: string, mode: SyncMode = "full"): Promise<
   // Only close the window when everything in it was saved (#28); otherwise the next run carries on.
   result.fetched = result.sorted; // what the app reports as "N new mails"
   const syncedAt = mode === "later" ? (user.last_synced_at ?? null) : nextSyncedAt({ previous: user.last_synced_at ?? null, startedAt, left: mailPlan.left, failed });
-  if (syncedAt !== (user.last_synced_at ?? null)) await db.from("users").update({ last_synced_at: syncedAt }).eq("email", email);
+  if (syncedAt !== (user.last_synced_at ?? null)) await D.db.from("users").update({ last_synced_at: syncedAt }).eq("email", email);
   // Separate write, so a database without the usage columns yet can't block the sync time.
-  if (!plan.own && aiUsed > 0) await db.from("users").update(bumpUsage(user.ai_day ?? null, user.ai_calls ?? 0, aiUsed, Date.now())).eq("email", email);
+  if (!plan.own && aiUsed > 0) await D.db.from("users").update(bumpUsage(user.ai_day ?? null, user.ai_calls ?? 0, aiUsed, Date.now())).eq("email", email);
   return result;
 }
 
@@ -278,7 +283,7 @@ export async function syncUser(email: string, mode: SyncMode = "full"): Promise<
  *  Atomic in the database (claim_sync in schema.sql), so the app, the background job and the daily
  *  cron can't overlap. If the function isn't installed yet, syncing is allowed (and logged). */
 export async function claimSync(email: string, gapSeconds: number): Promise<boolean> {
-  const { data, error } = await db.rpc("claim_sync", { p_email: email, p_gap_seconds: gapSeconds });
+  const { data, error } = await D.db.rpc("claim_sync", { p_email: email, p_gap_seconds: gapSeconds });
   if (error) {
     console.warn("claim_sync unavailable, syncing without the lock:", error.message);
     return true;
@@ -286,22 +291,22 @@ export async function claimSync(email: string, gapSeconds: number): Promise<bool
   return data === true;
 }
 export async function finishSync(email: string) {
-  await db.from("users").update({ sync_finished_at: new Date().toISOString() }).eq("email", email);
+  await D.db.from("users").update({ sync_finished_at: new Date().toISOString() }).eq("email", email);
 }
 
 /** Issue #10: remember that Google access is gone, so the app asks the student to sign in
  *  again and background sync stops trying. Cleared on the next sign-in (auth.ts). */
 export async function markRevoked(email: string) {
-  await db.from("users").update({ access_revoked: true }).eq("email", email); // no-op on an older database
+  await D.db.from("users").update({ access_revoked: true }).eq("email", email); // no-op on an older database
 }
 
 // ---------- shared Gemini key cooldown, stored in app_state so every sync sees it ----------
 async function sharedCooldownUntil(): Promise<number | null> {
-  const { data, error } = await db.from("app_state").select("value").eq("key", "gemini_cooldown_until").maybeSingle();
+  const { data, error } = await D.db.from("app_state").select("value").eq("key", "gemini_cooldown_until").maybeSingle();
   if (error || !data) return null;
   const t = Number((data.value as { until?: number })?.until);
   return Number.isFinite(t) ? t : null;
 }
 async function restSharedKey() {
-  await db.from("app_state").upsert({ key: "gemini_cooldown_until", value: { until: Date.now() + COOLDOWN_MS }, updated_at: new Date().toISOString() });
+  await D.db.from("app_state").upsert({ key: "gemini_cooldown_until", value: { until: Date.now() + COOLDOWN_MS }, updated_at: new Date().toISOString() });
 }
