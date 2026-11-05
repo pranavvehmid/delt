@@ -5,7 +5,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { EmailRow, Priority } from "@/lib/supabase";
 import type { FullMessage } from "@/lib/gmail";
-import { F, PILES, cleanSender, cleanSubject, dueLevel, dueText, pileLabel, wrongPileLink } from "@/lib/inbox";
+import { F, PILES, cleanSender, cleanSubject, dueLevel, dueText, pileLabel, senderDomain, wrongPileLink } from "@/lib/inbox";
 import { calendarLink } from "@/lib/insights";
 import { useDialog } from "./use-dialog";
 
@@ -178,7 +178,7 @@ export default function MailView({
             </div>
           )}
           {row && (
-            <a className="mv-report muted" href={wrongPileLink(subject, cleanSender(row.from_name), pileLabel(row.priority))} target="_blank" rel="noreferrer" title="Opens a public GitHub issue. Check it before posting.">
+            <a className="mv-report muted" href={wrongPileLink(senderDomain(row.from_address), pileLabel(row.priority), row.reason)} target="_blank" rel="noreferrer" title="Opens a public GitHub issue with the sender's domain and pile only, never the subject.">
               Wrong pile? Report it ↗
             </a>
           )}

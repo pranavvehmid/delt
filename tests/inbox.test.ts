@@ -116,17 +116,18 @@ test("initials skip small words and split hyphens", async () => {
   assert.equal(initials(""), "?");
 });
 
-test("wrong-pile report link carries subject, sender and pile, nothing else", async () => {
-  const { wrongPileLink } = await import("../src/lib/inbox");
-  const u = new URL(wrongPileLink("CAT-1 schedule & seating", "Controller of Examinations", "Later"));
+test("wrong-pile report link never carries the subject, text or a name (#33)", async () => {
+  const { wrongPileLink, senderDomain } = await import("../src/lib/inbox");
+  const u = new URL(wrongPileLink(senderDomain("Office.Of.DSW@VIT.ac.in"), "Later", "From VIT, no action found"));
   assert.equal(u.origin + u.pathname, "https://github.com/pranavvehmid/delt/issues/new");
   assert.equal(u.searchParams.get("labels"), "sorting");
-  assert.equal(u.searchParams.get("title"), "Wrong pile: CAT-1 schedule & seating");
+  assert.equal(u.searchParams.get("title"), "Wrong pile: mail from vit.ac.in sorted as Later");
   const body = u.searchParams.get("body")!;
-  assert.match(body, /CAT-1 schedule & seating/);
-  assert.match(body, /DELT put it in:\*\* Later/);
+  assert.match(body, /Sender's domain:\*\* vit\.ac\.in/);
+  assert.match(body, /DELT's reason:\*\* From VIT, no action found/);
   assert.match(body, /public/);
-  assert.doesNotMatch(body, /@/);
+  assert.doesNotMatch(body, /@|Office|DSW/);
+  assert.equal(senderDomain(null), "unknown");
 });
 
 // ---------- issue #11: more than one page ----------

@@ -185,17 +185,22 @@ export const openDeadlines = (b: Record<Bucket, unknown[]>) => b.Overdue.length 
  * sender name and pile go in; never the mail body or addresses. The student sees
  * it on GitHub and can edit or cancel before posting.
  */
-export function wrongPileLink(subject: string, sender: string, pile: string) {
+/** The part of an address after @, e.g. "vit.ac.in". */
+export const senderDomain = (address: string | null) => (address ?? "").toLowerCase().split("@")[1]?.replace(/[^a-z0-9.-]/g, "") || "unknown";
+
+/** A public GitHub issue about a wrong pile (#33). It never carries the subject, the text or a
+ *  person's name: only the sender's domain, the pile, and DELT's own reason for choosing it. */
+export function wrongPileLink(domain: string, pile: string, reason: string | null) {
   const body = [
-    `**Subject line**\n${subject}`,
-    `**Sender**\n${sender}`,
+    `**Sender's domain:** ${domain}`,
     `**DELT put it in:** ${pile}`,
+    `**DELT's reason:** ${reason || "(none given)"}`,
     `**It should be in:** Urgent / Priority / Later / Noise`,
-    `**Why**\n`,
+    `**What kind of mail is it?** Describe it in general words (for example "a fee deadline from the hostel office"). Please don't paste the subject or names.`,
     `**Your batch year** (for example 2026)\n`,
-    `_This issue is public. Remove anything private before posting._`,
+    `_This issue is public._`,
   ].join("\n\n");
-  const q = new URLSearchParams({ title: `Wrong pile: ${subject}`.slice(0, 120), labels: "sorting", body });
+  const q = new URLSearchParams({ title: `Wrong pile: mail from ${domain} sorted as ${pile}`.slice(0, 120), labels: "sorting", body });
   return `https://github.com/pranavvehmid/delt/issues/new?${q.toString()}`;
 }
 
