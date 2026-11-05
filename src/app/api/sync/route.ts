@@ -55,6 +55,8 @@ export async function POST(req: NextRequest) {
 
 // Time for one call; the GitHub Actions job (.github/workflows/sync.yml) calls again while students are left.
 const BUDGET_MS = 90_000;
+// Students synced at the same time per call (#36).
+const PARALLEL_STUDENTS = 4;
 
 // GET: background sync. Called by GitHub Actions every ~15 minutes and by the daily Vercel cron,
 // both with "Authorization: Bearer <CRON_SECRET>". Syncs whoever is due (see lib/schedule.ts),
@@ -75,27 +77,34 @@ export async function GET(req: NextRequest) {
 
   const queue = dueForSync(users ?? [], started);
   const results: { email: string; fetched?: number; notified?: number; error?: string }[] = [];
-  for (const u of queue) {
-    if (Date.now() - started > BUDGET_MS) break;
-    // the student's own app may be syncing them right now: skip, they're up to date
-    if (!(await claimSync(u.email, 60))) {
-      results.push({ email: mask(u.email), error: "busy" });
-      continue;
+  // #36: several students at once (each student's own Gmail limits are separate), within the budget.
+  const processed = new Set<string>();
+  let next = 0;
+  const worker = async () => {
+    while (next < queue.length && Date.now() - started < BUDGET_MS) {
+      const u = queue[next++];
+      processed.add(u.email);
+      // the student's own app may be syncing them right now: skip, they're up to date
+      if (!(await claimSync(u.email, 60))) {
+        results.push({ email: mask(u.email), error: "busy" });
+        continue;
+      }
+      try {
+        const r = await syncUser(u.email);
+        results.push({ email: mask(u.email), fetched: r.fetched, notified: await notifyStudent(u.email) });
+      } catch (e) {
+        // Revoked Google access is flagged by syncUser, so that student is skipped from now on.
+        // Any other failure: try again next round. last_synced_at is NOT moved, or mail in the
+        // window would be skipped for good (#28); claim_sync's gap stops tight retry loops.
+        results.push({ email: mask(u.email), error: (e as Error).message.slice(0, 120) });
+      } finally {
+        await finishSync(u.email);
+      }
     }
-    try {
-      const r = await syncUser(u.email);
-      results.push({ email: mask(u.email), fetched: r.fetched, notified: await notifyStudent(u.email) });
-    } catch (e) {
-      // Revoked Google access is flagged by syncUser, so that student is skipped from now on.
-      // Any other failure: move on and try again next round.
-      await db.from("users").update({ last_synced_at: new Date().toISOString() }).eq("email", u.email);
-      results.push({ email: mask(u.email), error: (e as Error).message.slice(0, 120) });
-    } finally {
-      await finishSync(u.email);
-    }
-  }
+  };
+  await Promise.all(Array.from({ length: PARALLEL_STUDENTS }, worker));
   // Deadline reminders for students who weren't due for a sync this round.
-  const synced = new Set(queue.slice(0, results.length).map((u) => u.email));
+  const synced = new Set(processed);
   for (const u of users ?? []) if (u.access_revoked) synced.add(u.email); // no reminders for students who left
   let reminders = 0;
   const { data: subscribed } = await db.from("push_subscriptions").select("user_email");
@@ -103,7 +112,7 @@ export async function GET(req: NextRequest) {
     if (synced.has(email) || Date.now() - started > BUDGET_MS + 20_000) continue;
     reminders += await notifyStudent(email);
   }
-  return NextResponse.json({ synced: results.length, remaining: Math.max(0, queue.length - results.length), reminders, results });
+  return NextResponse.json({ synced: results.length, remaining: Math.max(0, queue.length - processed.size), reminders, results });
 }
 
 // Logs shouldn't carry full addresses.

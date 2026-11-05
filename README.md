@@ -61,6 +61,8 @@ Most mail is sorted by simple rules. When the rules aren't sure, Google Gemini's
 
 New mail is checked when you open the app and every 5 minutes while it's open. In the background, a free GitHub Actions job checks students who used DELT this week about every 15 minutes, and everyone else at least once a day.
 
+**How far that goes:** each background call syncs 4 students at a time for 90 seconds, and the job makes up to 8 calls every 15 minutes. A check with no new mail takes about 3 to 5 seconds, so that is roughly 500 to 900 student checks per 15 minutes on the free plans. Past about 500 students who open DELT every week, active students will be checked less often than every 15 minutes; the next step then is skipping students with no new mail via Gmail's history id (see [#36](https://github.com/pranavvehmid/delt/issues/36)).
+
 ### Settings
 
 Account menu → Settings:
