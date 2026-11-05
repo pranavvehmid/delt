@@ -469,3 +469,27 @@ test("small details: counts say what they count and Back has a word (#59)", asyn
   await page.locator(".row-main").first().click();
   await expect(page.getByRole("button", { name: "Back to list" })).toContainText("Back");
 });
+
+for (const look of ["minimal", "glyph", "grid"] as const) {
+  test(`a ${look} row renders only what ${look} shows (#61)`, async ({ page }, info) => {
+    await page.addInitScript((l) => localStorage.setItem("delt-prefs", JSON.stringify({ look: l, mode: "light", accent: "auto", size: "normal", density: "comfortable" })), look);
+    await mockApi(page, smallInbox());
+    await page.goto("/e2e");
+    await expect(page.locator("li.row").first()).toBeVisible();
+    const counts = await page.locator("li.row").evaluateAll((rows) => rows.map((r) => r.querySelectorAll("*").length + 1));
+    // a phone has no hover buttons; a desktop adds 7 for them
+    const limit = { minimal: 12, grid: 13, glyph: 16 }[look] + (info.project.name === "phone" ? 0 : 7);
+    expect(Math.max(...counts)).toBeLessThanOrEqual(limit);
+  });
+}
+
+test("a filter change draws the first rows at once and the rest right after (#60)", async ({ page }) => {
+  await mockApi(page, bigInbox(120));
+  await page.goto("/e2e");
+  const chips = page.getByRole("navigation", { name: "Filter by pile" });
+  await expect.poll(() => page.locator("li.row").count()).toBeGreaterThan(24);
+  const total = await page.locator("li.row").count();
+  await chips.getByRole("button", { name: /^Urgent/ }).click();
+  await chips.getByRole("button", { name: /^All/ }).click();
+  await expect(page.locator("li.row")).toHaveCount(total);
+});

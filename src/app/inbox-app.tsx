@@ -3,7 +3,7 @@
 // DELT v2: one inbox with every mail (colour tag = pile), and a Deadlines tab.
 // Tap a mail to read it full screen. Swipe right = read/unread, left = done.
 // See docs/DESIGN.md for why it works this way.
-import { memo, useCallback, useEffect, useMemo, useRef, useState, type PointerEvent as RPointerEvent } from "react";
+import { memo, startTransition, useCallback, useEffect, useMemo, useRef, useState, type PointerEvent as RPointerEvent } from "react";
 import type { EmailRow, Priority } from "@/lib/supabase";
 import {
   PAGE_SIZE, PILES, BUCKETS, ago, cleanSender, cleanSubject, deadlineBuckets, dueLevel, dueText, filterMail, groupByDay, initials, mergeFresh, mergeMore, oldestReceived,
@@ -13,6 +13,7 @@ import { calendarLink } from "@/lib/insights";
 import { cacheKey, clearOffline, isInstalledApp, packCache, unpackCache } from "@/lib/offline";
 import MailView from "./mail-view";
 import Appearance from "./appearance";
+import { useCanHover, useLook, type Look } from "./use-look";
 import Settings from "./settings";
 import Welcome from "./welcome";
 import { transition } from "./motion";
@@ -343,6 +344,8 @@ export default function InboxApp({ email, name, signOutAction, signInAction }: P
   };
   // Row handlers that never change identity, so a tap re-renders only the row that changed (#20)
   const act = useRef<{ openMail: (m: EmailRow) => void; patch: (id: string, p: Patch) => void; learned: () => void } | null>(null);
+  const look = useLook();
+  const canHover = useCanHover();
   const rowActions = useMemo<RowActions>(
     () => ({
       open: (m) => act.current?.openMail(m),
@@ -410,6 +413,31 @@ export default function InboxApp({ email, name, signOutAction, signInAction }: P
     return ids.size ? shown.filter((m) => !ids.has(m.id)) : shown;
   }, [shown, pinned]);
   const days = useMemo(() => groupByDay(rest, now), [rest, now]);
+  // #60: after a filter change, draw the first screens of rows at once and the rest right
+  // after, as an interruptible update, so the tap answers quickly even with hundreds of mails.
+  const FIRST_ROWS = 24;
+  const filterKey = `${route.tab}|${pile}|${unreadOnly}|${query}`;
+  const [cap, setCap] = useState({ key: filterKey, n: FIRST_ROWS });
+  if (cap.key !== filterKey) setCap({ key: filterKey, n: FIRST_ROWS });
+  useEffect(() => {
+    if (cap.n === Infinity) return;
+    let t = 0;
+    const f = requestAnimationFrame(() => {
+      t = window.setTimeout(() => startTransition(() => setCap((c) => (c.key === cap.key ? { ...c, n: Infinity } : c))));
+    });
+    return () => {
+      cancelAnimationFrame(f);
+      clearTimeout(t);
+    };
+  }, [cap]);
+  const drawnDays = useMemo(() => {
+    let left = cap.n - pinned.length;
+    return days.map((d) => {
+      const draw = left <= 0 ? [] : d.mails.slice(0, left);
+      left -= draw.length;
+      return { ...d, draw };
+    }).filter((d) => d.draw.length > 0);
+  }, [days, cap.n, pinned.length]);
   // Grid look: each row's place in the list, and the newest mail to measure gaps from
   const posOf = useMemo(() => new Map([...pinned, ...rest].map((m, i) => [m.id, i + 1])), [pinned, rest]);
   const leaderAt = shown[0]?.received_at ?? "";
@@ -419,7 +447,7 @@ export default function InboxApp({ email, name, signOutAction, signInAction }: P
 
   // load the next page when the end of the list comes near
   const sentinel = useRef<HTMLDivElement>(null);
-  const canLoadOlder = route.tab === "inbox" && !query.trim() && more && mails !== null;
+  const canLoadOlder = route.tab === "inbox" && !query.trim() && more && mails !== null && cap.n === Infinity;
   useEffect(() => {
     const el = sentinel.current;
     if (!canLoadOlder || !el || typeof IntersectionObserver === "undefined") return;
@@ -715,12 +743,12 @@ export default function InboxApp({ email, name, signOutAction, signInAction }: P
                 </h2>
                 <ul className="rows">
                   {pinned.map((m) => (
-                    <MailRow key={m.id} m={m} now={now} pos={posOf.get(m.id) ?? 0} leaderAt={leaderAt} on={rowActions} current={route.mailId === m.id} query={query} />
+                    <MailRow key={m.id} m={m} now={now} pos={posOf.get(m.id) ?? 0} leaderAt={leaderAt} on={rowActions} current={route.mailId === m.id} query={query} look={look} hover={canHover} />
                   ))}
                 </ul>
               </section>
             )}
-            {days.map((d) => (
+            {drawnDays.map((d) => (
               <section key={d.key} className="day">
                 <h2 className="dayhead">
                   {d.label}
@@ -729,8 +757,8 @@ export default function InboxApp({ email, name, signOutAction, signInAction }: P
                   </span>
                 </h2>
                 <ul className="rows">
-                  {d.mails.map((m) => (
-                    <MailRow key={m.id} m={m} now={now} pos={posOf.get(m.id) ?? 0} leaderAt={leaderAt} on={rowActions} current={route.mailId === m.id} query={query} />
+                  {d.draw.map((m) => (
+                    <MailRow key={m.id} m={m} now={now} pos={posOf.get(m.id) ?? 0} leaderAt={leaderAt} on={rowActions} current={route.mailId === m.id} query={query} look={look} hover={canHover} />
                   ))}
                 </ul>
               </section>
@@ -910,7 +938,11 @@ function apply(m: EmailRow, p: { read?: boolean; is_done?: boolean; priority?: P
 type RowActions = { open: (m: EmailRow) => void; read: (m: EmailRow) => void; done: (m: EmailRow) => void };
 
 // memo: a row re-renders only when its own mail, position, gap or the minute changes (#20)
-const MailRow = memo(function MailRow({ m, now, pos = 0, leaderAt = "", on, current = false, query = "" }: { m: EmailRow; now: number; pos?: number; leaderAt?: string; on: RowActions; current?: boolean; query?: string }) {
+// #61: a row renders only what the current look shows (Glyph: avatar, pile tag, unread dot;
+// Minimal: time column; Grid: position, sender code, gap), the swipe background only while
+// swiping, and the hover buttons only on devices with a mouse.
+const MailRow = memo(function MailRow({ m, now, pos = 0, leaderAt = "", on, current = false, query = "", look = "minimal", hover = false }: { m: EmailRow; now: number; pos?: number; leaderAt?: string; on: RowActions; current?: boolean; query?: string; look?: Look; hover?: boolean }) {
+  const glyph = look === "glyph", grid = look === "grid";
   const onOpen = () => on.open(m), onRead = () => on.read(m), onDone = () => on.done(m);
   const [dx, setDx] = useState(0);
   const drag = useRef<{ x: number; y: number; on: boolean; moved: boolean; dx: number } | null>(null);
@@ -964,6 +996,7 @@ const MailRow = memo(function MailRow({ m, now, pos = 0, leaderAt = "", on, curr
 
   return (
     <li className={`row ink-${m.priority} ${m.unread ? "unread" : ""} ${m.is_done ? "done" : ""} ${dx ? "dragging" : ""}`} data-mail={m.id} data-pos={pos} style={{ "--i": Math.min(pos, 14) } as React.CSSProperties}>
+      {dx !== 0 && (
       <div className={`swipe-bg ${dx > 0 ? "r" : "l"} ${Math.abs(dx) > LIMIT ? "armed" : ""}`} aria-hidden="true">
         <span>
           {dx > 0 ? (
@@ -974,27 +1007,36 @@ const MailRow = memo(function MailRow({ m, now, pos = 0, leaderAt = "", on, curr
           {dx > 0 ? (m.unread ? "Read" : "Unread") : m.is_done ? "Not done" : "Done"}
         </span>
       </div>
+      )}
       <div className="row-slide" style={{ transform: dx ? `translateX(${dx}px)` : undefined }} onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={up}>
         <button className="row-main" onClick={() => !moved.current && onOpen()} aria-current={current || undefined} aria-label={label} aria-describedby={m.summary || m.snippet ? `sum-${m.id}` : undefined}>
-          <span className={`avatar p-${m.priority}`} aria-hidden="true">
-            {initials(sender)}
-          </span>
-          <span className="pos" aria-hidden="true">
-            {pos}
-          </span>
-          <span className="when" aria-hidden="true">
-            {timeOfDay(m.received_at)}
-          </span>
+          {glyph && (
+            <span className={`avatar p-${m.priority}`} aria-hidden="true">
+              {initials(sender)}
+            </span>
+          )}
+          {grid && (
+            <span className="pos" aria-hidden="true">
+              {pos}
+            </span>
+          )}
+          {look === "minimal" && (
+            <span className="when" aria-hidden="true">
+              {timeOfDay(m.received_at)}
+            </span>
+          )}
           <span className="row-text">
             <span className="line1" data-same={senderCode(m.from_name) === sender.toUpperCase() || undefined}>
-              <i className={`tagdot pdot p-${m.priority}`} title={pileLabel(m.priority)} aria-hidden="true" />
-              <span className="code" aria-hidden="true">
-                {senderCode(m.from_name)}
-              </span>
+              {glyph && <i className={`tagdot pdot p-${m.priority}`} title={pileLabel(m.priority)} aria-hidden="true" />}
+              {grid && (
+                <span className="code" aria-hidden="true">
+                  {senderCode(m.from_name)}
+                </span>
+              )}
               <span className="from ell">
                 <Marked text={sender} query={query} />
               </span>
-              <span className="time">{timeOfDay(m.received_at)}</span>
+              {glyph && <span className="time">{timeOfDay(m.received_at)}</span>}
             </span>
             <span className="subj ell">
               <Marked text={cleanSubject(m.subject)} query={query} />
@@ -1002,19 +1044,26 @@ const MailRow = memo(function MailRow({ m, now, pos = 0, leaderAt = "", on, curr
             <span className="sum ell" id={`sum-${m.id}`}>
               {m.summary || m.snippet}
             </span>
+            {(glyph || m.is_done || (m.deadline && !m.is_done)) && (
             <span className="meta">
-              <span className={`tag p-${m.priority}`}>
-                <i className="tagdot" />
-                {pileLabel(m.priority)}
-              </span>
+              {glyph && (
+                <span className={`tag p-${m.priority}`}>
+                  <i className="tagdot" />
+                  {pileLabel(m.priority)}
+                </span>
+              )}
               {m.deadline && !m.is_done && <span className={`due lv-${dueLevel(m.deadline, now)}`}>Due {dueText(m.deadline, now)}</span>}
               {m.is_done && <span className="donemark">✓ Done</span>}
             </span>
+            )}
           </span>
-          <span className="gap" aria-hidden="true">
-            {leaderAt ? gapText(m.received_at, leaderAt) : ""}
-          </span>
+          {grid && (
+            <span className="gap" aria-hidden="true">
+              {leaderAt ? gapText(m.received_at, leaderAt) : ""}
+            </span>
+          )}
         </button>
+        {hover && (
         <div className="row-acts hover-only">
           <button className="iconbtn" onClick={onRead} title={m.unread ? "Mark read" : "Mark unread"} aria-label={m.unread ? "Mark read" : "Mark unread"}>
             <svg viewBox="0 0 24 24" aria-hidden="true">{m.unread ? <path d="M4 6h16v12H4zM4 7l8 6 8-6" /> : <path d="M4 10l8-6 8 6v9H4zM4 10l8 5 8-5" />}</svg>
@@ -1023,7 +1072,8 @@ const MailRow = memo(function MailRow({ m, now, pos = 0, leaderAt = "", on, curr
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 5 5 9-10" /></svg>
           </button>
         </div>
-        {m.unread && <i className="unread-dot" aria-hidden="true" />}
+        )}
+        {glyph && m.unread && <i className="unread-dot" aria-hidden="true" />}
       </div>
     </li>
   );
