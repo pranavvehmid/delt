@@ -5,6 +5,8 @@ import { expect, test, type Page } from "@playwright/test";
 import { mockApi, smallInbox } from "./mock";
 
 async function axe(page: Page, what: string) {
+  // measure the finished screen, not a fade-in halfway through
+  await page.waitForFunction(() => document.getAnimations().every((a) => a.playState !== "running"));
   const { violations } = await new AxeBuilder({ page } as never).exclude(".mv-frame").analyze(); // the mail itself is the sender's HTML
   const bad = violations.filter((v) => v.impact === "serious" || v.impact === "critical");
   expect(bad.map((v) => `${what}: ${v.id} (${v.impact}) ${v.help} -> ${v.nodes.slice(0, 3).map((n) => n.target.join(" ")).join(" | ")}`)).toEqual([]);
@@ -14,6 +16,8 @@ async function setLook(page: Page, look: "minimal" | "glyph", mode: "light" | "d
   await page.addInitScript(([look, mode]) => localStorage.setItem("delt-prefs", JSON.stringify({ look, mode, accent: "auto", size: "normal", density: "comfortable" })), [look, mode]);
 }
 
+test.describe("axe", () => {
+  test.use({ contextOptions: { reducedMotion: "reduce" } });
 for (const look of ["minimal", "glyph"] as const) {
   for (const mode of ["light", "dark", "black"] as const) {
     test(`axe: ${look} ${mode}: inbox, mail, deadlines, settings`, async ({ page }) => {
@@ -40,6 +44,8 @@ for (const look of ["minimal", "glyph"] as const) {
     });
   }
 }
+
+});
 
 test.describe("keyboard only", () => {
   test.skip(({ isMobile }) => !!isMobile, "keyboard tests run on the desktop layout");
