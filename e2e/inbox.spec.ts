@@ -206,3 +206,29 @@ test("AI is off until the student answers, once (#31)", async ({ page }) => {
   await page.getByRole("button", { name: "Settings" }).click();
   await expect(page.getByRole("checkbox", { name: "Use AI for unclear mail" })).not.toBeChecked();
 });
+
+test("the Android app offers its own update when a newer build is out", async ({ page }) => {
+  await mockApi(page, smallInbox());
+  await page.route("https://api.github.com/**", (r) => r.fulfill({ contentType: "application/json", body: JSON.stringify({ name: "DELT for Android (build 6)" }) }));
+  await page.goto("/e2e?app=4#/inbox");
+  const banner = page.getByRole("region", { name: "A new version of the DELT app is ready." });
+  await expect(banner).toBeVisible();
+  await expect(banner.getByRole("link", { name: "Update" })).toHaveAttribute("href", "https://github.com/pranavvehmid/delt/releases/download/app-latest/DELT.apk");
+  await banner.getByRole("button", { name: "Later" }).click();
+  await expect(banner).toHaveCount(0);
+  await page.reload();
+  await expect(page.locator(row("cat1"))).toBeVisible();
+  await expect(banner).toHaveCount(0); // snoozed for a few days
+});
+
+test("no update banner for an up-to-date app or a normal browser", async ({ page }) => {
+  await mockApi(page, smallInbox());
+  await page.route("https://api.github.com/**", (r) => r.fulfill({ contentType: "application/json", body: JSON.stringify({ name: "DELT for Android (build 6)" }) }));
+  await page.goto("/e2e?app=6#/inbox");
+  await expect(page.locator(row("cat1"))).toBeVisible();
+  await expect(page.getByText("A new version of the DELT app is ready.")).toHaveCount(0);
+  await page.evaluate(() => localStorage.clear());
+  await page.goto("/e2e#/inbox");
+  await expect(page.locator(row("cat1"))).toBeVisible();
+  await expect(page.getByText("A new version of the DELT app is ready.")).toHaveCount(0);
+});

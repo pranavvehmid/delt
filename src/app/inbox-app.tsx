@@ -15,6 +15,7 @@ import MailView from "./mail-view";
 import Appearance from "./appearance";
 import Settings from "./settings";
 import { transition } from "./motion";
+import { APK_URL, checkAppUpdate, snoozeAppUpdate } from "@/lib/app-update";
 
 type Route = { tab: "inbox" | "deadlines"; mailId: string | null };
 const SYNC_EVERY = 5 * 60_000;
@@ -40,6 +41,11 @@ export default function InboxApp({ email, name, signOutAction, signInAction }: P
   const [reauth, setReauth] = useState(false);
   // #31: null = not asked yet, so the app asks once; undefined = unknown (older database)
   const [aiConsent, setAiConsent] = useState<boolean | null | undefined>(undefined);
+  // Android app: a newer build is on GitHub (see lib/app-update.ts)
+  const [appUpdate, setAppUpdate] = useState<{ installed: number; latest: number } | null>(null);
+  useEffect(() => {
+    checkAppUpdate().then(setAppUpdate);
+  }, []);
   // Offline (issue #14): the last inbox saved on this phone, and when it was saved.
   const [offline, setOffline] = useState(false);
   const [savedAt, setSavedAt] = useState<number | null>(null);
@@ -419,6 +425,27 @@ export default function InboxApp({ email, name, signOutAction, signInAction }: P
         </div>
       </header>
 
+      {appUpdate && (
+        <section className="banner update" aria-labelledby="app-update">
+          <span>
+            <b id="app-update">A new version of the DELT app is ready.</b> Tap Update, then Install when Android asks. You stay signed in.
+          </span>
+          <span className="ask-btns">
+            <a className="pillbtn on" href={APK_URL} onClick={() => setTimeout(() => setAppUpdate(null), 500)}>
+              Update
+            </a>
+            <button
+              className="pillbtn"
+              onClick={() => {
+                snoozeAppUpdate();
+                setAppUpdate(null);
+              }}
+            >
+              Later
+            </button>
+          </span>
+        </section>
+      )}
       {aiConsent === null && !offline && (
         <section className="banner ask" aria-labelledby="ai-ask">
           <span>

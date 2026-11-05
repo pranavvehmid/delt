@@ -18,7 +18,8 @@ android {
         targetSdk 34
         versionCode = (System.getenv("VERSION_CODE") ?: "1").toInteger()
         versionName = System.getenv("VERSION_NAME") ?: "1.0"
-        manifestPlaceholders = [host: siteHost, startUrl: "https://${siteHost}/#/inbox"]
+        // ?app=<build> tells the website which app build is running, so it can offer updates
+        manifestPlaceholders = [host: siteHost, startUrl: "https://${siteHost}/?app=${versionCode}#/inbox"]
         resValue "string", "asset_statements",
             "[{ \\\"relation\\\": [\\\"delegate_permission/common.handle_all_urls\\\"], \\\"target\\\": {\\\"namespace\\\": \\\"web\\\", \\\"site\\\": \\\"https://${siteHost}\\\"}}]"
     }
