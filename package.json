@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "test": "tsx --conditions=react-server --test tests/*.test.ts",
-    "e2e": "playwright test"
+    "e2e": "playwright test",
+    "test:db": "tsx --conditions=react-server --experimental-test-module-mocks --test tests-db/*.test.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.118.0",

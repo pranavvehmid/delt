@@ -53,3 +53,34 @@ jobs:
           name: playwright-traces
           path: test-results/
           retention-days: 7
+
+  # #39: the API routes against a real database. A throwaway Supabase (Postgres + PostgREST) runs
+  # in Docker on the runner, supabase/schema.sql is applied twice (it must be safe to re-run), then
+  # two students call every route and B must never read or change A's rows. Free, no secrets.
+  db:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - name: Start a throwaway Supabase
+        # in its own folder, so the CLI doesn't try to run supabase/migrations (schema.sql has them all)
+        run: |
+          mkdir -p "$RUNNER_TEMP/sb" && cd "$RUNNER_TEMP/sb"
+          supabase init
+          supabase start -x studio,imgproxy,realtime,storage-api,edge-runtime,logflare,vector,supavisor
+          supabase status -o env > "$RUNNER_TEMP/sb.env"
+      - name: Apply schema.sql twice
+        run: |
+          for i in 1 2; do psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -v ON_ERROR_STOP=1 -q -f supabase/schema.sql; done
+      - name: Route isolation tests
+        run: |
+          set -a; . "$RUNNER_TEMP/sb.env"; set +a
+          SUPABASE_URL="$API_URL" SUPABASE_SERVICE_ROLE_KEY="$SERVICE_ROLE_KEY" npm run test:db
