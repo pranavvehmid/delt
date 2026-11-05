@@ -28,3 +28,19 @@ export function nextSyncedAt(o: { previous: string | null; startedAt: string; le
 
 /** A message deleted between listing and downloading isn't a failure: there's nothing to save. */
 export const isGone = (message: string) => /\((404|410)\)/.test(message);
+
+// ---------- #29: mirroring Gmail's unread state ----------
+export const UNREAD_WINDOW_DAYS = 60;
+export const UNREAD_LIST_MAX = 2000;
+
+/** Which rows to mark read or unread, given the unread ids Gmail listed for the last 60 days.
+ *  `flaggedInWindow`: rows DELT has as unread, received in the same 60 days (older rows are left alone).
+ *  If Gmail's list was cut off at the cap, nothing is marked read: a mail missing from the list
+ *  may just be past the cap. */
+export function unreadChanges(flaggedInWindow: string[], unreadNow: string[], listCapped: boolean) {
+  const now = new Set(unreadNow);
+  return {
+    markRead: listCapped ? [] : flaggedInWindow.filter((id) => !now.has(id)),
+    markUnread: unreadNow,
+  };
+}

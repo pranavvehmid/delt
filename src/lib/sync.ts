@@ -15,7 +15,7 @@ import type { Classification, Correction } from "./types";
 import { profileFromName, type StudentProfile } from "./profile";
 import { COOLDOWN_MS, bumpUsage, planAI } from "./ai-quota";
 import { needsReseal, open, openToken, seal } from "./secret";
-import { BATCH, LIST_MAX, isGone, nextSyncedAt, planSync } from "./sync-plan";
+import { BATCH, LIST_MAX, UNREAD_LIST_MAX, UNREAD_WINDOW_DAYS, isGone, nextSyncedAt, planSync, unreadChanges } from "./sync-plan";
 
 const FIRST_SYNC_DAYS = 14;
 const PARALLEL = 5;
@@ -252,11 +252,15 @@ export async function syncUser(email: string, mode: SyncMode = "full"): Promise<
 
   // 6. Mirror Gmail's unread state, so mail read in Gmail leaves the NEW deck too.
   if (mode !== "later") try {
-    const unreadNow = new Set(await listMessageIds(token, "is:unread newer_than:60d -in:sent -in:chats", 300));
-    const { data: flagged } = await db.from("emails").select("id").eq("user_email", email).eq("unread", true);
-    const nowRead = (flagged ?? []).map((r) => r.id).filter((id) => !unreadNow.has(id));
-    if (nowRead.length) await db.from("emails").update({ unread: false }).in("id", nowRead).eq("user_email", email);
-    if (unreadNow.size) await db.from("emails").update({ unread: true }).in("id", [...unreadNow]).eq("user_email", email).eq("unread", false);
+    // #29: up to 2000 unread ids, compared only with rows from the same 60 days
+    const unreadNow = await listMessageIds(token, `is:unread newer_than:${UNREAD_WINDOW_DAYS}d -in:sent -in:chats`, UNREAD_LIST_MAX);
+    const windowStart = new Date(Date.now() - UNREAD_WINDOW_DAYS * 86400_000).toISOString();
+    const { data: flagged } = await db.from("emails").select("id").eq("user_email", email).eq("unread", true).gte("received_at", windowStart);
+    const change = unreadChanges((flagged ?? []).map((r) => r.id), unreadNow, unreadNow.length >= UNREAD_LIST_MAX);
+    for (let i = 0; i < change.markRead.length; i += 200)
+      await db.from("emails").update({ unread: false }).in("id", change.markRead.slice(i, i + 200)).eq("user_email", email);
+    for (let i = 0; i < change.markUnread.length; i += 200)
+      await db.from("emails").update({ unread: true }).in("id", change.markUnread.slice(i, i + 200)).eq("user_email", email).eq("unread", false);
   } catch (e) {
     result.errors.push(`Unread refresh: ${(e as Error).message}`);
   }

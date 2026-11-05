@@ -1,7 +1,7 @@
 // Issue #28: sync never skips mail for good, however much arrives at once.
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { BATCH, LIST_MAX, MAX_STUCK_MS, isGone, nextSyncedAt, planSync } from "../src/lib/sync-plan";
+import { BATCH, LIST_MAX, MAX_STUCK_MS, isGone, nextSyncedAt, planSync, unreadChanges } from "../src/lib/sync-plan";
 
 const ids = (n: number, from = 0) => Array.from({ length: n }, (_, i) => `m${from + i}`);
 
@@ -53,4 +53,14 @@ test("batch and listing limits", () => {
 test("a mail deleted between listing and download isn't a failure", () => {
   assert.ok(isGone("Gmail /messages/abc failed (404): Not Found"));
   assert.ok(!isGone("Gmail /messages/abc failed (500): oops"));
+});
+
+test("unread mirroring: read in Gmail becomes read in DELT, within the same window (#29)", () => {
+  assert.deepEqual(unreadChanges(["a", "b", "c"], ["a", "c", "z"], false), { markRead: ["b"], markUnread: ["a", "c", "z"] });
+});
+
+test("a cut-off unread list never marks anything read (a student with 1000s of unread mails)", () => {
+  const listed = ids(2000);
+  const flagged = [...ids(2000), "m2500"]; // m2500 is unread too, just past the cap
+  assert.deepEqual(unreadChanges(flagged, listed, true).markRead, []);
 });
