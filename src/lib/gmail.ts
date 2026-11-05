@@ -2,6 +2,20 @@ import "server-only";
 import type { Priority } from "./supabase";
 import { parseUnsubscribe } from "./insights";
 import { openToken } from "./secret";
+import { createHash } from "node:crypto";
+
+// #19: an access token lasts about an hour, so keep it (per server instance) instead of asking Google
+// before every action. Keyed by a hash of the refresh token; dropped 5 minutes before it expires,
+// or as soon as Gmail says it no longer works.
+const tokens = new Map<string, { access: string; until: number }>();
+const labelCache = new Map<string, Record<Priority, string>>();
+const keyOf = (refresh: string) => createHash("sha256").update(refresh).digest("hex");
+function forgetAccess(access: string) {
+  for (const [k, v] of tokens) if (v.access === access) tokens.delete(k);
+  labelCache.delete(access);
+}
+/** For tests. */
+export const resetTokenCache = () => (tokens.clear(), labelCache.clear());
 
 const API = "https://gmail.googleapis.com/gmail/v1/users/me";
 
@@ -19,6 +33,9 @@ export const isRevokedAnswer = (status: number, body: string) => (status === 400
 export async function getAccessToken(stored: string, attempt = 0): Promise<string> {
   const refreshToken = openToken(stored);
   if (!refreshToken) throw new AccessRevoked(); // key lost or row tampered with: ask the student to sign in again
+  const key = keyOf(refreshToken);
+  const hit = tokens.get(key);
+  if (hit && hit.until > Date.now()) return hit.access;
   const res = await fetch("https://oauth2.googleapis.com/token", {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -39,7 +56,10 @@ export async function getAccessToken(stored: string, attempt = 0): Promise<strin
     if (isRevokedAnswer(res.status, body)) throw new AccessRevoked();
     throw new Error(`Google token refresh failed (${res.status}): ${body.slice(0, 200)}`);
   }
-  return (await res.json()).access_token;
+  const data = (await res.json()) as { access_token: string; expires_in?: number };
+  tokens.set(key, { access: data.access_token, until: Date.now() + Math.max(0, (data.expires_in ?? 3600) - 300) * 1000 });
+  if (tokens.size > 5000) tokens.delete(tokens.keys().next().value!);
+  return data.access_token;
 }
 
 async function gmail<T>(token: string, path: string, init?: RequestInit, attempt = 0): Promise<T> {
@@ -53,6 +73,7 @@ async function gmail<T>(token: string, path: string, init?: RequestInit, attempt
   });
   if (!res.ok) {
     const text = await res.text();
+    if (res.status === 401) forgetAccess(token); // revoked or expired early: get a fresh one next time
     // Gmail answers 429, or 403 "rateLimitExceeded", when asked too fast: wait and retry.
     const rateLimited = res.status === 429 || (res.status === 403 && /rate ?limit/i.test(text));
     if (rateLimited && attempt < 4) {
@@ -185,6 +206,8 @@ const LABEL_COLORS: Record<Priority, { backgroundColor: string; textColor: strin
 
 /** Returns a map of priority -> Gmail label id, creating any labels that are missing. */
 export async function ensureLabels(token: string): Promise<Record<Priority, string>> {
+  const cached = labelCache.get(token); // #19: one label lookup per access token, not per move
+  if (cached) return cached;
   const { labels = [] } = await gmail<{ labels?: { id: string; name: string }[] }>(token, "/labels");
   const out = {} as Record<Priority, string>;
   for (const p of Object.keys(LABEL_NAMES) as Priority[]) {
@@ -204,6 +227,7 @@ export async function ensureLabels(token: string): Promise<Record<Priority, stri
     });
     out[p] = created.id;
   }
+  labelCache.set(token, out);
   return out;
 }
 
