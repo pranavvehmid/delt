@@ -1033,7 +1033,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 .mv-report, .mv-unsub { display: inline-flex; align-items: center; min-height: 36px; }
 .mv-report { margin-top: 14px; }
 /* the back button says Back */
-.iconbtn.mv-back { width: auto; gap: 4px; padding: 0 12px 0 6px; border-radius: 99px; font-size: 14px; font-weight: 600; }
+.iconbtn.mv-back { display: inline-flex; align-items: center; width: auto; gap: 4px; padding: 0 12px 0 6px; border-radius: 99px; font-size: 14px; font-weight: 600; }
 /* toasts sit under the list when the reading pane is open */
 @media (min-width: 1000px) { .shell.reading ~ .toast, body:has(.shell.reading) .toast { left: 230px; } }
 /* Glyph: a fade says there are more chips to the right */
@@ -1064,3 +1064,24 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 /* #64: the selected All chip is filled with the accent, which is dark ink in Glyph light,
    so its words use the accent's own text colour instead of hard-coded ink */
 :root[data-look="glyph"] .fchip.p-all.on, :root[data-look="glyph"] .fchip.p-all.on .n { color: var(--on-accent); }
+
+/* #65: Grid's slanted buttons stay inside their box. The button itself is no longer skewed
+   (a skew doesn't change layout size, so its corners poked out); a skewed ::before, inset by
+   the slant's overhang, draws the background instead. */
+:root[data-look="grid"] .pillbtn, :root[data-look="grid"] .pillbtn:hover, :root[data-look="grid"] .pillbtn.on { transform: none; background: none; position: relative; isolation: isolate; }
+:root[data-look="grid"] .pillbtn::before { content: ""; position: absolute; inset: 0 4px; z-index: -1; background: var(--surface2); transform: skewX(-12deg); transition: background-color 0.2s; }
+:root[data-look="grid"] .pillbtn:hover::before { background: #2d2d37; }
+:root[data-look="grid"] .pillbtn.on::before { background: var(--accent); }
+:root[data-look="grid"] .pillbtn:active::before { transform: skewX(-12deg) scale(0.96); }
+/* #65: short labels for the mail view bar on phones */
+.mv-short { display: none; }
+/* #65: the mail view's top bar fits a phone: tighter gaps and pills, and Gmail becomes an icon */
+.mv-gmail svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+@media (max-width: 479px) {
+  .mv-bar { gap: 4px; padding-left: 6px; padding-right: 8px; }
+  .mv-acts { gap: 4px; }
+  .mv-acts .pillbtn, :root[data-look="grid"] .mv-acts .pillbtn { padding: 0 10px; }
+  .mv-gmail span, .mv-long { display: none; }
+  .mv-short { display: inline; }
+  .mv-gmail svg { width: 17px; height: 17px; }
+}

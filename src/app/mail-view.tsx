@@ -183,13 +183,19 @@ export default function MailView({
         <div className="mv-acts">
           {row && (
             <>
-              <button className="pillbtn" onClick={() => onPatch({ read: !row.unread })}>{row.unread ? "Mark read" : "Mark unread"}</button>
+              <button className="pillbtn" onClick={() => onPatch({ read: !row.unread })} aria-label={row.unread ? "Mark read" : "Mark unread"}>
+                <span className="mv-long">{row.unread ? "Mark read" : "Mark unread"}</span>
+                <span className="mv-short">{row.unread ? "Read" : "Unread"}</span>
+              </button>
               <button className={`pillbtn ${row.is_done ? "on" : ""}`} aria-pressed={row.is_done} onClick={() => onPatch({ is_done: !row.is_done })}>
                 {row.is_done ? "✓ Done" : "Done"}
               </button>
             </>
           )}
-          <a className="pillbtn" href={gmailLink} target="_blank" rel="noreferrer" aria-label="Open in Gmail (new tab)">Gmail ↗</a>
+          <a className="pillbtn mv-gmail" href={gmailLink} target="_blank" rel="noreferrer" aria-label="Open in Gmail (new tab)">
+            <span aria-hidden="true">Gmail</span>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4h6v6M20 4l-9 9M18 14v6H4V6h6" /></svg>
+          </a>
         </div>
       </header>
 

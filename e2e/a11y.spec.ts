@@ -174,7 +174,43 @@ for (const mode of ["light", "dark", "black"] as const) {
     await mockApi(page, smallInbox());
     await page.goto("/e2e");
     await expect(page.locator(".fchip.p-all.on")).toBeVisible();
-    const r = await new AxeBuilder({ page }).include(".fchip.p-all.on").withRules(["color-contrast"]).analyze();
+    const r = await new AxeBuilder({ page } as never).include(".fchip.p-all.on").withRules(["color-contrast"]).analyze();
     expect(r.violations.map((v) => v.nodes.map((n) => n.failureSummary))).toEqual([]);
   });
 }
+
+// #65: Grid's slanted buttons don't stick out of their container or overlap each other
+test("Grid's slanted buttons stay inside their box (#65)", async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem("delt-prefs", JSON.stringify({ look: "grid", mode: "dark", accent: "auto", size: "normal", density: "comfortable" })));
+  await mockApi(page, smallInbox());
+  const check = () =>
+    page.evaluate(() => {
+      const bad: string[] = [];
+      const pills = [...document.querySelectorAll<HTMLElement>(".pillbtn")].filter((p) => p.getBoundingClientRect().width > 0);
+      for (const p of pills) {
+        const r = p.getBoundingClientRect(), box = p.parentElement!.getBoundingClientRect();
+        if (r.left < box.left - 0.5 || r.right > box.right + 0.5) bad.push(`${p.textContent} sticks out of its box`);
+        const s = p.nextElementSibling?.getBoundingClientRect();
+        if (s && s.width && s.top < r.bottom && s.bottom > r.top && s.left < r.right - 0.5 && s.left > r.left) bad.push(`${p.textContent} overlaps the next control`);
+      }
+      return { n: pills.length, bad };
+    });
+  await page.goto("/e2e");
+  await page.locator("li.row .row-main").first().click();
+  let r = await check();
+  expect(r.n).toBeGreaterThan(0);
+  expect(r.bad).toEqual([]);
+  // and on a small phone
+  const size = page.viewportSize()!;
+  await page.setViewportSize({ width: 360, height: 740 });
+  await page.waitForTimeout(500);
+  r = await check();
+  expect(r.bad).toEqual([]);
+  await page.setViewportSize(size);
+  await page.getByRole("button", { name: "Back to list" }).click();
+  await page.getByRole("button", { name: "Account" }).click();
+  await page.getByRole("button", { name: "Settings" }).click();
+  await expect(page.getByRole("dialog", { name: "Settings" })).toBeVisible();
+  r = await check();
+  expect(r.bad).toEqual([]);
+});
