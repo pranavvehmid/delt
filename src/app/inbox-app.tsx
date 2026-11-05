@@ -7,7 +7,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type PointerEvent as
 import type { EmailRow, Priority } from "@/lib/supabase";
 import {
   PAGE_SIZE, PILES, BUCKETS, ago, cleanSender, cleanSubject, deadlineBuckets, dueLevel, dueText, filterMail, groupByDay, initials, mergeFresh, mergeMore, oldestReceived,
-  openDeadlines, pileCounts, pileLabel, shortTime, gapText, senderCode,
+  openDeadlines, pileCounts, pileLabel, shortTime, timeOfDay, gapText, senderCode,
 } from "@/lib/inbox";
 import { calendarLink } from "@/lib/insights";
 import { cacheKey, clearOffline, packCache, unpackCache } from "@/lib/offline";
@@ -707,7 +707,7 @@ function MailRow({ m, now, pos = 0, leaderAt = "", onOpen, onRead, onDone }: { m
   const label = [
     m.unread ? "Unread." : "",
     `${sender}: ${cleanSubject(m.subject)}.`,
-    `${pileLabel(m.priority)}, ${shortTime(m.received_at, now)}.`,
+    `${pileLabel(m.priority)}, ${shortTime(m.received_at, now) === timeOfDay(m.received_at) ? "today" : shortTime(m.received_at, now)} at ${timeOfDay(m.received_at)}.`,
     m.deadline && !m.is_done ? `Due ${dueText(m.deadline, now)}.` : "",
     m.is_done ? "Done." : "",
   ].filter(Boolean).join(" ");
@@ -726,7 +726,7 @@ function MailRow({ m, now, pos = 0, leaderAt = "", onOpen, onRead, onDone }: { m
             {pos}
           </span>
           <span className="when" aria-hidden="true">
-            {shortTime(m.received_at, now)}
+            {timeOfDay(m.received_at)}
           </span>
           <span className="row-text">
             <span className="line1" data-same={senderCode(m.from_name) === sender.toUpperCase() || undefined}>
@@ -735,7 +735,7 @@ function MailRow({ m, now, pos = 0, leaderAt = "", onOpen, onRead, onDone }: { m
                 {senderCode(m.from_name)}
               </span>
               <span className="from ell">{sender}</span>
-              <span className="time">{shortTime(m.received_at, now)}</span>
+              <span className="time">{timeOfDay(m.received_at)}</span>
             </span>
             <span className="subj ell">{cleanSubject(m.subject)}</span>
             <span className="sum ell" id={`sum-${m.id}`}>

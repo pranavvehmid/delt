@@ -86,6 +86,10 @@ export function shortTime(iso: string, now: number) {
   return new Date(t).toLocaleDateString("en-IN", { day: "numeric", month: "short", timeZone: TZ });
 }
 
+/** "9:07 pm" (IST). Rows sit under a day heading, so they only need the time (#42). */
+export const timeOfDay = (iso: string) =>
+  new Date(Date.parse(iso)).toLocaleTimeString("en-IN", { hour: "numeric", minute: "2-digit", timeZone: TZ }).toLowerCase();
+
 /** "just now", "3 min ago", "2 h ago". */
 export function ago(t: number, now: number) {
   const s = Math.max(0, Math.round((now - t) / 1000));

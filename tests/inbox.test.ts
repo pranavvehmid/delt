@@ -214,3 +214,10 @@ test("gaps to the leader", () => {
   assert.equal(gapText("2026-11-03T09:00:00Z", lead), "+2D 3H");
   assert.equal(gapText("2026-11-04T12:00:00Z", lead), "+1D");
 });
+
+// ---------- #42: rows show the time of day, not the day again ----------
+import { timeOfDay } from "../src/lib/inbox";
+test("rows show the time of day in IST, lowercase", () => {
+  assert.equal(timeOfDay("2026-11-04T15:37:00Z"), "9:07 pm");
+  assert.equal(timeOfDay("2026-11-04T03:30:00Z"), "9:00 am");
+});
