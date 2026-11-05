@@ -59,3 +59,6 @@ android/local.properties
 /test-results/
 /playwright-report/
 /blob-report/
+
+# local screenshot helpers
+/e2e/zz-*.spec.ts
