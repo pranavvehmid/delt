@@ -398,3 +398,11 @@ test("pull down at the top of the list to check for mail (#51)", async ({ page, 
   await expect.poll(() => checks).toBeGreaterThan(before);
   void api;
 });
+
+test("Minimal marks unread mail with a square, and read mail without (#52)", async ({ page }) => {
+  await mockApi(page, smallInbox());
+  await page.goto("/e2e");
+  const mark = (id: string) => page.locator(`${row(id)} .subj`).evaluate((el) => getComputedStyle(el, "::before").content);
+  expect(await mark("hack")).toBe('""');
+  expect(await mark("notice")).toBe("none");
+});
