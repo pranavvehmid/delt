@@ -646,11 +646,6 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 }
 /* deadline titles wrap to two lines instead of being cut off */
 .due-row .subj { white-space: normal; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
-@media (min-width: 1000px) {
-  /* Glyph's sections are pills: centred in the bar at the bar's control height */
-  :root[data-look="glyph"] .shell.reading .appbar .mast { align-self: center; align-items: center; }
-  :root[data-look="glyph"] .shell.reading .appbar .mast button { height: 40px; padding: 0 16px; font-size: 16px !important; }
-}
 
 
 /* #77: the mail panel animates itself in (no page snapshot needed), in every browser */
