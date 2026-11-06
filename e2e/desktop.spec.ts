@@ -80,3 +80,14 @@ test("typing in the bar's search from Deadlines goes to the inbox results", asyn
   await expect(page.locator(".appbar .mast button.on")).toHaveText(/Inbox/);
   await expect(page.locator("li.row")).toHaveCount(1);
 });
+
+for (const look of LOOKS) {
+  test(`${look}: A04: every pile filter is fully inside the laptop list column`, async ({ page }, info) => {
+    test.skip(info.project.name !== "desktop");
+    await open(page, look, SIZES[0]);
+    const col = await box(page, ".shell");
+    const chips = await page.locator(".chips .fchip").evaluateAll((els) => els.map((e) => e.getBoundingClientRect().toJSON() as DOMRect));
+    expect(chips.length).toBe(5);
+    for (const c of chips) expect(c.right).toBeLessThanOrEqual(col.right - 16);
+  });
+}

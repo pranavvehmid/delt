@@ -650,3 +650,15 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 
 /* #77: the mail panel animates itself in (no page snapshot needed), in every browser */
 .mailview { animation: vt-in-right 0.28s var(--ease); }
+
+/* A04: on a laptop the list column is 380–520px; the pile filters wrap onto a second line
+   instead of scrolling out of sight (the phone keeps its scrolling row) */
+@media (min-width: 1000px) {
+  .shell.reading .chips { flex-wrap: wrap; overflow: visible; row-gap: 8px; }
+}
+@media (min-width: 1000px) and (max-height: 800px) {
+  .shell.reading .page { padding-top: 0; }
+  .shell.reading .chips { margin-top: 12px; }
+  .shell.reading .day { margin-top: 0; }
+  .shell.reading .dayhead { padding-top: 8px; }
+}

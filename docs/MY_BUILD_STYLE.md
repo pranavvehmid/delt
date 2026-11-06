@@ -4,9 +4,9 @@
 
 ## Project structure
 - [I] One Next.js app; client components flat in `src/app/` named by what they show (`mail-view.tsx`, `inbox-list.tsx`), hooks as `use-*.ts`, logic with no React in `src/lib/`.
-- [I] Big files get split once they pass ~200 lines (#41 split the mail view and settings).
-- [I] Styles are plain CSS split per look, not Tailwind classes in markup.
-- [I] Every feature has a test: unit tests for logic, Playwright for what's on screen, including measured layout (edges, spacing, type sizes).
+- [S] Big files get split around 200 lines (#41 split the mail view and settings).
+- [S] Styles are plain CSS split per look, not Tailwind classes in markup.
+- [S] Measured layout tests are the standard for done. Every feature has a test: unit tests for logic, Playwright for what's on screen, including measured layout (edges, spacing, type sizes).
 - [S] Everything free: no paid services, fonts shipped with the app.
 
 ## Design decisions
@@ -39,9 +39,12 @@
 - [S] When a test fails, note it and move on; come back to all failures at the end. Run long suites in the background.
 - [S] Work fast; keep replies short; detail goes in docs.
 - [S] Commits must be real work (no dummy or backdated commits).
-- [I] Plain, human wording in UI and docs; no AI-sounding phrases.
+- [S] Plain, human wording in UI and docs; no AI-sounding phrases.
 - [I] Strict self-audit with measured before/after numbers, and honest reporting of what isn't done.
 
-## Guesses to confirm
-The [I] items above, especially: plain CSS per look (no Tailwind), splitting files around 200 lines,
-and measured-layout tests as the standard for "done".
+## Every prompt (Part A)
+1. Translate it into a brief: Goal, Context, Exact requirements, Non-goals, Acceptance criteria, Risks and assumptions.
+2. Show the brief in 10 lines or fewer.
+3. Execute from the brief.
+4. Fill gaps from this file and the code; say what was assumed.
+5. Save the brief to docs/briefs/YYYY-MM-DD-name.md.
