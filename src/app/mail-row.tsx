@@ -66,7 +66,7 @@ export const MailRow = memo(function MailRow({ m, now, pos = 0, on, current = fa
   ].filter(Boolean).join(" ");
 
   return (
-    <li className={`row ink-${m.priority} ${m.unread ? "unread" : ""} ${m.is_done ? "done" : ""} ${dx ? "dragging" : ""}`} data-mail={m.id} data-pos={pos} style={{ "--i": Math.min(pos, 14) } as React.CSSProperties}>
+    <li className={`row ink-${m.priority} ${m.unread ? "unread" : ""} ${m.is_done ? "done" : ""} ${dx ? "dragging" : ""} ${current ? "current" : ""}`} data-mail={m.id} data-pos={pos} style={{ "--i": Math.min(pos, 14) } as React.CSSProperties}>
       {dx !== 0 && (
       <div className={`swipe-bg ${dx > 0 ? "r" : "l"} ${Math.abs(dx) > LIMIT ? "armed" : ""}`} aria-hidden="true">
         <span>

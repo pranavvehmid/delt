@@ -125,7 +125,7 @@
 :root[data-look="grid"] .due:is(.lv-over, .lv-soon) { color: var(--due-soon); }
 :root[data-look="grid"] .due.lv-week { color: var(--due-week); }
 /* wide screens: the open mail's row is lit, like the driver in focus */
-:root[data-look="grid"] .shell.reading li.row:has(.row-main[aria-current="true"]) .row-slide { background: var(--surface2); box-shadow: inset 3px 0 0 rgb(var(--ink)); }
+:root[data-look="grid"] .shell.reading li.row.current .row-slide { background: var(--surface2); box-shadow: inset 3px 0 0 rgb(var(--ink)); }
 
 /* deadlines: the same tower; the date reads like a race number */
 :root[data-look="grid"] .due-row { background: var(--surface); }
@@ -215,11 +215,16 @@
 :root[data-look="grid"] .mast button.on::after { transform-origin: left; animation: f1-bar 0.36s var(--f1) both; }
 @keyframes f1-bar { from { transform: scaleX(0); } }
 
-/* opening a mail: the panel wipes in from the right, and its pile-colour rule draws across */
-:root[data-look="grid"]::view-transition-new(mail) { animation: f1-panel-in 0.36s var(--f1) both; }
+/* closing a mail: the panel wipes out to the right; its pile-colour rule draws across on opening */
 :root[data-look="grid"]::view-transition-old(mail) { animation: f1-panel-out 0.22s cubic-bezier(0.7, 0, 0.84, 0) both; }
 :root[data-look="grid"]::view-transition-old(root), :root[data-look="grid"]::view-transition-new(root) { animation: none; }
-@keyframes f1-panel-in { from { clip-path: inset(0 0 0 100%); } to { clip-path: inset(0 0 0 0); } }
 @keyframes f1-panel-out { to { clip-path: inset(0 0 0 100%); } }
 :root[data-look="grid"] .mailview .mv-bar { position: relative; box-shadow: none; }
 :root[data-look="grid"] .mailview .mv-bar::after { content: ""; position: absolute; left: 0; right: 0; bottom: -2px; height: 2px; background: var(--c, var(--accent)); transform-origin: left; animation: f1-bar 0.42s var(--f1) 0.12s both; }
+/* #77: opening is the panel's own animation now (cheaper than a page snapshot); closing still uses the snapshot */
+:root[data-look="grid"] .mailview { animation: f1-panel-slide 0.36s var(--f1) both; }
+/* a slide (GPU only; a clip-path wipe of the whole panel repainted every frame), with the pile
+   colour riding its leading edge, then fading */
+:root[data-look="grid"] .mailview::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; z-index: 3; width: 4px; background: var(--c, var(--accent)); pointer-events: none; animation: f1-edge 0.6s linear both; }
+@keyframes f1-panel-slide { from { transform: translateX(100%); } }
+@keyframes f1-edge { 0%, 60% { opacity: 1; } 100% { opacity: 0; } }

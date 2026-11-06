@@ -1,7 +1,7 @@
 "use client";
 
 // Where you are in the app and what kind of screen it's on.
-import { useEffect, useState } from "react";
+import { startTransition, useEffect, useRef, useState } from "react";
 import { transition } from "./motion";
 
 export type Route = { tab: "inbox" | "deadlines"; mailId: string | null };
@@ -16,12 +16,20 @@ function readRoute(): Route {
 /** The route lives in the URL hash, so the phone's Back button closes a mail. */
 export function useRoute() {
   const [route, setRoute] = useState<Route>({ tab: "inbox", mailId: null });
+  const current = useRef(route);
   useEffect(() => {
-    // opening/closing a mail and switching tabs animate (see motion.ts); the first read doesn't
+    // #77: each change takes the cheapest smooth path. A page-wide view transition makes React
+    // render synchronously before anything moves (90–170ms on a mid-range phone), so:
+    // - opening a mail or switching tabs: render in small chunks React can pause, so frames keep
+    //   coming; the mail panel then animates itself in (one GPU layer)
+    // - closing a mail: the snapshot slide-out, which is cheap
     let first = true;
     const on = () => {
-      if (first) return (first = false), setRoute(readRoute());
-      transition(() => setRoute(readRoute()));
+      const next = readRoute(), prev = current.current;
+      current.current = next;
+      if (first) return (first = false), setRoute(next);
+      if (prev.mailId && !next.mailId) return transition(() => setRoute(next));
+      startTransition(() => setRoute(next));
     };
     on();
     window.addEventListener("hashchange", on);

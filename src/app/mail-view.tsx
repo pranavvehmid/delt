@@ -36,6 +36,12 @@ export default function MailView({
   const [msg, setMsg] = useState<FullMessage | null>(null);
   const [error, setError] = useState("");
   const [tries, setTries] = useState(0);
+  // #77: the mail's own frame is a whole document to build; wait until the panel has slid in
+  const [settled, setSettled] = useState(false);
+  useEffect(() => {
+    const t = setTimeout(() => setSettled(true), 300);
+    return () => clearTimeout(t);
+  }, []);
   const box = useRef<HTMLDivElement>(null);
   // A full-screen mail is a modal dialog; a reading pane isn't (the list stays usable), but Esc still closes it.
   useDialog(box, !pane, onClose, restoreFocus);
@@ -192,7 +198,7 @@ export default function MailView({
                   <a className="pillbtn" href={gmailLink} target="_blank" rel="noreferrer">Open in Gmail ↗</a>
                 </div>
               </div>
-            ) : !msg ? (
+            ) : !msg || !settled ? (
               <div className="mv-loading" aria-label="Loading the mail" role="status">
                 <span className="sk" style={{ width: "90%" }} />
                 <span className="sk" style={{ width: "75%" }} />

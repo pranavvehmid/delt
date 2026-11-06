@@ -36,7 +36,8 @@ type Props = {
   searchInBar?: boolean;
 };
 
-const FIRST_ROWS = 24;
+// #77: two screens of rows on a phone or laptop; the rest follow in a pausable render
+const FIRST_ROWS = 12;
 
 export function SearchBox({ query, onChange }: { query: string; onChange: (q: string) => void }) {
   return (
@@ -115,7 +116,7 @@ export default function InboxList(p: Props) {
 
       <nav className="chips" aria-label="Filter by pile" ref={chipsMount} onScroll={chipsMore}>
         {(["all", ...PILES.map((p) => p.key)] as const).map((k) => (
-          <button key={k} className={`fchip p-${k} ${pile === k ? "on" : ""}`} onClick={() => setFilters({ pile: k })} aria-pressed={pile === k}>
+          <button key={k} className={`fchip p-${k} ${pile === k ? "on" : ""}`} onClick={() => startTransition(() => setFilters({ pile: k }))} aria-pressed={pile === k}>
             {k !== "all" && <i className="tagdot" />}
             {k === "all" ? "All" : pileLabel(k)}
             <span className="n">{counts[k].total}</span>

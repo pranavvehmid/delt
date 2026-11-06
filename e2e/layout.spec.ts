@@ -29,9 +29,16 @@ for (const look of LOOKS) {
   test(`${look}: header, search and rows share the same left and right edges (#67)`, async ({ page }) => {
     await open(page, look);
     const [logo, search, avatar, row] = await Promise.all([box(page, ".logo"), box(page, ".searchbar"), box(page, ".avatar.me"), box(page, "li.row")]);
-    near(logo.left, search.left, "logo / search left");
-    near(row.left, search.left, "row / search left");
-    near(avatar.right, search.right, "avatar / search right");
+    const width = await page.evaluate(() => innerWidth);
+    if (width >= 1000) {
+      // #76: on a laptop the bar spans the window: the logo lines up with the list, the account sits 24px from the right edge
+      near(logo.left, row.left, "logo / row left");
+      near(width - avatar.right, 24, "avatar / window right");
+    } else {
+      near(logo.left, search.left, "logo / search left");
+      near(row.left, search.left, "row / search left");
+      near(avatar.right, search.right, "avatar / search right");
+    }
     // header controls are one height
     const sync = await box(page, ".sync");
     near(sync.height, avatar.height, "status chip / avatar height");
@@ -174,8 +181,8 @@ test("on a wide screen the list keeps its column and an empty pane waits beside 
   const pane = page.locator(".mv-empty");
   await expect(pane).toBeVisible();
   await expect(pane).toContainText("No mail open");
-  const list = await box(page, ".searchbar");
-  expect(list.right).toBeLessThanOrEqual(460);
+  const list = await box(page, "li.row");
+  expect(list.right).toBeLessThanOrEqual(520); // #76: the list column scales up to 520px
   await page.locator('li.row[data-mail="cat1"] .row-main').click();
   await expect(pane).toHaveCount(0);
   await expect(page.locator(".mailview.pane")).toBeVisible();
