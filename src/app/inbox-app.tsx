@@ -17,6 +17,7 @@ import { transition } from "./motion";
 import AccountMenu from "./account-menu";
 import Banners from "./banners";
 import DeadlinesList from "./deadlines-list";
+import Overview from "./overview";
 import InboxList, { SearchBox, type Filters } from "./inbox-list";
 import type { RowActions } from "./mail-row";
 import { TabBar, TopTabs } from "./tabs";
@@ -100,6 +101,8 @@ export default function InboxApp({ email, name, signOutAction, signInAction }: P
   const posOf = useMemo(() => new Map([...pinned, ...rest].map((m, i) => [m.id, i + 1])), [pinned, rest]);
   const buckets = useMemo(() => deadlineBuckets(mergeMore(all, due), now), [all, due, now]);
   const dueCount = openDeadlines(buckets);
+  // the overview counts what needs you across all mail, whatever filter the list has
+  const needsAll = useMemo(() => needsYou(all, now), [all, now]);
   const open = route.mailId ? findMail(route.mailId) : null;
   const order = route.tab === "deadlines" ? BUCKETS.flatMap((b) => buckets[b]) : [...pinned, ...rest];
   const at = route.mailId ? order.findIndex((m) => m.id === route.mailId) : -1;
@@ -187,10 +190,14 @@ export default function InboxApp({ email, name, signOutAction, signInAction }: P
 
       {/* #68: on a wide screen the list keeps its column and the space beside it waits for a mail */}
       {wide && !route.mailId && (
-        <div className="mv-empty">
-          <b>No mail open</b>
-          <span className="muted">Pick one from the list. J and K move to the next and previous mail.</span>
-        </div>
+        <Overview
+          unread={counts.all.unread}
+          needs={needsAll}
+          dueThisWeek={dueCount}
+          next={BUCKETS.flatMap((b) => (b === "Done" ? [] : buckets[b]))[0] ?? null}
+          now={now}
+          onOpen={(m) => openMail(m)}
+        />
       )}
       {route.mailId && (
         <MailView

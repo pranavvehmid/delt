@@ -44,7 +44,8 @@ for (const look of LOOKS) {
       await open(page, look, size);
       const tops = await page.locator("li.row").evaluateAll((els) => els.map((e) => e.getBoundingClientRect().top));
       const visible = tops.filter((t) => t + 40 < size.height).length;
-      expect(visible, `rows start at ${tops.slice(0, 7).map(Math.round)}`).toBeGreaterThanOrEqual(5);
+      // Glyph's outlined cards are ~100px tall by design: four full cards fit a 657px window
+      expect(visible, `rows start at ${tops.slice(0, 7).map(Math.round)}`).toBeGreaterThanOrEqual(look === "glyph" && size.height < 700 ? 4 : 5);
     });
   }
 
@@ -91,3 +92,30 @@ for (const look of LOOKS) {
     for (const c of chips) expect(c.right).toBeLessThanOrEqual(col.right - 16);
   });
 }
+
+for (const look of LOOKS) {
+  test(`${look}: A05: with no mail open the laptop pane shows today at a glance, and each item opens its mail`, async ({ page }, info) => {
+    test.skip(info.project.name !== "desktop");
+    await open(page, look, SIZES[0], smallInbox());
+    const ov = page.locator(".overview");
+    await expect(ov.getByRole("heading", { name: "Today" })).toBeVisible();
+    await expect(ov.locator(".ov-stats div", { hasText: "Unread" }).locator("dd")).toHaveText("4");
+    await expect(ov.locator(".ov-stats div", { hasText: "Needs you" }).locator("dd")).toHaveText("2");
+    await expect(ov.locator(".ov-stats div", { hasText: "Due this week" }).locator("dd")).toHaveText("1");
+    await ov.getByRole("button", { name: /Hostel fee payment/ }).first().click();
+    await expect(page.locator(".mailview.pane #mv-title")).toHaveText(/Hostel fee payment/);
+    await expect(ov).toHaveCount(0);
+    // A18: the mail's text starts on the pane's 40px gutter
+    const [pane, subj] = [await box(page, ".mailview.pane"), await box(page, ".mv-subj")];
+    expect(Math.round(subj.left - pane.left)).toBe(40 + 1); // +1: the pane's left hairline
+  });
+}
+
+test("A18: the open mail's action buttons end on the mail content's right edge", async ({ page }, info) => {
+  test.skip(info.project.name !== "desktop");
+  await open(page, "minimal", SIZES[0], smallInbox());
+  await page.locator('li.row[data-mail="cat1"] .row-main').click();
+  await expect(page.locator(".mv-frame")).toBeVisible();
+  const [gmail, sum] = [await box(page, ".mv-gmail"), await box(page, ".mv-sum")];
+  expect(Math.abs(gmail.right - sum.right)).toBeLessThanOrEqual(1);
+});

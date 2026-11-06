@@ -180,7 +180,7 @@ test("on a wide screen the list keeps its column and an empty pane waits beside 
   await open(page, "minimal");
   const pane = page.locator(".mv-empty");
   await expect(pane).toBeVisible();
-  await expect(pane).toContainText("No mail open");
+  await expect(pane).toContainText("Today"); // A05: the overview
   const list = await box(page, "li.row");
   expect(list.right).toBeLessThanOrEqual(520); // #76: the list column scales up to 520px
   await page.locator('li.row[data-mail="cat1"] .row-main').click();

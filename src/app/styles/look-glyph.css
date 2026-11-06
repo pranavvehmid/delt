@@ -109,3 +109,6 @@
   :root[data-look="glyph"] .shell.reading .fchip { padding: 0 8px; }
   :root[data-look="glyph"] .shell.reading .fchip .n { display: none; }
 }
+/* A05: Glyph's overview: its outlined cards */
+:root[data-look="glyph"] :is(.ov-stats div, .ov-item) { border: 2.5px solid var(--ink); box-shadow: 3px 3px 0 var(--ink); border-radius: 16px; }
+:root[data-look="glyph"] .ov-title { font-family: var(--font-dot), monospace; font-weight: 700; }

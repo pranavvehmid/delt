@@ -34,7 +34,7 @@ for (const [look, modes] of [["minimal", ["light", "dark", "black"]], ["glyph", 
       await page.keyboard.press("Escape");
 
       await page.goto("/e2e#/deadlines");
-      await expect(page.getByText("Hostel fee payment: last date")).toBeVisible();
+      await expect(page.locator("main").getByText("Hostel fee payment: last date")).toBeVisible();
       await axe(page, "deadlines");
 
       await page.getByRole("button", { name: "Account" }).click();

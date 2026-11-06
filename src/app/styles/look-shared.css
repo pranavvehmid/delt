@@ -233,3 +233,7 @@
 }
 /* A12: a segmented choice starts and ends on the content edge like everything else; a hairline frames it */
 :root:is([data-look="minimal"], [data-look="grid"]) .seg { padding: 0; background: none; box-shadow: inset 0 0 0 1px rgb(var(--ink) / 0.16); }
+/* A05: the laptop overview in Minimal and Grid: square boxes with a hairline, like the mail's own boxes */
+:root:is([data-look="minimal"], [data-look="grid"]) :is(.ov-stats div, .ov-item) { border-radius: 0; background: none; box-shadow: 0 0 0 1px rgb(var(--ink) / 0.1); }
+:root:is([data-look="minimal"], [data-look="grid"]) .ov-item:hover { background: rgb(var(--ink) / 0.04); }
+:root:is([data-look="minimal"], [data-look="grid"]) .ov-title { font-weight: 400; }
