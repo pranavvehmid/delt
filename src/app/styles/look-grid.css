@@ -221,7 +221,7 @@
 :root[data-look="grid"]::view-transition-old(root), :root[data-look="grid"]::view-transition-new(root) { animation: none; }
 @keyframes f1-panel-out { to { clip-path: inset(0 0 0 100%); } }
 :root[data-look="grid"] .mailview .mv-bar { position: relative; box-shadow: none; }
-:root[data-look="grid"] .mailview .mv-bar::after { content: ""; position: absolute; left: 0; right: 0; bottom: -2px; height: 2px; background: var(--c, var(--accent)); transform-origin: left; animation: f1-bar 0.42s var(--f1) 0.12s both; }
+:root[data-look="grid"] .mailview .mv-bar::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 2px; background: var(--c, var(--accent)); transform-origin: left; animation: f1-bar 0.42s var(--f1) 0.12s both; }
 /* #77: opening is the panel's own animation now (cheaper than a page snapshot); closing still uses the snapshot */
 :root[data-look="grid"] .mailview { animation: f1-panel-slide 0.36s var(--f1) both; }
 /* a slide (GPU only; a clip-path wipe of the whole panel repainted every frame), with the pile
@@ -235,3 +235,11 @@
 :root[data-look="grid"] .ov-title { font: 800 34px/1 var(--font); font-stretch: 125%; text-transform: uppercase; }
 :root[data-look="grid"] .ov-stats dd { font: 800 34px/1 var(--font); font-stretch: 125%; }
 :root[data-look="grid"] .ov-stats .hot { box-shadow: inset 3px 0 0 var(--accent); }
+
+/* A13: one red focal point per screen: the active tab's bar. The top bar keeps a plain hairline. */
+:root[data-look="grid"] .appbar::after { height: 1px; background: var(--line); }
+/* A11: the open mail has one rule (its pile colour) and room before the subject */
+:root[data-look="grid"] .mailview .mv-bar { border-bottom: 0; }
+:root[data-look="grid"] .mailview .mv-page { padding-top: 24px; }
+/* A14: the sync status is quiet: sentence case, no tracking, grey */
+:root[data-look="grid"] .sync { text-transform: none; letter-spacing: 0 !important; font-weight: 500; }
