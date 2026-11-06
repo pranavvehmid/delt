@@ -180,3 +180,42 @@ test("on a wide screen the list keeps its column and an empty pane waits beside 
   await expect(pane).toHaveCount(0);
   await expect(page.locator(".mailview.pane")).toBeVisible();
 });
+
+// #69: one type scale per look, no faint weights, and the dot-matrix face only for short display text
+const SIZES = [12.5, 14, 16, 18, 21, 22, 28, 34, 44];
+for (const look of LOOKS) {
+  test(`${look}: every text size on the inbox and in a mail is on the type scale, weight 400 or more (#69)`, async ({ page }) => {
+    await open(page, look);
+    const scan = (where: string) =>
+      page.evaluate(
+        ([where, sizes]) => {
+          const bad: string[] = [];
+          for (const el of document.querySelectorAll("body *")) {
+            if (el.closest("iframe, svg, .sr-only")) continue;
+            const own = [...el.childNodes].some((n) => n.nodeType === 3 && n.textContent!.trim());
+            const b = el.getBoundingClientRect();
+            if (!own || !b.width || !b.height) continue;
+            const cs = getComputedStyle(el);
+            const size = parseFloat(cs.fontSize), weight = parseInt(cs.fontWeight);
+            const name = `${where} ${el.tagName.toLowerCase()}.${String(el.className).split(" ")[0]} "${el.textContent!.trim().slice(0, 20)}"`;
+            if (!(sizes as number[]).includes(size)) bad.push(`${name} size ${size}`);
+            if (weight < 400) bad.push(`${name} weight ${weight}`);
+            if (/dot/i.test(cs.fontFamily) && el.textContent!.trim().length > 16) bad.push(`${name} long text in the dot font`);
+          }
+          return bad;
+        },
+        [where, SIZES] as const,
+      );
+    const bad = await scan("inbox");
+    await page.locator('li.row[data-mail="cat1"] .row-main').click();
+    await expect(page.locator("#mv-title")).toBeVisible();
+    bad.push(...(await scan("mail")));
+    expect(bad, bad.join("\n")).toEqual([]);
+  });
+}
+
+test("Minimal: day headings and sender names don't share a style (#69)", async ({ page }) => {
+  await open(page, "minimal");
+  const style = (sel: string) => page.locator(sel).first().evaluate((e) => { const c = getComputedStyle(e); return `${c.fontSize} ${c.fontWeight} ${c.textTransform} ${c.letterSpacing}`; });
+  expect(await style(".dayhead")).not.toEqual(await style(".from"));
+});

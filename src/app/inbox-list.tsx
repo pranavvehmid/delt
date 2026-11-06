@@ -186,7 +186,9 @@ export default function InboxList(p: Props) {
               <h2 className="dayhead">
                 {d.label}
                 <span className="muted">
-                  {d.mails.length} · {d.mails.filter((m) => m.unread).length} unread
+                  {/* #69: says what it counts, not "2 · 1" */}
+                  {d.mails.length} {d.mails.length === 1 ? "mail" : "mails"}
+                  {d.mails.some((m) => m.unread) && ` · ${d.mails.filter((m) => m.unread).length} unread`}
                 </span>
               </h2>
               <ul className="rows">{d.draw.map(row)}</ul>
