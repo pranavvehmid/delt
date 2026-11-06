@@ -112,3 +112,5 @@
 /* A05: Glyph's overview: its outlined cards */
 :root[data-look="glyph"] :is(.ov-stats div, .ov-item) { border: 2.5px solid var(--ink); box-shadow: 3px 3px 0 var(--ink); border-radius: 16px; }
 :root[data-look="glyph"] .ov-title { font-family: var(--font-dot), monospace; font-weight: 700; }
+/* A08: Glyph's empty state title in its dot face */
+:root[data-look="glyph"] .empty b { font-family: var(--font-dot), monospace; font-size: 28px; }

@@ -216,9 +216,12 @@ svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width:
 .iconbtn.check.on { color: #1f9d55; }
 
 .foot { text-align: center; font-size: 12.5px; padding: 24px 0 8px; }
-.empty { display: flex; flex-direction: column; align-items: center; gap: 8px; text-align: center; padding: 64px 16px; }
-.empty b { font-size: 16px; }
-.sk { display: block; height: 11px; border-radius: 6px; background: linear-gradient(90deg, var(--surface) 0, var(--surface2) 50%, var(--surface) 100%) 0 0 / 200% 100%; animation: shimmer 1.2s linear infinite; margin: 4px 0; }
+.empty { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; text-align: left; padding: 48px 0 32px; }
+.empty b { font: 700 22px/1.25 var(--head); }
+.empty .muted { font-size: 14px; max-width: 360px; }
+.empty-mark { display: block; width: 32px; height: 4px; margin-bottom: 8px; background: var(--accent); }
+.sk { display: block; height: 11px; border-radius: 6px; background: var(--surface2); animation: sk-pulse 1.4s ease-in-out infinite; margin: 4px 0; } /* A09: an opacity pulse runs on the GPU; the old gradient shimmer repainted every frame */
+@keyframes sk-pulse { 50% { opacity: 0.45; } }
 .avatar.sk { width: 40px; height: 40px; margin: 0; border-radius: 50%; }
 @keyframes shimmer { to { background-position: -200% 0; } }
 
@@ -518,7 +521,7 @@ body { min-height: 100dvh; }
 .welcome-steps { margin: 16px 0 16px; padding-left: 20px; display: flex; flex-direction: column; gap: 12px; font-size: 14px; line-height: 1.5; }
 
 /* #57: empty states that offer a way out, and marked search matches */
-.empty-acts { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin-top: 8px; }
+.empty-acts { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-start; margin-top: 8px; }
 mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: inherit; padding: 0 1px; }
 
 /* #58: sign-in page: a preview of the piles, Google's button, the Android app */

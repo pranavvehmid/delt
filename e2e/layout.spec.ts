@@ -287,3 +287,16 @@ test("A10: Minimal marks urgent mail with a red time and no floating dash", asyn
   const [c, other] = [await when.evaluate((e) => getComputedStyle(e).color), await page.locator("li.row:not(.ink-very_important) .when").first().evaluate((e) => getComputedStyle(e).color)];
   expect(c).not.toBe(other);
 });
+
+for (const look of LOOKS) {
+  test(`${look}: A09: loading rows use the full row width`, async ({ page }) => {
+    await page.addInitScript((l) => localStorage.setItem("delt-prefs", JSON.stringify({ look: l, mode: l === "grid" ? "dark" : "light", accent: "auto", size: "normal", density: "comfortable" })), look);
+    await mockApi(page, smallInbox());
+    await page.route("**/api/emails**", async (r) => { await new Promise((x) => setTimeout(x, 3000)); await r.fallback(); });
+    await page.goto("/e2e");
+    const sk = page.locator(".skeleton li").first();
+    await expect(sk).toBeVisible();
+    const [row, bar] = [await sk.boundingBox(), await sk.locator(".row-text .sk").nth(1).boundingBox()];
+    expect(bar!.width).toBeGreaterThan(row!.width * 0.5);
+  });
+}

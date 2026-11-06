@@ -237,3 +237,7 @@
 :root:is([data-look="minimal"], [data-look="grid"]) :is(.ov-stats div, .ov-item) { border-radius: 0; background: none; box-shadow: 0 0 0 1px rgb(var(--ink) / 0.1); }
 :root:is([data-look="minimal"], [data-look="grid"]) .ov-item:hover { background: rgb(var(--ink) / 0.04); }
 :root:is([data-look="minimal"], [data-look="grid"]) .ov-title { font-weight: 400; }
+/* A08: the empty state's mark follows the look: Minimal's red rule */
+:root[data-look="minimal"] .empty b { font-weight: 400; font-size: 28px; }
+/* A09: loading rows have no time or position column, so their bars take the full row */
+:root:is([data-look="minimal"], [data-look="grid"]) .skeleton .row-main { grid-template-columns: minmax(0, 1fr); }

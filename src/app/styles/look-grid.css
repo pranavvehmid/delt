@@ -245,3 +245,9 @@
 :root[data-look="grid"] .sync { text-transform: none; letter-spacing: 0 !important; font-weight: 500; }
 /* A15: labelled icon buttons (Deadlines: Calendar, Done) use Grid's label style */
 :root[data-look="grid"] .iconbtn.labelled { font: 700 12.5px/1 var(--font); text-transform: uppercase; letter-spacing: 0.04em; }
+/* A08, A09: Grid's empty and loading states use the tower: a carbon panel, wide capitals, grey stripes */
+:root[data-look="grid"] .empty { padding: 24px; margin-top: 24px; background: var(--surface); border-radius: 0 var(--corner) 0 0; }
+:root[data-look="grid"] .empty b { font: 800 22px/1.1 var(--font); font-stretch: 125%; text-transform: uppercase; }
+:root[data-look="grid"] .skeleton { margin-top: 24px; background: var(--surface); }
+:root[data-look="grid"] .skeleton .row-text { box-shadow: inset 3px 0 0 var(--surface2); }
+:root[data-look="grid"] .skeleton .row-slide { background: var(--surface); }
