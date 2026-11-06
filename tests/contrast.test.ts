@@ -73,7 +73,7 @@ test("the big section names pass 3:1 (large text) when not selected", () => {
     const r = ratio(mix(t.ink.split(/\s+/).map(Number) as RGB, hex(t.bg), Number(t["floor-lg"])), hex(t.bg));
     assert.ok(r >= 3, `${name}: ${r.toFixed(2)}:1`);
   }
-  assert.match(css, /\.mast button \{ font: 300 34px/, "the section names are 24px or more");
+  assert.match(css, /\.mast button \{ font: 400 34px/, "the section names are 24px or more");
 });
 
 test("the four piles still look different: ink steps apart, plus size and weight", () => {
@@ -83,7 +83,8 @@ test("the four piles still look different: ink steps apart, plus size and weight
     for (let i = 1; i < steps.length; i++) assert.ok(steps[i - 1] - steps[i] >= 0.08, `${name}: piles ${i - 1} and ${i} too close in ink`);
   }
   assert.match(rowRule, /\.ink-later \{[^}]*--subj: 16px/);
-  assert.match(rowRule, /\.ink-noise \{[^}]*--subj: 15px; --w: 300/);
+  // #69: Noise is the type scale's smallest step; its weight stays 400 (no faint type)
+  assert.match(rowRule, /\.ink-noise \{[^}]*--subj: 14px; --w: 400/);
 });
 
 test("no faint fixed-alpha text is left in the Minimal look", () => {
