@@ -84,3 +84,15 @@ test("with reduce motion, Grid doesn't animate", async ({ page }) => {
   const long = await page.evaluate(() => document.getAnimations().filter((a) => Number(a.effect!.getComputedTiming().duration) > 1).length);
   expect(long).toBe(0);
 });
+
+test("A06: the leader's position number is readable (4.5:1 or more)", async ({ page }) => {
+  const ratio = await page.locator('.row[data-pos="1"] .pos').evaluate((el) => {
+    const parse = (s: string) => s.match(/[\d.]+/g)!.map(Number);
+    const lin = (c: number) => ((c /= 255) <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4);
+    const lum = (c: number[]) => 0.2126 * lin(c[0]) + 0.7152 * lin(c[1]) + 0.0722 * lin(c[2]);
+    const s = getComputedStyle(el);
+    const [a, b] = [lum(parse(s.color)), lum(parse(s.backgroundColor))];
+    return (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
+  });
+  expect(ratio).toBeGreaterThanOrEqual(4.5);
+});

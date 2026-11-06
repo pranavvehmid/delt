@@ -116,7 +116,8 @@
 :root[data-look="grid"] .meta { margin-top: 4px; }
 :root[data-look="grid"] .gap { display: block; align-self: start; padding-top: 2px; text-align: right; white-space: nowrap; font: 600 12.5px/1.25 var(--font); letter-spacing: 0.04em; font-variant-numeric: tabular-nums; color: rgb(var(--ink) / var(--a2)); }
 :root[data-look="grid"] .row[data-pos="1"] .gap { color: rgb(var(--ink)); }
-:root[data-look="grid"] .row[data-pos="1"] .pos { color: var(--accent); }
+/* A06: the leader's position sits in an accent block (F1's tower marks P1 this way); red text on carbon was 3.7:1 */
+:root[data-look="grid"] .row[data-pos="1"] .pos { padding: 2px 0; background: var(--accent); color: var(--on-accent); }
 :root[data-look="grid"] .row-acts.hover-only { background: linear-gradient(90deg, transparent, var(--surface2) 24%); padding-right: 12px; }
 :root[data-look="grid"] .swipe-bg { font: 800 12.5px/1 var(--font); letter-spacing: 0.08em; text-transform: uppercase; }
 :root[data-look="grid"] .swipe-bg.r { background: var(--flag-green); color: #03140b; }
