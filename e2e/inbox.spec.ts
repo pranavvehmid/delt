@@ -108,7 +108,8 @@ test("a busy inbox loads older mail on scroll, and search finds mail that isn't 
   expect(new Set(await page.locator("li.row").evaluateAll((els) => els.map((e) => e.getAttribute("data-mail")))).size).toBe(451);
   expect(api.emailRequests.some((s) => s.includes("before="))).toBe(true);
 
-  // a fresh start, then search reaches the old mail on the server
+  // a fresh start (from the top, so the restored scroll position doesn't load an older page), then search reaches the old mail on the server
+  await page.evaluate(() => scrollTo(0, 0));
   await page.reload();
   await expect(page.locator("li.row")).toHaveCount(200);
   await page.getByRole("textbox", { name: "Search mail" }).fill("scholarship");
