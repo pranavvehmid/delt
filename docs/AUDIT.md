@@ -13,22 +13,22 @@ Critical 2 · Major 9 · Minor 7 · Blocked on references 6
 |---|---|---|---|---|---|
 | A01 | critical | Android app (#78) | App can open as a Chrome tab with an address bar | Doesn't feel like an app at all | open: needs phone check |
 | A02 | critical | Grid theme, whole look | Built from memory of F1 TV graphics, not from the Instagram/broadcast references the user wants; no script + bold driver-name pairing | Wrong reference = wrong look, however polished | blocked: references |
-| A03 | major | Minimal, laptop top bar (`look-shared.css .mast sup`) | Unread counts sit low like subscripts ("Inbox ₄") | `top: 0.5em` was tuned for 34px titles, wrong at 18px | open |
-| A04 | major | Glyph, laptop list column (`.chips`) | Pile chips are cut off at the column edge ("Later 2" clipped, Noise hidden) | Crowded; looks broken, hides a filter | open |
-| A05 | major | Laptop, nothing open (`.mv-empty`) | ~900px of empty pane saying "No mail open" | Wasted space on the biggest screen | open |
-| A06 | major | Grid, P1 position (`.row[data-pos="1"] .pos`) | Red `#e10600` "1" on `#1f1f27` is ~3.7:1 | Under 4.5:1 for 16px text | open |
-| A07 | major | Grid, mail open (#77) | Worst frame ~100–150ms at 4x slowdown | Above the 100ms smoothness target | open |
-| A08 | major | Empty states everywhere (`list-states.tsx`, Deadlines) | Centred grey sentence in a large void ("Nothing else is due.") | No hierarchy or design; feels unfinished | open |
-| A09 | major | Loading states | Grey shimmer bars, same in every look | Generic; no look identity (Grid should load like a tower filling) | open |
-| A10 | major | Minimal, Needs you rows (`.when::before`) | Red dash floats above the time between rows, reads like a stray divider | Crooked-looking mark with no clear owner | open |
-| A11 | major | Grid mail view (`.mv-subj`, `.mv-bar`) | Subject is 8px under a red rule that's under a grey hairline: three lines stacked, cramped top | Clutter and crowding at the most important spot | open |
-| A12 | minor | Appearance sheet, all looks (`.seg`) | Selected segment starts 8–10px in from the content edge, not on it | Breaks the left edge everything else shares | open |
-| A13 | minor | Grid laptop top bar | Red block under the logo plus the mail pane's red rule: two red lines at different heights | Accent overused; no single focal point | open |
-| A14 | minor | Grid phone header | "UPDATED JUST NOW" in spaced capitals competes with the section titles | Status text louder than it needs to be | open |
-| A15 | minor | Deadlines rows, Minimal/Grid (`.iconbtn.labelled`) | "Calendar" / "Done" labels are sentence case, everything else in Grid is caps | Inconsistent label style | open |
-| A16 | minor | Sign-in page | Not reviewed in Grid since #73; still uses Minimal's layout | Unchecked screen | open |
-| A17 | minor | Glyph look cards preview | Dotted texture in a 120px thumbnail looks like noise | Texture without a purpose at that size | open |
-| A18 | minor | All looks, laptop | Mail column capped at 780px, centred in the pane, leaving uneven side space on 1536px | Width not tied to the grid | open |
+| A03 | major | Minimal, laptop top bar (`look-shared.css .mast sup`) | Unread counts sit low like subscripts ("Inbox ₄") | `top: 0.5em` was tuned for 34px titles, wrong at 18px | fixed (af4f22a) |
+| A04 | major | Glyph, laptop list column (`.chips`) | Pile chips are cut off at the column edge ("Later 2" clipped, Noise hidden) | Crowded; looks broken, hides a filter | fixed (2559b25) |
+| A05 | major | Laptop, nothing open (`.mv-empty`) | ~900px of empty pane saying "No mail open" | Wasted space on the biggest screen | fixed (97a319e) |
+| A06 | major | Grid, P1 position (`.row[data-pos="1"] .pos`) | Red `#e10600` "1" on `#1f1f27` is ~3.7:1 | Under 4.5:1 for 16px text | fixed (d24a046) |
+| A07 | major | Grid, mail open (#77) | Worst frame ~100–150ms at 4x slowdown | Above the 100ms smoothness target | partial: repeat opens 53–88ms, first open 103–137ms (drawing the screen the first time) |
+| A08 | major | Empty states everywhere (`list-states.tsx`, Deadlines) | Centred grey sentence in a large void ("Nothing else is due.") | No hierarchy or design; feels unfinished | fixed (c069ed7) |
+| A09 | major | Loading states | Grey shimmer bars, same in every look | Generic; no look identity (Grid should load like a tower filling) | fixed (1c181ce) |
+| A10 | major | Minimal, Needs you rows (`.when::before`) | Red dash floats above the time between rows, reads like a stray divider | Crooked-looking mark with no clear owner | fixed (c71da6b) |
+| A11 | major | Grid mail view (`.mv-subj`, `.mv-bar`) | Subject is 8px under a red rule that's under a grey hairline: three lines stacked, cramped top | Clutter and crowding at the most important spot | fixed (20b36b2) |
+| A12 | minor | Appearance sheet, all looks (`.seg`) | Selected segment starts 8–10px in from the content edge, not on it | Breaks the left edge everything else shares | fixed (af4f22a) |
+| A13 | minor | Grid laptop top bar | Red block under the logo plus the mail pane's red rule: two red lines at different heights | Accent overused; no single focal point | fixed (20b36b2) |
+| A14 | minor | Grid phone header | "UPDATED JUST NOW" in spaced capitals competes with the section titles | Status text louder than it needs to be | fixed (20b36b2) |
+| A15 | minor | Deadlines rows, Minimal/Grid (`.iconbtn.labelled`) | "Calendar" / "Done" labels are sentence case, everything else in Grid is caps | Inconsistent label style | fixed (3378682) |
+| A16 | minor | Sign-in page | Not reviewed in Grid since #73; still uses Minimal's layout | Unchecked screen | fixed (fff7a08) |
+| A17 | minor | Glyph look cards preview | Dotted texture in a 120px thumbnail looks like noise | Texture without a purpose at that size | fixed (3ed46b1) |
+| A18 | minor | All looks, laptop | Mail column capped at 780px, centred in the pane, leaving uneven side space on 1536px | Width not tied to the grid | fixed (97a319e) |
 
 ### Blocked on F1 references (to be specified in `docs/F1_STYLE_SPEC.md`)
 | ID | What |

@@ -2,6 +2,13 @@
 
 One line each: what, and why. Newest first.
 
+- 2026-11-07 Glyph needs 4 full mails (not 5) visible at 1366x657: its outlined cards are ~100px by design; squashing them would break the look.
+- 2026-11-07 On laptops, Glyph's filter chips drop their counts to fit one line; counts stay in day headings and "Unread only".
+- 2026-11-07 The empty laptop pane shows a "Today" overview rather than auto-opening a mail, so nothing is marked read without a click.
+- 2026-11-07 Grid uses one red focal point per screen (the active tab bar); the top bar keeps a plain hairline.
+- 2026-11-07 Google's sign-in button keeps Google's own shape in every look (brand rules).
+- 2026-11-07 Loading placeholders pulse opacity (GPU) instead of a moving gradient (repaints every frame).
+
 - 2026-11-06 Grid font is Saira (variable, wdth 50–125, wght 100–900, SIL OFL 1.1, `src/app/fonts/saira/OFL.txt`). F1's Formula1 Display is proprietary; Saira's squared wide capitals are the closest free match found so far. To be re-checked side by side once F1 references arrive.
 - 2026-11-06 No F1 or team logos anywhere; Grid recreates the style, not the marks.
 - 2026-11-06 Opening a mail and switching tabs don't use View Transitions; closing a mail does. A page snapshot forces React to render synchronously first (90–170ms at 4x slowdown).

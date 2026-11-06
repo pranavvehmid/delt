@@ -2,6 +2,15 @@
 
 Short notes on what runs under the hood. Newest first.
 
+## Laptop "Today" overview (A05)
+- **Data:** no new fetches. It reuses what the inbox already has: `counts.all.unread`, `needsYou(all, now)` (unread urgent or soon-due mail, soonest first) and the deadline buckets (Overdue, Today, Tomorrow, This week…).
+- **Next deadline:** the first mail across the buckets in order, skipping Done.
+- **Path:** `inbox-app.tsx` renders `<Overview>` when the screen is wide and no mail is open; each item calls the same `openMail` the list uses, so focus, read state and Back behave the same.
+- **Why not auto-open the first mail:** opening marks it read; the student should choose that.
+
+## Why the loading bars were tiny (A09)
+- Minimal and Grid lay rows out on a CSS grid: a fixed first column (time or position, 28–52px) and the text. Placeholder rows have no time or position element, so the text block fell into the narrow first column. A single column for `.skeleton .row-main` fixes it.
+
 ## Smooth screen changes (#77)
 - **Problem:** a View Transition snapshots the page, then React must render synchronously inside its callback; nothing moves until that finishes.
 - **Logic:** `useRoute` (`src/app/use-screen.ts`) compares the old and new route. Opening a mail or switching tabs uses React's `startTransition`, which renders in small chunks and yields to the browser between them. Only closing a mail uses the snapshot slide-out.

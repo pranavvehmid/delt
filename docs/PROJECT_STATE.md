@@ -1,6 +1,6 @@
 # Project state
 
-Updated 2026-11-06.
+Updated 2026-11-07.
 
 ## Live
 - Production (delt-mu.vercel.app) runs code up to 436117a (#70). Everything below from #71 on
@@ -18,8 +18,10 @@ Updated 2026-11-06.
 - #76 laptop layout (top bar across the window, scaling list column, pane under the bar).
 - #77 smoother screen changes (no page snapshot on open/tab switch, chunked rendering, 12 first rows).
 
+- Audit A03–A18 fixed (2026-11-07, see `docs/AUDIT.md`); A07 partial.
+
 ## Half-done
-- #77: Grid's mail open still has frames around 100–150ms at 4x CPU slowdown.
+- A07/#77: Grid's first mail open of a session is 103–137ms at 4x slowdown; repeat opens 53–88ms.
 - #78: Android app sometimes shows Chrome's address bar. Server side verified; app now shows a note
   when it opens as a plain tab. Needs a check on the user's phone.
 - F1 theme: the user says the reference should be F1's Instagram and TV graphics (grid intro,
@@ -34,5 +36,5 @@ Updated 2026-11-06.
 
 ## Next
 1. User drops F1 references; write `docs/F1_STYLE_SPEC.md`; pick fonts side by side.
-2. Work through `docs/AUDIT.md` in order, one item per commit.
+2. F1 rebuild (F01–F06), then re-audit Grid against the references.
 3. Deploy when the user says so.
