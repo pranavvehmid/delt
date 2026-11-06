@@ -500,3 +500,21 @@ test("the privacy page has bullets and space between paragraphs (#66)", async ({
   expect(await doc.locator("ul").first().evaluate((el) => getComputedStyle(el).listStyleType)).toBe("disc");
   expect(await doc.locator("p + p").first().evaluate((el) => parseFloat(getComputedStyle(el).marginTop))).toBeGreaterThan(8);
 });
+
+test("a sheet over the reading pane: Esc closes only the sheet, and J/K wait (#41)", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 860 });
+  await mockApi(page, smallInbox());
+  await page.goto("/e2e");
+  await page.locator(row("cat1")).locator(".row-main").click();
+  const title = await page.locator("#mv-title").textContent();
+  await page.getByRole("button", { name: "Account" }).click();
+  await page.locator("#acct-menu .menu-item", { hasText: /^Settings$/ }).click();
+  const dialog = page.getByRole("dialog", { name: "Settings" });
+  await expect(dialog).toBeVisible();
+  await page.keyboard.press("j");
+  await expect(page.locator("#mv-title")).toHaveText(title!);
+  await page.keyboard.press("Escape");
+  await expect(dialog).toHaveCount(0);
+  await expect(page.locator(".mailview.pane")).toBeVisible();
+  await expect(page.locator("#mv-title")).toHaveText(title!);
+});

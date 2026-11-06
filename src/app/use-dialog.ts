@@ -20,7 +20,13 @@ export function useDialog(ref: RefObject<HTMLElement | null>, open: boolean, onC
     const start = box?.querySelector<HTMLElement>("[data-autofocus]") ?? box?.querySelector<HTMLElement>(FOCUSABLE);
     start?.focus({ preventScroll: true });
 
+    // #41: with a sheet open over a full-screen mail, only the one on top answers keys and focus
+    const top = () => {
+      const open = document.querySelectorAll('[aria-modal="true"]');
+      return !open.length || open[open.length - 1] === box;
+    };
     const key = (e: KeyboardEvent) => {
+      if (e.defaultPrevented || !top()) return;
       if (e.key === "Escape") {
         e.preventDefault();
         close.current();
@@ -40,7 +46,7 @@ export function useDialog(ref: RefObject<HTMLElement | null>, open: boolean, onC
     };
     // Tab out of the mail's own frame skips the key handler, so also catch focus landing outside.
     const guard = (e: FocusEvent) => {
-      if (box && e.target instanceof Node && !box.contains(e.target)) box.querySelector<HTMLElement>(FOCUSABLE)?.focus({ preventScroll: true });
+      if (box && top() && e.target instanceof Node && !box.contains(e.target)) box.querySelector<HTMLElement>(FOCUSABLE)?.focus({ preventScroll: true });
     };
     document.addEventListener("keydown", key);
     document.addEventListener("focusin", guard);
