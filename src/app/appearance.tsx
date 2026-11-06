@@ -34,7 +34,7 @@ const GRID_ACCENTS: { key: Prefs["accent"]; label: string; color: string }[] = [
 const LOOKS = [
   { key: "minimal", name: "Minimal", note: "Black and white" },
   { key: "glyph", name: "Glyph", note: "Purple and gold" },
-  { key: "grid", name: "Grid", note: "F1-inspired, dark" },
+  { key: "grid", name: "Grid", note: "F1-inspired" },
 ] as const;
 
 function readPrefs(): Prefs {

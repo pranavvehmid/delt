@@ -17,7 +17,9 @@ export default defineConfig({
     { name: "phone", use: { ...devices["Pixel 7"] } },
     { name: "desktop", use: { ...devices["Desktop Chrome"], viewport: { width: 1280, height: 860 } } },
     // Safari's engine on an iPhone-sized screen (issue #17). Not a real iPhone, but catches most Safari issues.
-    { name: "iphone", use: { ...devices["iPhone 15"] }, testIgnore: /a11y/ },
+    // a11y and layout measure CSS geometry, which phone and desktop already cover; WebKit's canvas
+    // text metrics (used to find where letters start) differ, so they would test WebKit, not DELT
+    { name: "iphone", use: { ...devices["iPhone 15"] }, testIgnore: /a11y|layout/ },
   ],
   webServer: {
     // CI builds first (see .github/workflows/test.yml); locally the dev server is fine.
