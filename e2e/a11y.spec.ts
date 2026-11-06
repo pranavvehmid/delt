@@ -214,3 +214,16 @@ test("Grid's slanted buttons stay inside their box (#65)", async ({ page }) => {
   r = await check();
   expect(r.bad).toEqual([]);
 });
+
+test("Esc closes the mail even when focus is on a link inside the mail itself", async ({ page }) => {
+  await page.setViewportSize({ width: 900, height: 860 });
+  await mockApi(page, smallInbox());
+  await page.goto("/e2e");
+  await page.locator('li.row[data-mail="notice"] .row-main').click();
+  const dialog = page.getByRole("dialog", { name: "Library timings this week" });
+  await expect(dialog).toBeVisible();
+  const link = page.frameLocator(".mv-frame").getByRole("link", { name: "Library portal" });
+  await link.focus();
+  await page.keyboard.press("Escape");
+  await expect(dialog).toHaveCount(0);
+});
