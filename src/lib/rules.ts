@@ -19,6 +19,8 @@ const P = {
     /\b(online|mock|written|module|unit|class) test\b/, /\btest (today|tomorrow|on|schedule)\b/, /\bviva\b/, /\bhall ticket\b/,
     /\bseating (arrangement|plan)\b/, /\bre-?exam\b/, /\barrears?\b/, /\bmid[- ]?term\b/, /\bend[- ]?sem(ester)?\b/,
     /\blab (exam|test|assessment)\b/, /\bmissed (quiz|test|exam|assessment)/,
+    // #24 (held-out set)
+    /\binternal assessment\b/, /\bre-?test\b/,
   ],
   registration: [
     /\bcourse registration\b/, /\bffcs\b/, /\bmock (course )?registration\b/, /\bwinter (semester )?registration\b/,
@@ -44,6 +46,7 @@ const P = {
     /\brelocation\b/, /\bbus (facility|service)\b/, /\btransport\b/,
     // #24: day-to-day campus notices (timings, outages, venue changes)
     /\btimings?\b/, /\bshut ?down\b/, /\binterruption\b/, /\boutage\b/, /\bmaintenance\b/, /\bchange of venue\b/, /\bvenue (change|changed)\b/,
+    /\b(classes?|lectures?|labs?) (are |is )?(suspended|cancelled)\b/, /\bsuspended\b/, /\broute\b/, /\bcurfew\b/,
   ],
   decision: [/\bhas been decided\b/, /\bis hereby\b/, /\bmandatory\b/, /\bcompulsory\b/, /\bpostponed\b/, /\brescheduled\b/, /\bwith immediate effect\b/],
   academic: [/\bassignment\b/, /\bdigital assignment\b/, /\bsyllabus\b/, /\bproctor\b/, /\bfaculty advisor\b/, /\bvtop\b/, /\bworkbook\b/, /\bcourse (page|material|enrol)/, /\bda ?\d{1,2}\b/, /\bwelcome to [a-z]{3,6}\d{3}/, /\b[a-z]{4,6}\d{3}[a-z]?\b/],
@@ -57,9 +60,13 @@ const P = {
     /\bimmersion\b/, /\bstudy abroad\b/, /\bsemester abroad\b/, /\b(2\+2|3\+1|4\+1)\b/, /\bexchange program/, /\bblood donation\b/,
     /\binformation session\b/, /\borientation session\b/, /\bexhibition\b/, /\bsymposium\b/, /\bconference\b/,
     /\bsummit\b/, /\bconfluence\b/, /\bconclave\b/,
+    // #24: sports and club activities
+    /\btournament\b/, /\bauditions?\b/, /\btrials?\b/, /\bcelebration\b/,
   ],
   newsletter: [/\bnewsletter\b/, /\bdigest\b/, /\bmagazine\b/, /\bgratitude\b/, /\bthank you for (attending|participating)\b/],
-  promotion: [/\b\d+ ?% off\b/, /\bdiscount\b/, /\bsale\b/, /\bmerch(andise)?\b/, /\bexclusive( [a-z]+)? offers?\b/, /\boffers? for (the )?vit\b/, /\bcoupon\b/, /\bbuy now\b/, /\bfree trial\b/, /\bsponsored\b/, /\blimited[- ]time\b/],
+  promotion: [/\b\d+ ?% off\b/, /\bdiscount\b/, /\bsale\b/, /\bmerch(andise)?\b/, /\bexclusive( [a-z]+)? offers?\b/, /\boffers? for (the )?vit\b/, /\bcoupon\b/, /\bbuy now\b/, /\bfree trial\b/, /\bsponsored\b/, /\blimited[- ]time\b/,
+    // #24: selling a course or a habit app
+    /\bearly[- ]bird\b/, /\bbootcamp\b/, /\btest series\b/, /\b(keep|maintain) your streak\b/, /\bstreak alive\b/, /\bdaily (coding )?(challenge|problem)\b/],
 };
 
 const PROGRAMME = /\bsummer school\b|\bwinter school\b|\bimmersion\b|\bnational university of\b|\buniversity of [a-z]+\b|\b(certificate|specialised|specialized) courses?\b|\bcourses? under\b|\b(programme|program) 20\d\d\b|\bai programme\b|\b[a-z]+ programme$/;
@@ -71,6 +78,8 @@ const INTERNATIONAL = /\b(oci|foreign nationals?|nri students?|international stu
 const COLLECT = /\b(collect|pick up)\s+(your|the)\b/;
 // A file or folder someone shared with you directly (Google Drive, Docs, Sheets).
 const SHARED_WITH_YOU = /\bshared with you\b|\binvited you to (edit|view|comment)/;
+// #24: words that ask the student to do something (with a date, from VIT, it's Urgent)
+const ACTION = /\b(must|mandatory|compulsory|required to|are requested to|apply|submit|complete|clear|attend|register|pay|download)\b/;
 const SENIOR =/\b(final|pre-?final|2nd|second|3rd|third|4th|fourth)[- ]years?\b|\b(m\.?tech|mba|mca|m\.?sc|ph\.?d|research scholars?|pg students|integrated m\.?tech)\b/;
 const FOR_FIRST_YEARS = /\b(first|1st)[- ]years?\b|\bfreshers?\b|\bfreshman\b|\ball (the )?(students|years)\b|\bopen to all\b|\bug[- ]freshers\b/;
 
@@ -79,7 +88,7 @@ function notForYou(text: string, subject: string, profile: StudentProfile): stri
   if (INTERNATIONAL.test(subject)) return "Meant for international students";
   if (FOR_FIRST_YEARS.test(text)) return null;
   // Batch years mentioned near "batch"/"students"/"b.tech", none of them yours.
-  const years = [...text.matchAll(/\b(20[1-3]\d)\s*(?:batch|admitted|students|-\s*20\d\d batch)|\b(?:batch|b\.?tech\.?\s*\(?)\s*(20[1-3]\d)/g)]
+  const years = [...text.matchAll(/\b(20[1-3]\d)\s*(?:(?:graduating|passing[- ]out|outgoing)\s+)?(?:batch|admitted|students|-\s*20\d\d batch)|\b(?:batch|b\.?tech\.?\s*\(?)\s*(20[1-3]\d)/g)]
     .map((m) => Number(m[1] ?? m[2]));
   if (profile.batch && years.length && !years.includes(profile.batch)) return `For the ${years[0]} batch, not yours`;
   if (SENIOR.test(subject)) return "Meant for senior or PG students";
@@ -134,13 +143,13 @@ function findDates(text: string, received: Date): FoundDate[] {
       if (!isNaN(ts)) out.push({ iso, ts, index: m.index });
     }
   }
-  const rel = /\b(today|tonight|tomorrow)\b/.exec(text);
-  if (rel) {
+  // #24: every one of them, so "closes tonight ... before 10 PM today" finds the one after the cue
+  for (const rel of text.matchAll(/\b(today|tonight|tomorrow)\b/g)) {
     const base = new Date(received.getTime() + 5.5 * 3600_000);
     if (rel[1] === "tomorrow") base.setUTCDate(base.getUTCDate() + 1);
     const time = findTime(text.slice(rel.index, rel.index + 60)) ?? [23, 59];
     const iso = istISO(base.getUTCFullYear(), base.getUTCMonth() + 1, base.getUTCDate(), time[0], time[1]);
-    out.push({ iso, ts: Date.parse(iso), index: rel.index });
+    out.push({ iso, ts: Date.parse(iso), index: rel.index! });
   }
   return out;
 }
@@ -148,7 +157,7 @@ function findDates(text: string, received: Date): FoundDate[] {
 const DEADLINE_CUES = [
   /\blast date\b/, /\bdeadline\b/, /\bdue (date|on|by)\b/, /\bregist(er|ration)s? (by|before|closes?|ends?|on or before)\b/,
   /\bcloses? on\b/, /\blast day\b/, /\bsubmit(ted)? (by|before|on or before)\b/, /\bon or before\b/, /\bno later than\b/,
-  /\bapply (by|before)\b/, /\bbefore\b/, /\bby\b/, /\btest\b/, /\bexam\b/, /\bquiz\b/, /\binterview\b/, /\bscheduled (on|for)\b/,
+  /\bapply (by|before)\b/, /\bbefore\b/, /\buntil\b/, /\bbetween\b/, /\bby\b/, /\btest\b/, /\bexam\b/, /\bquiz\b/, /\binterview\b/, /\bscheduled (on|for)\b/,
 ];
 
 /** The date right after a deadline cue, else the earliest upcoming date when the mail asks for action. */
@@ -197,7 +206,7 @@ export function classifyByRules(
   const fromVit = /@(vit\.ac\.in|vitstudent\.ac\.in)$/.test(msg.fromAddress);
   const fromGoogle = /@(google\.com|accounts\.google\.com|googlemail\.com)$/.test(msg.fromAddress);
 
-  const actionable = inSubject("exam") || inSubject("registration") || inSubject("interview") || inText("fee");
+  const actionable = inSubject("exam") || inSubject("registration") || inSubject("interview") || inText("fee") || (fromVit && ACTION.test(text));
   const deadline = findDeadline(text, msg.receivedAt, actionable);
   const upcoming = !!deadline && Date.parse(deadline) > now;
 
@@ -227,6 +236,9 @@ export function classifyByRules(
   // An outside sender pushing a sale is noise even if it says "enroll by".
   if (inSubject("promotion") && (!actionable || !fromVit)) return out("noise", "promotion", "Promotion or sale", 0.9);
 
+  // #24: an outside sender selling something in the body ("register by... early bird price") is still an ad
+  if (!fromVit && inText("promotion") && !inSubject("hackathon")) return out("noise", "promotion", "Promotion from outside VIT", 0.75);
+
   // 4. Not meant for you (other batches, seniors, PG).
   const notYours = notForYou(text, subject, profile);
   if (notYours && !FOR_FIRST_YEARS.test(text)) return out("later", "other", notYours, 0.75);
@@ -245,6 +257,8 @@ export function classifyByRules(
   if (/\b(results?|marks|grades?)\b.{0,30}\b(published|declared|announced|released|uploaded|available|out)\b/.test(subject)) {
     return out("priority", "announcement", "Results are out", 0.8);
   }
+  // #24: a club's workshop about exams is an event, not an exam
+  if (inSubject("exam") && inSubject("club_event") && /@vitstudent\.ac\.in$/.test(msg.fromAddress)) return out("later", "club_event", "Event, talk or program", 0.65);
   if (inSubject("exam")) return out("very_important", "exam", "Exam, quiz or test", 0.85);
   if (inSubject("interview")) return out("very_important", "interview", "Interview or selection round", 0.85);
   // Paid programmes and certificate courses from other institutions: optional, so "later".
@@ -281,9 +295,12 @@ export function classifyByRules(
     return out("very_important", "registration", "Has a registration deadline", 0.65);
   }
 
+  // #24: VIT asks you to do something by a date that hasn't passed
+  if (fromVit && upcoming && !isEvent && ACTION.test(text)) return out("very_important", "deadline", "Asks you to act by a date", 0.65);
+
   // Official notices.
   if (inSubject("decision")) return out("priority", "decision", "Official decision", 0.75);
-  if (inSubject("announcement")) return out("priority", "announcement", "Official announcement", 0.7);
+  if (inSubject("announcement") && !isEvent) return out("priority", "announcement", "Official announcement", 0.7);
   if (inSubject("academic") && fromVit) {
     return upcoming && /\bsubmi(t|ssion)\b|\bdue\b|\bupload\b/.test(text)
       ? out("very_important", "academic", "Course work due", 0.75)
