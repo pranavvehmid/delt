@@ -133,3 +133,50 @@ test("Minimal: the unread square is centred on the subject's first line, left of
   expect(m.left + m.size).toBeLessThan(m.subjLeft);
   expect(m.left).toBeGreaterThan(m.rowLeft);
 });
+
+// #68: spacing comes from one scale (4px steps; 1–2px only as hairline nudges)
+for (const look of LOOKS) {
+  test(`${look}: every padding, margin and gap on the inbox, Settings and Appearance is on the 4px scale (#68)`, async ({ page }) => {
+    await open(page, look);
+    const off = async (where: string) =>
+      page.evaluate((where) => {
+        const props = ["paddingTop", "paddingRight", "paddingBottom", "paddingLeft", "marginTop", "marginBottom", "rowGap", "columnGap"] as const;
+        const bad: string[] = [];
+        for (const el of document.querySelectorAll("body *")) {
+          const b = el.getBoundingClientRect();
+          if (!b.width || !b.height) continue;
+          const cs = getComputedStyle(el);
+          for (const p of props) {
+            const v = cs[p];
+            if (!v.endsWith("px")) continue;
+            const n = Math.abs(parseFloat(v));
+            if (![0, 1, 2, 4, 8, 12, 16, 20, 24, 32, 40, 48, 64, 96].includes(Math.round(n * 100) / 100)) bad.push(`${where} ${el.tagName.toLowerCase()}.${String(el.className).split(" ")[0]} ${p}=${v}`);
+          }
+        }
+        return bad;
+      }, where);
+    const bad = [...(await off("inbox"))];
+    await page.getByRole("button", { name: "Account" }).click();
+    await page.locator("#acct-menu .menu-item", { hasText: /^Settings$/ }).click();
+    await expect(page.getByRole("dialog", { name: "Settings" })).toBeVisible();
+    bad.push(...(await off("settings")));
+    await page.keyboard.press("Escape");
+    await page.getByRole("button", { name: /Appearance/ }).first().click();
+    await expect(page.getByRole("dialog", { name: "Appearance" })).toBeVisible();
+    bad.push(...(await off("appearance")));
+    expect(bad, bad.join("\n")).toEqual([]);
+  });
+}
+
+test("on a wide screen the list keeps its column and an empty pane waits beside it (#68)", async ({ page }, info) => {
+  test.skip(info.project.name !== "desktop", "wide screens only");
+  await open(page, "minimal");
+  const pane = page.locator(".mv-empty");
+  await expect(pane).toBeVisible();
+  await expect(pane).toContainText("No mail open");
+  const list = await box(page, ".searchbar");
+  expect(list.right).toBeLessThanOrEqual(460);
+  await page.locator('li.row[data-mail="cat1"] .row-main').click();
+  await expect(pane).toHaveCount(0);
+  await expect(page.locator(".mailview.pane")).toBeVisible();
+});

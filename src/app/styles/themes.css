@@ -19,7 +19,7 @@
 :root[data-size="large"] :is(.shell, .mailview, .sheet, .signin) { zoom: 1.12; }
 :root[data-density="compact"] .row-main { padding-top: 8px !important; padding-bottom: 8px !important; }
 :root[data-density="compact"] .sum { display: none; }
-:root[data-density="compact"] .meta { margin-top: 3px; }
+:root[data-density="compact"] .meta { margin-top: 4px; }
 
 /* =========================================================
    Extra dark, Nothing OS style (issue #26): pure black, white type,

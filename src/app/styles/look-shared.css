@@ -47,11 +47,11 @@
 
 /* top bar: the brand mark stays heavy (the one bold thing on screen) */
 :root:is([data-look="minimal"], [data-look="grid"]) .appbar { background: var(--bg); backdrop-filter: none; padding-bottom: 4px; }
-:root:is([data-look="minimal"], [data-look="grid"]) .sync { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; padding: 6px 8px; border-radius: 0; }
+:root:is([data-look="minimal"], [data-look="grid"]) .sync { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; padding: 8px 8px; border-radius: 0; }
 :root:is([data-look="minimal"], [data-look="grid"]) .avatar.me { background: rgb(var(--ink)); color: var(--bg); font-weight: 500; }
 
 /* masthead: the two sections as type */
-:root:is([data-look="minimal"], [data-look="grid"]) .mast { display: flex; gap: 22px; padding: 6px 16px 2px; }
+:root:is([data-look="minimal"], [data-look="grid"]) .mast { display: flex; gap: 24px; padding: 8px 16px 2px; }
 :root:is([data-look="minimal"], [data-look="grid"]) .mast button { font: 300 34px/1.1 var(--font); letter-spacing: -0.025em; color: rgb(var(--ink) / var(--floor-lg)); transition: color 0.3s var(--ease); }
 :root:is([data-look="minimal"], [data-look="grid"]) .mast button:hover { color: rgb(var(--ink) / 0.8); }
 :root:is([data-look="minimal"], [data-look="grid"]) .mast button.on { color: rgb(var(--ink)); }
@@ -63,11 +63,11 @@
 :root:is([data-look="minimal"], [data-look="grid"]) .searchbar input { font-size: 15px; font-weight: 300; }
 
 /* filters: words, underlined when chosen */
-:root:is([data-look="minimal"], [data-look="grid"]) .chips { gap: 20px; margin-top: 14px; margin-bottom: 0; }
+:root:is([data-look="minimal"], [data-look="grid"]) .chips { gap: 20px; margin-top: 16px; margin-bottom: 0; }
 :root:is([data-look="minimal"], [data-look="grid"]) .fchip { background: none !important; border: 0 !important; padding: 0; height: 34px; font-size: 14px; font-weight: 400; color: rgb(var(--ink) / var(--floor)); }
 :root:is([data-look="minimal"], [data-look="grid"]) .fchip:hover { color: rgb(var(--ink) / 0.85); }
 :root:is([data-look="minimal"], [data-look="grid"]) .fchip.on { color: rgb(var(--ink)); box-shadow: inset 0 -2px 0 rgb(var(--ink)); }
-:root:is([data-look="minimal"], [data-look="grid"]) .listbar { margin-top: 6px; }
+:root:is([data-look="minimal"], [data-look="grid"]) .listbar { margin-top: 8px; }
 :root:is([data-look="minimal"], [data-look="grid"]) .toggle { font-size: 13px; color: rgb(var(--ink) / max(0.7, var(--floor))); }
 :root:is([data-look="minimal"], [data-look="grid"]) .toggle .knob { width: 28px; height: 14px; background: rgb(var(--ink) / 0.14); }
 :root:is([data-look="minimal"], [data-look="grid"]) .toggle .knob::after { width: 10px; height: 10px; box-shadow: none; }
@@ -76,13 +76,13 @@
 :root:is([data-look="minimal"], [data-look="grid"]) .foot .link:disabled { text-decoration: none; } /* the base rule, which this file would otherwise override */
 
 /* day labels: small capitals */
-:root:is([data-look="minimal"], [data-look="grid"]) .dayhead { position: static; font: 500 11px/1 var(--font); text-transform: uppercase; letter-spacing: 0.12em; color: rgb(var(--ink) / var(--floor)); padding-top: 30px; padding-bottom: 6px; background: none; }
+:root:is([data-look="minimal"], [data-look="grid"]) .dayhead { position: static; font: 500 11px/1 var(--font); text-transform: uppercase; letter-spacing: 0.12em; color: rgb(var(--ink) / var(--floor)); padding-top: 32px; padding-bottom: 8px; background: none; }
 :root:is([data-look="minimal"], [data-look="grid"]) .day.needs .dayhead { color: var(--due-soon); } /* #23, as in base */
 
 /* rows on a two-column grid: time | mail */
 :root:is([data-look="minimal"], [data-look="grid"]) .rows { display: flex; flex-direction: column; gap: 4px; }
 :root:is([data-look="minimal"], [data-look="grid"]) .row-slide { background: var(--bg); }
-:root:is([data-look="minimal"], [data-look="grid"]) .row-main { grid-template-columns: 52px minmax(0, 1fr); gap: 14px; padding: 12px 0; border-bottom: 0; }
+:root:is([data-look="minimal"], [data-look="grid"]) .row-main { grid-template-columns: 52px minmax(0, 1fr); gap: 16px; padding: 12px 0; border-bottom: 0; }
 :root:is([data-look="minimal"], [data-look="grid"]) .row-acts { border-bottom: 0; }
 /* --lv: 1 Urgent, 0.6 Priority, 0.3 Later, 0 Noise. --a is the main ink, --a2 the quieter lines. */
 :root:is([data-look="minimal"], [data-look="grid"]) .row { --lv: 1; --a: calc(var(--floor) + (1 - var(--floor)) * var(--lv)); --a2: calc(var(--floor) + (1 - var(--floor)) * var(--lv) * 0.45); --subj: 17px; --w: 400; }
@@ -90,14 +90,14 @@
 :root:is([data-look="minimal"], [data-look="grid"]) .ink-later { --lv: 0.3; --subj: 16px; }
 :root:is([data-look="minimal"], [data-look="grid"]) .ink-noise { --lv: 0; --subj: 15px; --w: 300; }
 :root:is([data-look="minimal"], [data-look="grid"]) .when { display: block; padding-top: 2px; font-size: 11.5px; letter-spacing: 0.02em; font-variant-numeric: tabular-nums; color: rgb(var(--ink) / var(--a2)); white-space: nowrap; }
-:root:is([data-look="minimal"], [data-look="grid"]) .when::before { content: ""; display: block; width: 14px; height: 2px; margin-bottom: 7px; background: transparent; }
+:root:is([data-look="minimal"], [data-look="grid"]) .when::before { content: ""; display: block; width: 14px; height: 2px; margin-bottom: 8px; background: transparent; }
 :root:is([data-look="minimal"], [data-look="grid"]) .ink-very_important .when::before { background: var(--accent); }
 :root:is([data-look="minimal"], [data-look="grid"]) .row.unread .when { color: rgb(var(--ink) / var(--a)); font-weight: 500; }
 :root:is([data-look="minimal"], [data-look="grid"]) .from { font-size: 11px; font-weight: 400; text-transform: uppercase; letter-spacing: 0.08em; color: rgb(var(--ink) / var(--a2)); }
-:root:is([data-look="minimal"], [data-look="grid"]) .subj { font-size: var(--subj); line-height: 1.3; font-weight: var(--w); letter-spacing: -0.012em; color: rgb(var(--ink) / var(--a)); margin-top: 3px; white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+:root:is([data-look="minimal"], [data-look="grid"]) .subj { font-size: var(--subj); line-height: 1.3; font-weight: var(--w); letter-spacing: -0.012em; color: rgb(var(--ink) / var(--a)); margin-top: 4px; white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
 :root:is([data-look="minimal"], [data-look="grid"]) .sum { font-size: 13.5px; font-weight: 300; color: rgb(var(--ink) / var(--a2)); margin-top: 2px; }
 :root:is([data-look="minimal"], [data-look="grid"]) .row.unread :is(.subj, .from) { font-weight: 500; }
-:root:is([data-look="minimal"], [data-look="grid"]) .meta { margin-top: 6px; }
+:root:is([data-look="minimal"], [data-look="grid"]) .meta { margin-top: 8px; }
 :root:is([data-look="minimal"], [data-look="grid"]) .row-text > .meta:not(:has(.due, .donemark)) { display: none; }
 :root:is([data-look="minimal"], [data-look="grid"]) :is(.due, .donemark) { background: none !important; padding: 0; height: auto; font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.08em; color: rgb(var(--ink) / max(0.7, var(--floor))); }
 :root:is([data-look="minimal"], [data-look="grid"]) .due:is(.lv-over, .lv-soon) { color: var(--accent); }
@@ -105,7 +105,7 @@
 :root:is([data-look="minimal"], [data-look="grid"]) .row.done .subj { text-decoration: line-through; text-decoration-thickness: 1px; }
 :root:is([data-look="minimal"], [data-look="grid"]) .swipe-bg.r { background: rgb(var(--ink)); color: var(--bg); }
 :root:is([data-look="minimal"], [data-look="grid"]) .swipe-bg.l { background: rgb(var(--ink) / 0.5); color: var(--bg); }
-:root:is([data-look="minimal"], [data-look="grid"]) .foot { font-size: 11px; letter-spacing: 0.04em; padding-top: 36px; }
+:root:is([data-look="minimal"], [data-look="grid"]) .foot { font-size: 11px; letter-spacing: 0.04em; padding-top: 32px; }
 
 /* deadlines: big light day numbers, like a poster */
 :root:is([data-look="minimal"], [data-look="grid"]) .pagehead { padding-top: 0; }
@@ -126,15 +126,15 @@
 :root:is([data-look="minimal"], [data-look="grid"]) .pillbtn:hover { border-color: rgb(var(--ink)); background: none; }
 :root:is([data-look="minimal"], [data-look="grid"]) .pillbtn.on { background: rgb(var(--ink)); border-color: rgb(var(--ink)); color: var(--bg); }
 :root:is([data-look="minimal"], [data-look="grid"]) .mv-page { padding-top: 8px; }
-:root:is([data-look="minimal"], [data-look="grid"]) .mv-subj { font: 300 30px/1.14 var(--font); letter-spacing: -0.025em; margin-bottom: 14px; }
+:root:is([data-look="minimal"], [data-look="grid"]) .mv-subj { font: 300 30px/1.14 var(--font); letter-spacing: -0.025em; margin-bottom: 16px; }
 :root:is([data-look="minimal"], [data-look="grid"]) .mv-from { font-size: 13px; }
 :root:is([data-look="minimal"], [data-look="grid"]) .mv-from b { font-weight: 500; }
 :root:is([data-look="minimal"], [data-look="grid"]) .lbl { font-size: 10.5px; font-weight: 500; letter-spacing: 0.12em; }
-:root:is([data-look="minimal"], [data-look="grid"]) .mv-pile { gap: 0; margin-top: 22px; }
+:root:is([data-look="minimal"], [data-look="grid"]) .mv-pile { gap: 0; margin-top: 24px; }
 :root:is([data-look="minimal"], [data-look="grid"]) .pchip { border: 0; background: none !important; padding: 0; margin-right: 16px; height: 28px; font-size: 14px; color: rgb(var(--ink) / var(--floor)); }
 :root:is([data-look="minimal"], [data-look="grid"]) .pchip.on { color: rgb(var(--ink)); font-weight: 500; box-shadow: inset 0 -2px 0 currentColor; }
 :root:is([data-look="minimal"], [data-look="grid"]) .pchip.on.p-very_important { color: var(--accent); }
-:root:is([data-look="minimal"], [data-look="grid"]) :is(.mv-due, .mv-sum) { background: none; border-radius: 0; padding: 2px 0 2px 14px; margin-top: 18px; border-left: 2px solid rgb(var(--ink) / 0.14); }
+:root:is([data-look="minimal"], [data-look="grid"]) :is(.mv-due, .mv-sum) { background: none; border-radius: 0; padding: 2px 0 2px 16px; margin-top: 16px; border-left: 2px solid rgb(var(--ink) / 0.14); }
 :root:is([data-look="minimal"], [data-look="grid"]) .mv-due:is(.lv-over, .lv-soon) { border-left-color: var(--accent); }
 :root:is([data-look="minimal"], [data-look="grid"]) .mv-due b { font-weight: 500; }
 :root:is([data-look="minimal"], [data-look="grid"]) .mv-sum { font-weight: 300; font-size: 15px; }
@@ -187,7 +187,7 @@
 :root:is([data-look="minimal"], [data-look="grid"]) .signin .p-very_important .tagdot { background: var(--accent); }
 :root:is([data-look="minimal"], [data-look="grid"]) .settings b { font-weight: 500; }
 :root:is([data-look="minimal"], [data-look="grid"]) .settings .keyform input { border-radius: 0; background: none; border: 0; border-bottom: 1px solid rgb(var(--ink) / 0.2); padding: 0; }
-:root:is([data-look="minimal"], [data-look="grid"]) .banner { border-radius: 0; background: none; border-left: 2px solid var(--accent); padding: 4px 0 4px 14px; }
+:root:is([data-look="minimal"], [data-look="grid"]) .banner { border-radius: 0; background: none; border-left: 2px solid var(--accent); padding: 4px 0 4px 16px; }
 @media (pointer: coarse) {
 :root:is([data-look="minimal"], [data-look="grid"]) .searchbar input { font-size: 16px; }
 }

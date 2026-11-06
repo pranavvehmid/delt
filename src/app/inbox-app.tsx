@@ -103,7 +103,7 @@ export default function InboxApp({ email, name, signOutAction, signInAction }: P
   const { syncProblem } = data;
 
   return (
-    <div className={`shell ${route.mailId && wide ? "reading" : ""} ${swipeHint ? "hinting" : ""}`}>
+    <div className={`shell ${wide ? "reading" : ""} ${swipeHint ? "hinting" : ""}`}>
       <header className="appbar">
         <a href="#/inbox" className="logo" onClick={() => goTab("inbox")} aria-label="DELT inbox">
           <span>DELT</span>
@@ -166,6 +166,13 @@ export default function InboxApp({ email, name, signOutAction, signInAction }: P
 
       <TabBar tab={route.tab} unread={counts.all.unread} dueCount={dueCount} />
 
+      {/* #68: on a wide screen the list keeps its column and the space beside it waits for a mail */}
+      {wide && !route.mailId && (
+        <div className="mv-empty">
+          <b>No mail open</b>
+          <span className="muted">Pick one from the list. J and K move to the next and previous mail.</span>
+        </div>
+      )}
       {route.mailId && (
         <MailView
           pane={wide}

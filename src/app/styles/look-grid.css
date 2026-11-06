@@ -69,9 +69,9 @@
 
 /* sections: big italic capitals, a slanted bar under the one you're on */
 :root[data-look="grid"] .mast { gap: 20px; padding-top: 16px; }
-:root[data-look="grid"] .mast button { position: relative; padding-bottom: 10px; font: italic 900 30px/1 var(--font); text-transform: uppercase; letter-spacing: 0; }
+:root[data-look="grid"] .mast button { position: relative; padding-bottom: 8px; font: italic 900 30px/1 var(--font); text-transform: uppercase; letter-spacing: 0; }
 :root[data-look="grid"] .mast button.on::after { content: ""; position: absolute; left: 2px; right: 14px; bottom: 0; height: 4px; background: var(--accent); transform: skewX(-28deg); }
-:root[data-look="grid"] .mast sup { top: 0.2em; margin-left: 7px; padding: 3px 6px 2px; font: italic 700 11px/1 var(--font); background: var(--surface2); color: rgb(var(--ink)); display: inline-block; transform: skewX(-12deg); }
+:root[data-look="grid"] .mast sup { top: 0.2em; margin-left: 8px; padding: 4px 8px 2px; font: italic 700 11px/1 var(--font); background: var(--surface2); color: rgb(var(--ink)); display: inline-block; transform: skewX(-12deg); }
 :root[data-look="grid"] .mast button.on sup { background: var(--accent); color: var(--on-accent); }
 @media (min-width: 720px) { :root[data-look="grid"] .mast button { font-size: 40px; } }
 
@@ -85,16 +85,16 @@
 :root[data-look="grid"] .toggle input:checked + .knob { background: var(--accent); }
 
 /* day headers with a chequered flag */
-:root[data-look="grid"] .dayhead { display: flex; align-items: center; gap: 10px; font: italic 700 12px/1 var(--font); letter-spacing: 0.18em; }
+:root[data-look="grid"] .dayhead { display: flex; align-items: center; gap: 8px; font: italic 700 12px/1 var(--font); letter-spacing: 0.18em; }
 :root[data-look="grid"] .dayhead::before { content: ""; flex: none; width: 18px; height: 10px; opacity: 0.75; background: conic-gradient(#e6e6e6 25%, transparent 0 50%, #e6e6e6 0 75%, transparent 0) 0 0 / 6px 6px; }
 
 /* rows as a timing tower */
-:root[data-look="grid"] .rows { gap: 6px; }
+:root[data-look="grid"] .rows { gap: 8px; }
 :root[data-look="grid"] .row { --w: 600; }
 :root[data-look="grid"] .ink-later { --w: 600; }
 :root[data-look="grid"] .ink-noise { --w: 400; }
 :root[data-look="grid"] .row-slide { background: linear-gradient(90deg, var(--surface), color-mix(in srgb, var(--surface) 40%, transparent)); box-shadow: inset 4px 0 0 var(--c); clip-path: polygon(0 0, 100% 0, calc(100% - 12px) 100%, 0 100%); }
-:root[data-look="grid"] .row-main { padding: 12px 22px 12px 16px; grid-template-columns: 54px minmax(0, 1fr); }
+:root[data-look="grid"] .row-main { padding: 12px 24px 12px 16px; grid-template-columns: 54px minmax(0, 1fr); }
 :root[data-look="grid"] .row-main:focus-visible { outline-offset: -3px; }
 :root[data-look="grid"] .row-acts.hover-only { background: linear-gradient(90deg, transparent, var(--surface) 24%); padding-right: 16px; }
 :root[data-look="grid"] .when { font: 600 12px/1.2 var(--font); letter-spacing: 0.05em; }
@@ -141,7 +141,7 @@
 :root[data-look="grid"] .swatch { border-radius: 0; transform: skewX(-12deg); }
 
 /* timing tower: position box | team stripe + code + subject | gap */
-:root[data-look="grid"] .row-main { grid-template-columns: 30px minmax(0, 1fr) auto; column-gap: 12px; padding-left: 14px; }
+:root[data-look="grid"] .row-main { grid-template-columns: 30px minmax(0, 1fr) auto; column-gap: 12px; padding-left: 16px; }
 :root[data-look="grid"] .when { display: none; }
 :root[data-look="grid"] .pos {
   display: grid; place-items: center; align-self: start; width: 30px; height: 30px; margin-top: 1px;
@@ -153,7 +153,7 @@
 :root[data-look="grid"] .code { display: inline; margin-right: 8px; font: italic 900 13px/1 var(--font); letter-spacing: 0.08em; color: rgb(var(--ink)); }
 :root[data-look="grid"] .line1 { display: flex; align-items: baseline; gap: 0; }
 :root[data-look="grid"] .gap {
-  display: block; align-self: start; padding-top: 3px; text-align: right; white-space: nowrap;
+  display: block; align-self: start; padding-top: 4px; text-align: right; white-space: nowrap;
   font: italic 700 12px/1 var(--font); letter-spacing: 0.06em; font-variant-numeric: tabular-nums;
   color: rgb(var(--ink) / var(--a2));
 }
@@ -166,7 +166,7 @@
 
 /* lights out: while checking for mail, five reds come on one by one, then all go out */
 :root[data-look="grid"] .sync:disabled > span:first-child { display: none; }
-:root[data-look="grid"] .sync:disabled .lights { display: inline-flex; gap: 3px; }
+:root[data-look="grid"] .sync:disabled .lights { display: inline-flex; gap: 4px; }
 :root[data-look="grid"] .lights i { width: 7px; height: 7px; border-radius: 50%; background: #3b1010; animation-duration: 2.4s; animation-timing-function: steps(1, end); animation-iteration-count: infinite; }
 :root[data-look="grid"] .lights i:nth-child(1) { animation-name: light1; }
 :root[data-look="grid"] .lights i:nth-child(2) { animation-name: light2; }
@@ -180,12 +180,12 @@
 @keyframes light5 { 68%, 82% { background: #ff1e1e; box-shadow: 0 0 6px #ff1e1e; } 0%, 67%, 83% { background: #3b1010; box-shadow: none; } }
 
 /* race control messages */
-:root[data-look="grid"] .toast { background: #121217; color: #f2f2f2; border-left: 4px solid var(--flag-yellow); text-transform: none; letter-spacing: 0.01em; font: 600 14px/1.3 var(--font); gap: 10px; }
+:root[data-look="grid"] .toast { background: #121217; color: #f2f2f2; border-left: 4px solid var(--flag-yellow); text-transform: none; letter-spacing: 0.01em; font: 600 14px/1.3 var(--font); gap: 8px; }
 :root[data-look="grid"] .toast .rc { display: block; flex: none; font: italic 900 10px/1 var(--font); letter-spacing: 0.16em; text-transform: uppercase; color: var(--flag-yellow); }
 :root[data-look="grid"] .toast button { color: #f2f2f2; font-weight: 700; }
 
 /* chequered flag at the end of the list */
-:root[data-look="grid"] .finish { display: inline-flex; align-items: center; gap: 10px; font: italic 700 12px/1 var(--font); letter-spacing: 0.14em; text-transform: uppercase; }
+:root[data-look="grid"] .finish { display: inline-flex; align-items: center; gap: 8px; font: italic 700 12px/1 var(--font); letter-spacing: 0.14em; text-transform: uppercase; }
 :root[data-look="grid"] .finish::before, :root[data-look="grid"] .finish::after { content: ""; width: 30px; height: 12px; background: conic-gradient(#e6e6e6 25%, transparent 0 50%, #e6e6e6 0 75%, transparent 0) 0 0 / 6px 6px; }
 
 /* the open mail carries its flag colour */
@@ -204,10 +204,12 @@
 :root[data-look="grid"] .pillbtn.on::before { background: var(--accent); }
 :root[data-look="grid"] .pillbtn:active::before { transform: skewX(-12deg) scale(0.96); }
 @media (max-width: 479px) {
-:root[data-look="grid"] .mv-acts .pillbtn { padding: 0 10px; }
+:root[data-look="grid"] .mv-acts .pillbtn { padding: 0 8px; }
 }
 
 /* #67: the slanted avatar's top corner overhangs by 17px * tan(12deg); pull it in so its right edge
    lines up with the search bar and rows below */
-:root[data-look="grid"] .avatar.me { margin-right: calc(17px * tan(12deg)); }
+:root[data-look="grid"] .avatar.me { margin-right: calc(16px * tan(12deg)); }
 :root[data-look="grid"] .mast button.on { box-shadow: none; }
+:root[data-look="grid"] .meta { margin-top: 4px; } /* #68 */
+:root[data-look="grid"] .row-main { padding-top: 8px; padding-bottom: 8px; }

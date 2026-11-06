@@ -38,12 +38,12 @@
 :root[data-look="glyph"] body { background: var(--bg) radial-gradient(color-mix(in srgb, var(--gold) 14%, transparent) 1.4px, transparent 1.5px) 0 0 / 22px 22px; }
 :root[data-look="glyph"] :is(.dayhead, .pagehead h1, .mv-subj, .datebox b) { font-family: var(--font-dot), monospace; font-weight: 900; font-variation-settings: "ROND" 100; letter-spacing: 0.01em; }
 :root[data-look="glyph"] .appbar { background: transparent; backdrop-filter: none; }
-:root[data-look="glyph"] .dayhead { background: transparent; position: static; font-size: 17px; padding-top: 18px; }
-:root[data-look="glyph"] .rows { display: flex; flex-direction: column; gap: 10px; }
+:root[data-look="glyph"] .dayhead { background: transparent; position: static; font-size: 17px; padding-top: 16px; }
+:root[data-look="glyph"] .rows { display: flex; flex-direction: column; gap: 8px; }
 :root[data-look="glyph"] .row { overflow: visible; }
 :root[data-look="glyph"] .row-slide { background: var(--surface); border: 2.5px solid var(--ink); border-radius: 16px; box-shadow: 4px 4px 0 var(--ink); transition: transform 0.15s cubic-bezier(0.3, 1.4, 0.6, 1), box-shadow 0.15s; }
 :root[data-look="glyph"] .row-slide:hover { transform: translate(-2px, -2px); box-shadow: 6px 6px 0 var(--ink); }
-:root[data-look="glyph"] .row-main, :root[data-look="glyph"] .row-acts { border-bottom: 0; padding: 12px 14px; }
+:root[data-look="glyph"] .row-main, :root[data-look="glyph"] .row-acts { border-bottom: 0; padding: 12px 16px; }
 :root[data-look="glyph"] .row-acts.hover-only { background: linear-gradient(90deg, transparent, var(--surface) 22%); border-radius: 0 14px 14px 0; }
 :root[data-look="glyph"] .swipe-bg { border-radius: 16px; }
 :root[data-look="glyph"] .unread-dot { left: 42px; top: 14px; background: #ff5a63; border-color: var(--ink); }
@@ -61,7 +61,7 @@
 :root[data-look="glyph"] .cta { border: 3px solid var(--ink); box-shadow: 4px 4px 0 var(--ink); background: var(--gold); color: #1b1238; }
 :root[data-look="glyph"][data-tone="black"] { --bg: #000; --surface: #0e0d12; --surface2: #1a1820; }
 :root[data-look="glyph"][data-tone="black"] body { background: #000 radial-gradient(color-mix(in srgb, var(--gold) 9%, transparent) 1.4px, transparent 1.5px) 0 0 / 22px 22px; }
-:root[data-density="compact"][data-look="glyph"] .rows { gap: 6px; }
+:root[data-density="compact"][data-look="glyph"] .rows { gap: 8px; }
 :root[data-look="glyph"] .banner { border: 2.5px solid var(--ink); box-shadow: 3px 3px 0 var(--ink); }
 :root[data-look="glyph"][data-tone="black"] :is(.sheet, .menu) { box-shadow: 5px 5px 0 var(--ink); border-color: #3a3550; }
 /* Glyph: the day's counts in the body face, not tiny dim dots */
@@ -80,9 +80,11 @@
 @media (min-width: 720px) {
   :root[data-look="glyph"] .tabbar { display: none; }
   :root[data-look="glyph"] .mast { display: flex; gap: 8px; padding: 4px 24px 2px; }
-  :root[data-look="glyph"] .mast button { display: inline-flex; align-items: center; gap: 8px; height: 44px; padding: 0 18px; border-radius: 99px; border: 2.5px solid transparent; font: 600 15px/1 var(--font); color: var(--muted); }
+  :root[data-look="glyph"] .mast button { display: inline-flex; align-items: center; gap: 8px; height: 44px; padding: 0 16px; border-radius: 99px; border: 2.5px solid transparent; font: 600 15px/1 var(--font); color: var(--muted); }
   :root[data-look="glyph"] .mast button:hover { color: var(--text); }
   :root[data-look="glyph"] .mast button.on { background: var(--accent); color: var(--on-accent); border-color: var(--ink); box-shadow: 3px 3px 0 var(--ink); }
-  :root[data-look="glyph"] .mast sup { top: 0; min-width: 22px; height: 22px; padding: 0 6px; border-radius: 99px; display: inline-grid; place-items: center; background: var(--surface2); color: var(--text); font-size: 12.5px; font-weight: 700; }
+  :root[data-look="glyph"] .mast sup { top: 0; min-width: 22px; height: 22px; padding: 0 8px; border-radius: 99px; display: inline-grid; place-items: center; background: var(--surface2); color: var(--text); font-size: 12.5px; font-weight: 700; }
   :root[data-look="glyph"] .mast button.on sup { background: var(--on-accent); color: var(--accent); }
 }
+:root[data-look="glyph"] .meta { margin-top: 4px; } /* #68 */
+:root[data-look="glyph"] .row-main { padding-top: 8px; padding-bottom: 8px; }
