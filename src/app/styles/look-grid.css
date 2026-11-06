@@ -243,3 +243,5 @@
 :root[data-look="grid"] .mailview .mv-page { padding-top: 24px; }
 /* A14: the sync status is quiet: sentence case, no tracking, grey */
 :root[data-look="grid"] .sync { text-transform: none; letter-spacing: 0 !important; font-weight: 500; }
+/* A15: labelled icon buttons (Deadlines: Calendar, Done) use Grid's label style */
+:root[data-look="grid"] .iconbtn.labelled { font: 700 12.5px/1 var(--font); text-transform: uppercase; letter-spacing: 0.04em; }
