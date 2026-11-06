@@ -56,7 +56,7 @@ Most mail is sorted by simple rules. When the rules aren't sure, Google Gemini's
 - **Tap a mail** to read the whole thing inside DELT. You can move it to another pile, add its deadline to Google Calendar, or mark it done.
 - **Deadlines** lists the due dates found in your mail: overdue, today, tomorrow, this week, later.
 - On a phone, swipe right to mark read, swipe left to mark done. You can undo either.
-- **Wrong pile?** Each open mail has a link that starts a GitHub issue with the subject and pile filled in.
+- **Wrong pile?** Each open mail has a link that starts a GitHub issue with only the sender's domain and the pile filled in, never the subject.
 - **Offline**, DELT shows the last inbox it loaded and pauses changes until you're back online.
 
 New mail is checked when you open the app and every 5 minutes while it's open. In the background, a free GitHub Actions job checks students who used DELT this week about every 15 minutes, and everyone else at least once a day.

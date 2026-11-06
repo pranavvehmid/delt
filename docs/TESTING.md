@@ -13,7 +13,7 @@ Sign in with your `@vitstudent.ac.in` account. DELT reads and labels mail; it ca
 
 Open it when you'd normally check mail. While you do:
 
-- **A mail in the wrong pile?** Open it and tap **Wrong pile? Report it**. You'll get a GitHub issue with the subject and pile filled in. Fix the pile you think it belongs in, add your batch year, and post. Remove anything private first; issues are public.
+- **A mail in the wrong pile?** Open it and tap **Wrong pile? Report it**. You'll get a GitHub issue with only the sender's domain and the pile filled in (never the subject or names). Say which pile it belongs in, describe the mail in general words, add your batch year, and post. Issues are public.
 - **A deadline missing or wrong?** Same button. Say what the date should have been.
 - **Something broken or confusing?** Account menu → Settings → **Report a problem**.
 
