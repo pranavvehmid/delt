@@ -12,6 +12,7 @@ export const LIMITS = {
   patch: 120,
   bulk: 20,
   mail: 60,
+  attachment: 120,
   rules: 30,
   push: 20,
   ai: 10,

@@ -43,7 +43,7 @@
 }
 :root:is([data-look="minimal"], [data-look="grid"]) body { font-weight: 400; letter-spacing: 0; }
 :root:is([data-look="minimal"], [data-look="grid"]) :is(.tabbar, .row .avatar, .pdot, .row .meta .tag, .unread-dot, .line1 .time, .fchip .n, .fchip .tagdot, .dayhead .muted, .toggle .muted, .pagehead h1, .pchip .tagdot) { display: none !important; }
-:root:is([data-look="minimal"], [data-look="grid"]) :is(.iconbtn, .avatar.me, .searchbar, .fchip, .pchip, .pillbtn, .toast, .menu, .sheet, .seg, .seg button, .look-card, .look-prev, .swatch, .mv-frame, .att, .cta, .menu-item, .datebox, .toggle .knob, .toggle .knob::after, .sk) { border-radius: 0 !important; }
+:root:is([data-look="minimal"], [data-look="grid"]) :is(.iconbtn, .avatar.me, .searchbar, .fchip, .pchip, .pillbtn, .toast, .menu, .sheet, .seg, .seg button, .look-card, .look-prev, .swatch, .mv-frame, .att, .att-thumb, .att-kind, .cta, .menu-item, .datebox, .toggle .knob, .toggle .knob::after, .sk) { border-radius: 0 !important; }
 
 /* top bar: the brand mark stays heavy (the one bold thing on screen) */
 :root:is([data-look="minimal"], [data-look="grid"]) .appbar { background: var(--bg); backdrop-filter: none; padding-bottom: 4px; }

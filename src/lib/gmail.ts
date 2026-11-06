@@ -3,6 +3,8 @@ import type { Priority } from "./supabase";
 import { parseUnsubscribe } from "./insights";
 import { openToken } from "./secret";
 import { createHash } from "node:crypto";
+import { MAX_ATTACHMENT, SHOWN_TYPES, type Attachment } from "./attachments";
+export type { Attachment };
 
 // #19: an access token lasts about an hour, so keep it (per server instance) instead of asking Google
 // before every action. Keyed by a hash of the refresh token; dropped 5 minutes before it expires,
@@ -102,6 +104,7 @@ export async function listMessageIds(token: string, query: string, max = 100): P
 }
 
 export type Part = {
+  partId?: string;
   mimeType?: string;
   filename?: string;
   body?: { data?: string; size?: number; attachmentId?: string };
@@ -265,20 +268,72 @@ export type FullMessage = {
   date: string;
   html: string | null;
   text: string | null;
-  attachments: { name: string; size: number }[];
+  attachments: Attachment[];
   unsubscribe: string | null;
 };
+
+const headerOf = (p: Part, name: string) => p.headers?.find((h) => h.name.toLowerCase() === name)?.value ?? "";
+
+/** Every file in a mail: parts with a file name, or inline pictures with a Content-ID. */
+export function listAttachments(payload: Part): Attachment[] {
+  const out: Attachment[] = [];
+  const walk = (p: Part) => {
+    const cid = headerOf(p, "content-id").replace(/^<|>$/g, "").trim() || null;
+    const isFile = p.body?.attachmentId || (p.filename && p.body?.data);
+    if (isFile && p.partId && (p.filename || (cid && p.mimeType?.startsWith("image/")))) {
+      out.push({ part: p.partId, name: p.filename || `image.${(p.mimeType ?? "image/png").split("/")[1]}`, size: p.body?.size ?? 0, type: (p.mimeType ?? "application/octet-stream").toLowerCase(), cid });
+    }
+    p.parts?.forEach(walk);
+  };
+  walk(payload);
+  return out;
+}
+
+export function findPartById(p: Part, id: string): Part | null {
+  if (p.partId === id) return p;
+  for (const c of p.parts ?? []) {
+    const f = findPartById(c, id);
+    if (f) return f;
+  }
+  return null;
+}
+
+export class TooBig extends Error {}
+
+/** How the file is sent: pictures and PDFs open in place; anything else is a plain download. */
+export function attachmentHeaders(name: string, type: string, size: number): Record<string, string> {
+  const shown = SHOWN_TYPES.includes(type);
+  const safeName = name.replace(/[\r\n"\\]/g, "_");
+  return {
+    "Content-Type": shown ? type : "application/octet-stream",
+    "Content-Length": String(size),
+    "Content-Disposition": `${shown ? "inline" : "attachment"}; filename="${safeName.replace(/[^\x20-\x7e]/g, "_")}"; filename*=UTF-8''${encodeURIComponent(name)}`,
+    "X-Content-Type-Options": "nosniff",
+    // a file is never a page that can run anything; PDFs need no policy of their own to show
+    ...(type === "application/pdf" ? {} : { "Content-Security-Policy": "default-src 'none'; img-src 'self'; style-src 'unsafe-inline'; sandbox" }),
+    "Cache-Control": "private, max-age=3600",
+    "Referrer-Policy": "no-referrer",
+  };
+}
+
+/** #72: one attachment's bytes, read live from Gmail (never stored). */
+export async function getAttachment(token: string, id: string, partId: string) {
+  const msg = await gmail<{ payload: Part }>(token, `/messages/${id}?format=full`);
+  const p = findPartById(msg.payload, partId);
+  // only files (a name or a Content-ID), never the mail's own text parts
+  if (!p || !(p.body?.attachmentId || p.body?.data) || !(p.filename || headerOf(p, "content-id"))) return null;
+  if ((p.body.size ?? 0) > MAX_ATTACHMENT) throw new TooBig("Too big to open here");
+  const data = p.body.data ?? (await gmail<{ data: string }>(token, `/messages/${id}/attachments/${p.body.attachmentId}`)).data;
+  const bytes = Buffer.from(data.replace(/-/g, "+").replace(/_/g, "/"), "base64");
+  const cid = headerOf(p, "content-id").replace(/^<|>$/g, "").trim();
+  return { name: p.filename || cid || "attachment", type: (p.mimeType ?? "application/octet-stream").toLowerCase(), bytes };
+}
 
 /** The whole mail for the in-app reader. Read live, never stored. */
 export async function getFullMessage(token: string, id: string): Promise<FullMessage> {
   const msg = await gmail<{ payload: Part; internalDate: string }>(token, `/messages/${id}?format=full`);
   const header = (name: string) => msg.payload.headers?.find((h) => h.name.toLowerCase() === name)?.value ?? "";
-  const attachments: FullMessage["attachments"] = [];
-  const walk = (p: Part) => {
-    if (p.filename && p.body?.attachmentId) attachments.push({ name: p.filename, size: p.body.size ?? 0 });
-    p.parts?.forEach(walk);
-  };
-  walk(msg.payload);
+  const attachments = listAttachments(msg.payload);
   return {
     subject: header("subject"),
     from: header("from"),

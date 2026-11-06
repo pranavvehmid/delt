@@ -29,7 +29,7 @@ export default function Privacy() {
       <h2>What DELT keeps</h2>
       <ul>
         <li>Your email address and Google name. The register number in your name tells DELT your batch.</li>
-        <li>For each mail: sender, subject, Gmail&apos;s one-line preview, the pile, a short summary, any due date, and whether it&apos;s read or done. Not the full mail: that is fetched from Gmail when you open it and not saved.</li>
+        <li>For each mail: sender, subject, Gmail&apos;s one-line preview, the pile, a short summary, any due date, and whether it&apos;s read or done. Not the full mail or its attachments: those are fetched from Gmail when you open them and not saved.</li>
         <li>A Google sign-in token, so mail can be checked while the app is closed. It&apos;s stored encrypted.</li>
         <li>The senders you moved to another pile (your sorting rules).</li>
         <li>If you turn on notifications: your browser&apos;s push address. If you add your own Gemini key: that key, encrypted.</li>

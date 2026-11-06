@@ -6,11 +6,12 @@ import { useEffect, useRef, useState } from "react";
 import type { EmailRow, Priority } from "@/lib/supabase";
 import type { FullMessage } from "@/lib/gmail";
 import MailFrame from "./mail-frame";
+import MailAttachments from "./mail-attachments";
+import { listedFiles } from "@/lib/attachments";
 import { F, PILES, cleanSender, cleanSubject, dueLevel, dueText, pileLabel, senderDomain, wrongPileLink } from "@/lib/inbox";
 import { calendarLink } from "@/lib/insights";
 import { useDialog } from "./use-dialog";
 
-const kb = (n: number) => (n > 1048576 ? `${(n / 1048576).toFixed(1)} MB` : `${Math.max(1, Math.round(n / 1024))} KB`);
 
 // #41: a sheet (Settings, the welcome) is open on top of this mail
 const covered = () => !!document.querySelector('[aria-modal="true"]:not(.mailview)');
@@ -179,15 +180,7 @@ export default function MailView({
           {msg?.unsubscribe && (
             <a className="mv-unsub muted" href={msg.unsubscribe} target="_blank" rel="noreferrer noopener">Unsubscribe ↗</a>
           )}
-          {msg && msg.attachments.length > 0 && (
-            <div className="mv-att">
-              {msg.attachments.map((a, i) => (
-                <a key={i} className="att" href={gmailLink} target="_blank" rel="noreferrer" title="Open in Gmail to download">
-                  📎 <span className="ell">{a.name}</span> <small className="muted">{kb(a.size)}</small>
-                </a>
-              ))}
-            </div>
-          )}
+          {msg && <MailAttachments mailId={id} files={listedFiles(msg.html, msg.attachments)} gmailLink={gmailLink} />}
 
           <div className="mv-body">
             {error ? (
@@ -207,7 +200,7 @@ export default function MailView({
                 <span className="sk" style={{ width: "40%" }} />
               </div>
             ) : (
-              <MailFrame key={id} msg={msg} />
+              <MailFrame key={id} id={id} msg={msg} />
             )}
           </div>
         </article>

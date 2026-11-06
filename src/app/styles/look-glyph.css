@@ -50,7 +50,7 @@
 :root[data-look="glyph"] .avatar:not(.me) { background: var(--c); color: #1b1238; border: 2px solid var(--ink); }
 :root[data-look="glyph"] .tag { background: var(--c); color: #1b1238; border: 2px solid var(--ink); }
 :root[data-look="glyph"] .tag .tagdot { display: none; }
-:root[data-look="glyph"] :is(.fchip, .pchip, .searchbar, .pillbtn, .datebox, .mv-due, .mv-sum, .mv-err, .att) { border: 2.5px solid var(--ink); box-shadow: 3px 3px 0 var(--ink); }
+:root[data-look="glyph"] :is(.fchip, .pchip, .searchbar, .pillbtn, .datebox, .mv-due, .mv-sum, .mv-err, .att, .att-thumb) { border: 2.5px solid var(--ink); box-shadow: 3px 3px 0 var(--ink); }
 :root[data-look="glyph"] :is(.fchip, .pchip).on { background: var(--c); color: #1b1238; border-color: var(--ink); }
 :root[data-look="glyph"] :is(.fchip, .pchip).on .n { color: #1b1238; }
 :root[data-look="glyph"] :is(.fchip, .pchip, .pillbtn):active { transform: translate(3px, 3px); box-shadow: 0 0 0 var(--ink); }

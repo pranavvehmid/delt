@@ -4,6 +4,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { FullMessage } from "@/lib/gmail";
 import { darkenMail, parseColor, type RGB } from "./mail-dark";
+import { inlineCids } from "@/lib/attachments";
 
 const esc = (s: string) =>
   s.replace(
@@ -50,11 +51,13 @@ const large = () =>
 
 // #32: by default nothing is fetched from the sender's servers (no tracking pixels, no IP or
 // read-time leak). "Load images" allows images only, never scripts or connections.
-function frameDoc(m: FullMessage, darkBg: string | null, remote: boolean) {
+function frameDoc(m: FullMessage, id: string, darkBg: string | null, remote: boolean) {
   const body = m.html
-    ? cleanMailHtml(m.html)
+    ? inlineCids(cleanMailHtml(m.html), id, m.attachments)
     : `<pre>${linkify(esc(m.text ?? "(This mail has no readable text.)"))}</pre>`;
-  const img = remote ? "img-src data: cid: https: http:" : "img-src data: cid:";
+  // #72: pictures inside the mail come from DELT itself (Gmail, via the attachment route), so they always load
+  const self = typeof location === "undefined" ? "" : ` ${location.origin}`;
+  const img = remote ? `img-src data:${self} https: http:` : `img-src data:${self}`;
   return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; ${img}; style-src 'unsafe-inline'; font-src data:; script-src 'none'; object-src 'none'; frame-src 'none'; form-action 'none'; connect-src 'none'; media-src 'none'">
 <base target="_blank">
@@ -69,7 +72,7 @@ ${darkBg ? `html,body{background:${darkBg};color:#e9e9ec} a{color:#a9b8ff} block
 }
 
 /** One mail's content. Give it a `key` per mail so "Load images" resets for the next one. */
-export default function MailFrame({ msg }: { msg: FullMessage }) {
+export default function MailFrame({ id, msg }: { id: string; msg: FullMessage }) {
   const [height, setHeight] = useState(96);
   const frame = useRef<HTMLIFrameElement>(null);
   // dark mail in dark themes, unless the student asked for the original colours
@@ -156,7 +159,7 @@ export default function MailFrame({ msg }: { msg: FullMessage }) {
         // same-origin only so the height can be measured; no allow-scripts, so nothing in the mail can run
         sandbox="allow-same-origin allow-popups allow-popups-to-escape-sandbox"
         referrerPolicy="no-referrer"
-        srcDoc={frameDoc(msg, dimMail ? bg : null, remote)}
+        srcDoc={frameDoc(msg, id, dimMail ? bg : null, remote)}
         onLoad={fit}
         style={{ height }}
       />

@@ -56,6 +56,17 @@ function mail(id: string, hoursAgo: number, p: Partial<FakeMail> = {}): FakeMail
 /** #71: a typical college circular: white table, grey footer, red date, a dark header block, a link. */
 export const CIRCULAR = `<table width="100%" style="background:#ffffff;border:1px solid #dddddd"><tr><td style="background:#1f2a44;color:#ffffff;padding:12px"><b>VIT Library</b></td></tr><tr><td style="padding:12px;color:#333333"><p>Library timings this week are changed.</p><p style="color:#c00000"><b>Closed on 12 Nov.</b></p><p style="background:#fff8e1;color:#7a5c00">Return books before the break.</p><p><a href="https://vit.ac.in" style="color:#1a73e8">Library portal</a></p><p style="color:#999999;font-size:12px">This is an automated mail. Do not reply.</p><p style="color:#cccccc;font-size:11px">Unsubscribe from library notices</p></td></tr></table>`;
 
+/** #72: the hackathon mail carries a poster inside its text, two photos, a PDF, a Word file and a file too big to pass on. */
+export const PNG = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==";
+export const FILES = [
+  { part: "0.1", name: "image.png", size: 2000, type: "image/png", cid: "poster@vit" },
+  { part: "1", name: "Brochure.pdf", size: 90_000, type: "application/pdf", cid: null },
+  { part: "2", name: "team.jpg", size: 300_000, type: "image/jpeg", cid: null },
+  { part: "3", name: "stage.png", size: 200_000, type: "image/png", cid: null },
+  { part: "4", name: "Rules.docx", size: 40_000, type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document", cid: null },
+  { part: "5", name: "Recording.zip", size: 9_000_000, type: "application/zip", cid: null },
+];
+
 export function smallInbox(): FakeMail[] {
   return [
     mail("cat1", 1, { subject: "CAT-1 exam schedule released", from_name: "COE", priority: "very_important", unread: true, summary: "Exams start 18 Nov. Check your slot." }),
@@ -85,6 +96,7 @@ export type Api = {
   emailRequests: string[];
   forgotten: string[];
   bulk: { ids: string[]; read?: boolean }[];
+  attachments: string[];
   sync: { status: number; body: Record<string, unknown> };
 };
 
@@ -100,6 +112,7 @@ export async function mockApi(page: Page, mails: FakeMail[], opts: { reauth?: bo
     emailRequests: [],
     forgotten: [],
     bulk: [],
+    attachments: [],
     sync: opts.reauth ? { status: 409, body: { error: "Google access was removed.", reauth: true } } : { status: 200, body: { fetched: 0 } },
   };
   const json = (body: unknown, status = 200) => ({ status, contentType: "application/json", body: JSON.stringify(body) });
@@ -140,12 +153,22 @@ export async function mockApi(page: Page, mails: FakeMail[], opts: { reauth?: bo
       return route.fulfill(json({ rules: [...seen.values()] }));
     }
 
+    const att = path.match(/^\/api\/emails\/([^/]+)\/attachments\/([\d.]+)$/);
+    if (att) {
+      api.attachments.push(att[2]);
+      const m = api.mails.find((x) => x.id === decodeURIComponent(att[1]));
+      const file = FILES.find((x) => x.part === att[2]);
+      if (!m || m.id !== "hack" || !file) return route.fulfill(json({ error: "Not found" }, 404));
+      if (file.type === "application/pdf") return route.fulfill({ status: 200, contentType: "application/pdf", body: "%PDF-1.4\n%%EOF" });
+      if (file.type.startsWith("image/")) return route.fulfill({ status: 200, contentType: "image/png", body: Buffer.from(PNG, "base64") });
+      return route.fulfill({ status: 200, contentType: "application/octet-stream", headers: { "Content-Disposition": `attachment; filename="${file.name}"` }, body: "file" });
+    }
     if (path.startsWith("/api/emails/")) {
       const id = decodeURIComponent(path.slice("/api/emails/".length));
       const m = api.mails.find((x) => x.id === id);
       if (!m) return route.fulfill(json({ error: "Not found" }, 404));
       return route.fulfill(
-        json({ subject: m.subject, from: m.from_name, to: ME, cc: "", date: m.received_at, html: /library/i.test(m.subject) ? CIRCULAR : /webinar/i.test(m.subject) ? `<p>Join us online.</p><img src="https://tracker.example/pixel.gif" alt=""><meta http-equiv="refresh" content="0;url=https://phish.example/">` : /newsletter/i.test(m.subject) ? Array.from({ length: 40 }, (_, i) => `<p>Paragraph ${i + 1} of a long newsletter.</p>`).join("") : `<p>Full text of <b>${m.subject}</b>.</p>`, text: null, attachments: [], unsubscribe: null }),
+        json({ subject: m.subject, from: m.from_name, to: ME, cc: "", date: m.received_at, html: m.id === "hack" ? `<p>Poster below.</p><img src="cid:poster@vit" alt="Hackathon poster" width="200" height="120">` : /library/i.test(m.subject) ? CIRCULAR : /webinar/i.test(m.subject) ? `<p>Join us online.</p><img src="https://tracker.example/pixel.gif" alt=""><meta http-equiv="refresh" content="0;url=https://phish.example/">` : /newsletter/i.test(m.subject) ? Array.from({ length: 40 }, (_, i) => `<p>Paragraph ${i + 1} of a long newsletter.</p>`).join("") : `<p>Full text of <b>${m.subject}</b>.</p>`, text: null, attachments: m.id === "hack" ? FILES : [], unsubscribe: null }),
       );
     }
 

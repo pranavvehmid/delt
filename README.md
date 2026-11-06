@@ -94,7 +94,7 @@ Tap ◐ in the top bar.
 
 - DELT reads your mail, adds labels and marks mail read or unread. Google's `gmail.modify` permission would also allow moving mail to Trash (never permanent deletion); DELT doesn't use that.
 - AI sorting is off until you say yes in the app. Full details: [the privacy page](https://delt-mu.vercel.app/privacy).
-- It stores a short preview and a one-line summary of each mail, not the full text. The full mail is fetched from Gmail when you open it.
+- It stores a short preview and a one-line summary of each mail, not the full text. The full mail and its photos and files are fetched from Gmail when you open them, and never saved.
 - Every student sees only their own mail. Each database query is tied to the signed-in account, and the tests check this.
 - Google may use what is sent to Gemini's free tier to improve its models. Each student chooses "Allow AI" or "Rules only"; nothing is sent before they choose. Leave `GEMINI_API_KEY` empty to turn AI off for everyone.
 - If you add your own Gemini key, it's encrypted before it's stored.
