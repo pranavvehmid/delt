@@ -5,7 +5,7 @@
 // See docs/DESIGN.md for why it works this way. The parts live in their own files:
 // use-mail (loading), use-sync (checking Gmail), use-mail-actions (changes + undo),
 // use-screen (route, screen size, gestures), inbox-list / deadlines-list (the two tabs).
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { EmailRow } from "@/lib/supabase";
 import { BUCKETS, ago, deadlineBuckets, filterMail, groupByDay, mergeMore, needsYou, openDeadlines, pileCounts } from "@/lib/inbox";
 import MailView from "./mail-view";
@@ -88,7 +88,15 @@ export default function InboxApp({ email, name, signOutAction, signInAction }: P
     return ids.size ? shown.filter((m) => !ids.has(m.id)) : shown;
   }, [shown, pinned]);
   const days = useMemo(() => groupByDay(rest, now), [rest, now]);
-  // Grid look: each row's place in the list, and the newest mail to measure gaps from
+  // #75, #77: the list's entrance plays once, when the first mail arrives; after that new rows,
+  // filters and tab switches draw straight away (re-running it on every change cost frames)
+  const hasMail = shown.length > 0;
+  useEffect(() => {
+    if (!hasMail) return;
+    const t = setTimeout(() => document.documentElement.classList.add("settled"), 1600);
+    return () => clearTimeout(t);
+  }, [hasMail]);
+  // Grid look: each row's place in the list (P1 is the leader)
   const posOf = useMemo(() => new Map([...pinned, ...rest].map((m, i) => [m.id, i + 1])), [pinned, rest]);
   const buckets = useMemo(() => deadlineBuckets(mergeMore(all, due), now), [all, due, now]);
   const dueCount = openDeadlines(buckets);
@@ -146,7 +154,7 @@ export default function InboxApp({ email, name, signOutAction, signInAction }: P
           pinned={pinned}
           days={days}
           counts={counts}
-          posOf={posOf}
+          posOf={posOf}
           searching={searching}
           more={data.more}
           loadingOlder={data.loadingOlder}

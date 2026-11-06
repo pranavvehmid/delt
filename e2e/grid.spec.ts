@@ -51,3 +51,36 @@ test("panels use F1's rounded top-right corner and nothing else is rounded (#73)
   });
   expect(r).toEqual(["0px", "10px", "0px", "0px"]);
 });
+
+test.describe("motion (#75)", () => {
+  test.use({ contextOptions: { reducedMotion: "no-preference" } });
+  test("rows enter like F1's grid graphics: sweep, wipe, rise, 35ms apart, once", async ({ page }) => {
+    // beforeEach already loaded the page; load again with motion on and catch the entrance
+    await page.reload();
+    await expect(page.locator("li.row .pos").first()).toBeVisible();
+    const anims = await page.evaluate(() =>
+      document.getAnimations().map((a) => {
+        const t = a.effect!.getComputedTiming(), el = (a.effect as KeyframeEffect).target as Element;
+        return { name: (a as CSSAnimation).animationName, delay: Math.round(t.delay ?? 0), duration: Math.round(Number(t.duration)), pos: Number(el.closest("li.row")?.getAttribute("data-pos") ?? 0) };
+      }),
+    );
+    const names = new Set(anims.map((a) => a.name));
+    for (const n of ["f1-sweep", "f1-wipe", "f1-rise"]) expect(names, [...names].join()).toContain(n);
+    for (const a of anims.filter((a) => a.name.startsWith("f1-"))) expect(a.duration).toBeLessThanOrEqual(420);
+    // the sweep for P2 starts 35ms after P1's
+    const sweep = (p: number) => anims.find((a) => a.name === "f1-sweep" && a.pos === p)!.delay;
+    expect(sweep(2) - sweep(1)).toBe(35);
+    // once settled, changing the filter draws rows straight away
+    await expect(page.locator("html")).toHaveClass(/settled/, { timeout: 5000 });
+    await page.getByRole("navigation", { name: "Filter by pile" }).getByRole("button", { name: /^Later/ }).click();
+    await expect(page.locator("li.row").first()).toBeVisible();
+    const after = await page.evaluate(() => document.getAnimations().map((a) => (a as CSSAnimation).animationName).filter((n) => n?.startsWith("f1-")));
+    expect(after.filter((n) => n !== "f1-bar")).toEqual([]);
+  });
+});
+
+test("with reduce motion, Grid doesn't animate", async ({ page }) => {
+  await page.reload();
+  const long = await page.evaluate(() => document.getAnimations().filter((a) => Number(a.effect!.getComputedTiming().duration) > 1).length);
+  expect(long).toBe(0);
+});

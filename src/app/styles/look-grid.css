@@ -189,3 +189,37 @@
 /* the five pile filters fit a 360px phone */
 :root[data-look="grid"] .chips { gap: 16px; }
 :root[data-look="grid"] .fchip { font-size: 12.5px; letter-spacing: 0.04em; }
+
+/* =========================================================
+   Motion (#75): how F1's grid graphics move. A band of the pile colour leads the edge as the panel
+   wipes open, then the text rises out of a mask. Rows follow 35ms apart, so the tower fills top to bottom
+   like the grid being read out. Sharp expo-out, no fades or bounce. Only clip-path and transform
+   are animated, so the GPU does the work. Plays once on first load (html.settled stops it);
+   "reduce motion" turns it all off (base.css).
+   ========================================================= */
+:root[data-look="grid"] { --f1: cubic-bezier(0.16, 1, 0.3, 1); }
+:root[data-look="grid"]:not(.settled) .rows > li .row-slide { animation: f1-wipe 0.32s var(--f1) both; animation-delay: calc(var(--i, 0) * 35ms + 90ms); }
+:root[data-look="grid"]:not(.settled) .rows > li .row-slide::before {
+  /* the leading edge: a band of the pile colour that rides the wipe, then goes */
+  content: ""; position: absolute; inset: 0; z-index: 2; pointer-events: none;
+  background: linear-gradient(90deg, transparent calc(100% - 16px), var(--c) calc(100% - 16px));
+  animation: f1-sweep 0.32s var(--f1) both; animation-delay: calc(var(--i, 0) * 35ms + 90ms);
+}
+:root[data-look="grid"]:not(.settled) .rows > li :is(.pos, .line1, .subj, .sum, .meta, .gap) { animation: f1-rise 0.36s var(--f1) both; animation-delay: calc(var(--i, 0) * 35ms + 160ms); }
+:root[data-look="grid"]:not(.settled) .dayhead { animation: f1-wipe 0.3s var(--f1) both; }
+@keyframes f1-wipe { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
+@keyframes f1-sweep { from { transform: translateX(-100%); } 80% { opacity: 1; } to { transform: translateX(0); opacity: 0; } }
+@keyframes f1-rise { from { transform: translateY(60%); clip-path: inset(0 0 60% 0); } to { transform: none; clip-path: inset(0 0 0 0); } }
+
+/* sections: the red bar draws across under the one you switch to */
+:root[data-look="grid"] .mast button.on::after { transform-origin: left; animation: f1-bar 0.36s var(--f1) both; }
+@keyframes f1-bar { from { transform: scaleX(0); } }
+
+/* opening a mail: the panel wipes in from the right, and its pile-colour rule draws across */
+:root[data-look="grid"]::view-transition-new(mail) { animation: f1-panel-in 0.36s var(--f1) both; }
+:root[data-look="grid"]::view-transition-old(mail) { animation: f1-panel-out 0.22s cubic-bezier(0.7, 0, 0.84, 0) both; }
+:root[data-look="grid"]::view-transition-old(root), :root[data-look="grid"]::view-transition-new(root) { animation: none; }
+@keyframes f1-panel-in { from { clip-path: inset(0 0 0 100%); } to { clip-path: inset(0 0 0 0); } }
+@keyframes f1-panel-out { to { clip-path: inset(0 0 0 100%); } }
+:root[data-look="grid"] .mailview .mv-bar { position: relative; box-shadow: none; }
+:root[data-look="grid"] .mailview .mv-bar::after { content: ""; position: absolute; left: 0; right: 0; bottom: -2px; height: 2px; background: var(--c, var(--accent)); transform-origin: left; animation: f1-bar 0.42s var(--f1) 0.12s both; }
