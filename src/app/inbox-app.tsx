@@ -2,128 +2,55 @@
 
 // DELT v2: one inbox with every mail (colour tag = pile), and a Deadlines tab.
 // Tap a mail to read it full screen. Swipe right = read/unread, left = done.
-// See docs/DESIGN.md for why it works this way.
-import { memo, startTransition, useCallback, useEffect, useMemo, useRef, useState, type PointerEvent as RPointerEvent } from "react";
-import type { EmailRow, Priority } from "@/lib/supabase";
-import {
-  PAGE_SIZE, PILES, BUCKETS, ago, cleanSender, cleanSubject, deadlineBuckets, dueLevel, dueText, filterMail, groupByDay, initials, mergeFresh, mergeMore, oldestReceived,
-  openDeadlines, pileCounts, pileLabel, shortTime, timeOfDay, gapText, senderCode, F, needsYou, dueInBucket,
-} from "@/lib/inbox";
-import { calendarLink } from "@/lib/insights";
-import { cacheKey, clearOffline, isInstalledApp, packCache, unpackCache } from "@/lib/offline";
+// See docs/DESIGN.md for why it works this way. The parts live in their own files:
+// use-mail (loading), use-sync (checking Gmail), use-mail-actions (changes + undo),
+// use-screen (route, screen size, gestures), inbox-list / deadlines-list (the two tabs).
+import { useCallback, useMemo, useRef, useState } from "react";
+import type { EmailRow } from "@/lib/supabase";
+import { BUCKETS, ago, deadlineBuckets, filterMail, groupByDay, mergeMore, needsYou, openDeadlines, pileCounts } from "@/lib/inbox";
 import MailView from "./mail-view";
 import Appearance from "./appearance";
-import { useCanHover, useLook, type Look } from "./use-look";
+import { useCanHover, useLook } from "./use-look";
 import Settings from "./settings";
 import Welcome from "./welcome";
 import { transition } from "./motion";
-import { APK_URL, checkAppUpdate, snoozeAppUpdate } from "@/lib/app-update";
-
-type Route = { tab: "inbox" | "deadlines"; mailId: string | null };
-const SYNC_EVERY = 5 * 60_000;
-
-function readRoute(): Route {
-  const h = typeof location === "undefined" ? "" : location.hash;
-  const m = h.match(/^#\/mail\/(.+)$/);
-  if (m) return { tab: (sessionStorage.getItem("delt-tab") as Route["tab"]) || "inbox", mailId: decodeURIComponent(m[1]) };
-  return { tab: h.startsWith("#/deadlines") ? "deadlines" : "inbox", mailId: null };
-}
+import AccountMenu from "./account-menu";
+import Banners from "./banners";
+import DeadlinesList from "./deadlines-list";
+import InboxList, { type Filters } from "./inbox-list";
+import type { RowActions } from "./mail-row";
+import { TabBar, TopTabs } from "./tabs";
+import { Toast, useToast } from "./toast";
+import { useMail, useSearch } from "./use-mail";
+import { useMailActions, type Patch } from "./use-mail-actions";
+import { PULL_AT, goTab, usePullToRefresh, useRoute, useSwipeHint, useWide } from "./use-screen";
+import { useNow, useSync } from "./use-sync";
 
 type Props = { email: string; name: string; signOutAction: () => Promise<void>; signInAction?: () => Promise<void> };
 
 export default function InboxApp({ email, name, signOutAction, signInAction }: Props) {
-  // mails: newest pages, loaded as you scroll. hits: server search results. due: mail with a
-  // deadline, however old, so the Deadlines tab doesn't depend on how far you scrolled.
-  const [mails, setMails] = useState<EmailRow[] | null>(null);
-  const [more, setMore] = useState(false);
-  const [loadingOlder, setLoadingOlder] = useState(false);
-  const [hits, setHits] = useState<EmailRow[] | null>(null);
-  const [searching, setSearching] = useState(false);
-  const [due, setDue] = useState<EmailRow[]>([]);
-  const [reauth, setReauth] = useState(false);
-  const [backlog, setBacklog] = useState(0); // #56: a big first sync is still bringing in older mail
-  // #51: pull down at the top of the list to check for mail (touch screens)
-  const [pull, setPull] = useState(0);
-  const PULL_AT = 72;
-  // #50: tell touch users once that rows can be swiped
-  const [swipeHint, setSwipeHint] = useState(false);
-  useEffect(() => {
-    try {
-      setSwipeHint(window.matchMedia("(pointer: coarse)").matches && !localStorage.getItem("delt-swipe-hint"));
-    } catch {}
-  }, []);
-  const dismissSwipeHint = () => {
-    setSwipeHint(false);
-    try {
-      localStorage.setItem("delt-swipe-hint", "1");
-    } catch {}
-  };
-  // #48: wide screens read mail in a pane beside the list
-  const [wide, setWide] = useState(false);
-  const wideRef = useRef(false);
-  wideRef.current = wide;
-  useEffect(() => {
-    const mq = window.matchMedia("(min-width: 1000px)");
-    const on = () => setWide(mq.matches);
-    on();
-    mq.addEventListener("change", on);
-    return () => mq.removeEventListener("change", on);
-  }, []);
-  const [syncProblem, setSyncProblem] = useState<string | null>(null); // #40
-  // #31: null = not asked yet, so the app asks once; undefined = unknown (older database)
-  const [aiConsent, setAiConsent] = useState<boolean | null | undefined>(undefined);
-  // Android app: a newer build is on GitHub (see lib/app-update.ts)
-  const [appUpdate, setAppUpdate] = useState<{ installed: number; latest: number } | null>(null);
-  useEffect(() => {
-    checkAppUpdate().then(setAppUpdate);
-  }, []);
-  // Offline (issue #14): the last inbox saved on this phone, and when it was saved.
-  const [offline, setOffline] = useState(false);
-  const [savedAt, setSavedAt] = useState<number | null>(null);
+  const [toast, setToast] = useToast();
+  const data = useMail(email);
+  const { mails, due, offline, load, setReauth, setOffline } = data;
+  const [filters, setFiltersState] = useState<Filters>({ pile: "all", unreadOnly: false, query: "" });
+  const setFilters = useCallback((f: Partial<Filters>) => setFiltersState((s) => ({ ...s, ...f })), []);
+  const { pile, unreadOnly, query } = filters;
+  const { hits, setHits, searching } = useSearch(query);
+  const { sync, syncing, syncedAt, backlog } = useSync({ load, setReauth, setOffline, say: setToast });
+  const now = useNow();
+  const route = useRoute();
+  const wide = useWide();
+  const [swipeHint, dismissSwipeHint] = useSwipeHint();
+  const look = useLook();
+  const canHover = useCanHover();
   const [settingsSection, setSettingsSection] = useState<"data" | "rules" | undefined>();
-  const [route, setRoute] = useState<Route>({ tab: "inbox", mailId: null });
-  const [pile, setPile] = useState<Priority | "all">("all");
-  const [unreadOnly, setUnreadOnly] = useState(false);
-  const [query, setQuery] = useState("");
-  const [syncing, setSyncing] = useState(false);
-  const [syncedAt, setSyncedAt] = useState<number | null>(null);
-  const [now, setNow] = useState(() => Date.now());
-  // #59: a fade on the chips' right edge while some are scrolled out of sight
-  const chipsRef = useRef<HTMLElement>(null);
-  const chipsMore = useCallback(() => {
-    const el = chipsRef.current;
-    if (el) el.dataset.more = String(el.scrollLeft + el.clientWidth < el.scrollWidth - 4);
-  }, []);
-  const chipsMount = useCallback((el: HTMLElement | null) => {
-    chipsRef.current = el;
-    chipsMore();
-  }, [chipsMore]);
-  useEffect(() => {
-    window.addEventListener("resize", chipsMore);
-    return () => window.removeEventListener("resize", chipsMore);
-  }, [chipsMore]);
-  const [toast, setToast] = useState<{ text: string; undo?: () => void; alt?: { label: string; run: () => void } } | null>(null);
-  const [menu, setMenu] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [showDone, setShowDone] = useState(false);
+  const { findMail, patch, markAllRead, answerAi } = useMailActions({ ...data, hits, setHits, say: setToast });
 
-  // ---------- routing (hash, so the phone's Back button closes a mail) ----------
-  useEffect(() => {
-    // opening/closing a mail and switching tabs animate (see motion.ts); the first read doesn't
-    let first = true;
-    const on = () => {
-      if (first) return (first = false), setRoute(readRoute());
-      transition(() => setRoute(readRoute()));
-    };
-    on();
-    window.addEventListener("hashchange", on);
-    return () => window.removeEventListener("hashchange", on);
-  }, []);
-  const goTab = (tab: Route["tab"]) => {
-    sessionStorage.setItem("delt-tab", tab);
-    location.hash = `#/${tab}`;
-    window.scrollTo({ top: 0 });
-  };
+  const loudSync = useCallback(() => sync(true), [sync]);
+  const pull = usePullToRefresh(!route.mailId && route.tab === "inbox", loudSync);
+
+  // ---------- opening and closing a mail ----------
   const openedFrom = useRef<string | null>(null);
   const openMail = (m: EmailRow, step = false) => {
     openedFrom.current = m.id;
@@ -135,217 +62,11 @@ export default function InboxApp({ email, name, signOutAction, signInAction }: P
   };
   // On a phone, closing goes Back (so the phone's Back button and ours agree). In the wide-screen
   // pane you may have clicked through several mails, so closing goes straight to the list (#48).
-  const closeMail = () => (!wideRef.current && history.length > 1 && route.mailId ? history.back() : (location.hash = `#/${route.tab}`));
+  const closeMail = () => (!wide && history.length > 1 && route.mailId ? history.back() : (location.hash = `#/${route.tab}`));
 
-  // ---------- data + sync ----------
-  const mailsRef = useRef<EmailRow[] | null>(null);
-  mailsRef.current = mails;
-  const pagedOlder = useRef(false);
-  const load = useCallback(async () => {
-    let r: Response, d: Response;
-    try {
-      [r, d] = await Promise.all([fetch(`/api/emails?limit=${PAGE_SIZE}`), fetch("/api/emails?due=1&limit=300")]);
-    } catch {
-      setOffline(true); // no connection: keep showing the saved inbox
-      return false;
-    }
-    if (r.status === 401) {
-      location.reload();
-      return false;
-    }
-    setOffline(false);
-    if (r.ok) {
-      const j = await r.json();
-      const page: EmailRow[] = j.emails ?? [];
-      setMails((l) => (l && pagedOlder.current ? mergeFresh(l, page, j.more) : page));
-      if (!pagedOlder.current || !j.more) setMore(!!j.more);
-      if (!j.more) pagedOlder.current = false;
-      setReauth(!!j.reauth);
-      setAiConsent(j.aiConsent);
-      setSyncProblem(j.syncProblem ?? null);
-    }
-    if (d.ok) setDue((await d.json()).emails ?? []);
-    if (r.ok) setSavedAt(Date.now());
-    return r.ok;
-  }, []);
-  // Scrolling near the end loads the next older page (issue #11).
-  const olderBusy = useRef(false);
-  const loadOlder = useCallback(async () => {
-    const cursor = oldestReceived(mailsRef.current ?? []);
-    if (olderBusy.current || !cursor) return;
-    olderBusy.current = true;
-    setLoadingOlder(true);
-    try {
-      const r = await fetch(`/api/emails?before=${encodeURIComponent(cursor)}&limit=${PAGE_SIZE}`);
-      if (r.ok) {
-        const j = await r.json();
-        const page: EmailRow[] = j.emails ?? [];
-        const have = new Set((mailsRef.current ?? []).map((m) => m.id));
-        const added = page.filter((m) => !have.has(m.id)).length;
-        pagedOlder.current = true;
-        setMails((l) => mergeMore(l ?? [], page));
-        setMore(!!j.more && added > 0);
-      }
-    } finally {
-      olderBusy.current = false;
-      setLoadingOlder(false);
-    }
-  }, []);
-  const syncing$ = useRef(false);
-  const sync = useCallback(
-    async (loud = false, force = false) => {
-      if (syncing$.current) return;
-      // Only one open tab checks for mail at a time (#30). A tap on ↻, or fetching the rest of a
-      // big first sync, always goes through.
-      try {
-        const last = Number(localStorage.getItem("delt-sync-at") || 0);
-        if (!loud && !force && Date.now() - last < 60_000) return;
-        localStorage.setItem("delt-sync-at", String(Date.now()));
-      } catch {}
-      syncing$.current = true;
-      setSyncing(true);
-      try {
-        const r = await fetch("/api/sync", { method: "POST" });
-        const d = await r.json().catch(() => ({}));
-        if (d.reauth) setReauth(true);
-        if (r.status === 429) {
-          // another check for this student is running or just ran: nothing to do
-          if (loud) setToast({ text: "Already checking for mail" });
-          return;
-        }
-        if (!(await load())) throw new Error("offline");
-        setSyncedAt(Date.now());
-        // AI re-checks and Gmail labels run after, without holding up the list (#21)
-        if (!d.reauth && !d.backlog)
-          fetch("/api/sync?phase=later", { method: "POST", keepalive: true })
-            .then((r) => r.json())
-            .then((x) => x?.resorted > 0 && load())
-            .catch(() => {});
-        // A big first sync comes in batches (#28): fetch the rest once the 10 s gap has passed.
-        setBacklog(d.backlog ?? 0);
-        if (d.backlog > 0) setTimeout(() => sync(false, true), 11_000);
-        if (!d.reauth && (loud || d.fetched > 0)) setToast({ text: d.fetched > 0 ? `${d.fetched} new mail${d.fetched > 1 ? "s" : ""}` : "No new mail" });
-      } catch {
-        if (!navigator.onLine) setOffline(true);
-        if (loud) setToast({ text: navigator.onLine ? "Couldn't reach Gmail" : "You're offline" });
-      } finally {
-        syncing$.current = false;
-        setSyncing(false);
-      }
-    },
-    [load],
-  );
-  // Show the saved inbox at once, then fetch the real one.
-  useEffect(() => {
-    try {
-      const c = unpackCache<EmailRow>(localStorage.getItem(cacheKey(email)), Date.now());
-      if (c) {
-        setMails((l) => l ?? c.mails);
-        setDue((l) => (l.length ? l : c.due));
-        setSavedAt(c.at);
-      }
-    } catch {}
-    if ("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js", { scope: "/" }).catch(() => {});
-  }, [email]);
-  // Keep the saved copy up to date with what's on screen (read, done, moved).
-  useEffect(() => {
-    if (!mails || offline || !isInstalledApp()) return;
-    const t = setTimeout(() => {
-      try {
-        localStorage.setItem(cacheKey(email), packCache(mails, due, savedAt ?? Date.now()));
-      } catch {}
-    }, 800);
-    return () => clearTimeout(t);
-  }, [mails, due, offline, savedAt, email]);
-  useEffect(() => {
-    const down = () => setOffline(true);
-    const up = () => {
-      setOffline(false);
-      load().then((ok) => {
-      if (ok) sync();
-    });
-    };
-    window.addEventListener("offline", down);
-    window.addEventListener("online", up);
-    return () => {
-      window.removeEventListener("offline", down);
-      window.removeEventListener("online", up);
-    };
-  }, [load, sync]);
-
-  useEffect(() => {
-    load().then((ok) => {
-      if (ok) sync();
-    });
-    const tick = setInterval(() => setNow(Date.now()), 30_000);
-    const auto = setInterval(() => document.visibilityState === "visible" && sync(), SYNC_EVERY);
-    const back = () => {
-      if (document.visibilityState !== "visible") return;
-      setNow(Date.now());
-      setSyncedAt((t) => {
-        if (!t || Date.now() - t > 2 * 60_000) sync();
-        return t;
-      });
-    };
-    document.addEventListener("visibilitychange", back);
-    return () => {
-      clearInterval(tick);
-      clearInterval(auto);
-      document.removeEventListener("visibilitychange", back);
-    };
-  }, [load, sync]);
-  useEffect(() => {
-    if (!toast) return;
-    const t = setTimeout(() => setToast(null), toast.alt ? 8000 : toast.undo ? 5000 : 2600);
-    return () => clearTimeout(t);
-  }, [toast]);
-
-  // Search covers all stored mail on the server, not only the loaded pages (issue #11).
-  useEffect(() => {
-    const q = query.trim();
-    if (q.length < 2) {
-      setHits(null);
-      setSearching(false);
-      return;
-    }
-    let alive = true;
-    setSearching(true);
-    const t = setTimeout(async () => {
-      try {
-        const r = await fetch(`/api/emails?q=${encodeURIComponent(q)}&limit=200`);
-        if (alive && r.ok) setHits((await r.json()).emails ?? []);
-      } catch {}
-      if (alive) setSearching(false);
-    }, 300);
-    return () => {
-      alive = false;
-      clearTimeout(t);
-    };
-  }, [query]);
-
-  // ---------- actions (instant on screen, then saved + mirrored to Gmail) ----------
-  const findMail = (id: string) => mails?.find((m) => m.id === id) ?? hits?.find((m) => m.id === id) ?? due.find((m) => m.id === id) ?? null;
-  const updateAll = (fn: (m: EmailRow) => EmailRow) => {
-    setMails((l) => l?.map(fn) ?? null);
-    setHits((l) => l?.map(fn) ?? null);
-    setDue((l) => l.map(fn));
-  };
-  type Patch = { read?: boolean; is_done?: boolean; priority?: Priority; teach?: boolean; deadline?: null };
-  async function answerAi(consent: boolean) {
-    setAiConsent(consent);
-    setToast({ text: consent ? "AI sorting on. Change it in Settings." : "Rules only. Change it in Settings." });
-    const r = await fetch("/api/settings/ai", { method: "POST", body: JSON.stringify({ consent }) });
-    if (!r.ok) setAiConsent(null);
-  }
-  const blockedOffline = () => {
-    if (!offline) return false;
-    setToast({ text: "You're offline. Changes are paused until you're back online." });
-    return true;
-  };
   // Row handlers that never change identity, so a tap re-renders only the row that changed (#20)
   const act = useRef<{ openMail: (m: EmailRow) => void; patch: (id: string, p: Patch) => void; learned: () => void } | null>(null);
-  const look = useLook();
-  const canHover = useCanHover();
+  act.current = { openMail, patch: (id, p) => patch(id, p), learned: () => swipeHint && dismissSwipeHint() };
   const rowActions = useMemo<RowActions>(
     () => ({
       open: (m) => act.current?.openMail(m),
@@ -354,54 +75,8 @@ export default function InboxApp({ email, name, signOutAction, signInAction }: P
     }),
     [],
   );
-  act.current = { openMail, patch: (id, p) => patch(id, p), learned: () => swipeHint && dismissSwipeHint() };
-  function patch(id: string, p: Patch, quiet = false) {
-    if (blockedOffline()) return;
-    const before = findMail(id);
-    updateAll((m) => (m.id === id ? apply(m, p) : m));
-    fetch("/api/emails", { method: "PATCH", body: JSON.stringify({ id, ...p }) }).then((r) => !r.ok && setToast({ text: "Couldn't save that change" }));
-    if (quiet || !before) return;
-    const undo = () => {
-      if (p.deadline === null) {
-        // put the removed deadline back
-        updateAll((m) => (m.id === id ? { ...m, deadline: before.deadline } : m));
-        void fetch("/api/emails", { method: "PATCH", body: JSON.stringify({ id, deadline: before.deadline }) });
-        return;
-      }
-      patch(id, { read: p.read !== undefined ? !before.unread : undefined, is_done: p.is_done !== undefined ? before.is_done : undefined, priority: p.priority ? before.priority : undefined }, true);
-    };
-    // Moving a mail also teaches DELT where that sender's mail goes: say so, and offer a one-off move (#46).
-    if (p.priority && p.teach !== false) {
-      const sender = cleanSender(before.from_name);
-      const to = pileLabel(p.priority);
-      return setToast({
-        text: `Moved to ${to}. New mail from ${sender} will go there too.`,
-        undo,
-        alt: { label: "Just this one", run: () => {
-          patch(id, { priority: p.priority, teach: false }, true);
-          setToast({ text: `Moved to ${to}, no rule for ${sender}` });
-        } },
-      });
-    }
-    const text =
-      p.deadline === null ? "Deadline removed" : p.priority ? `Moved to ${pileLabel(p.priority)}` : p.is_done !== undefined ? (p.is_done ? "Marked done" : "Not done") : p.read ? "Marked read" : "Marked unread";
-    setToast({ text, undo });
-  }
-  async function markAllRead(ids: string[]) {
-    if (blockedOffline()) return;
-    const set = new Set(ids);
-    updateAll((m) => (set.has(m.id) ? { ...m, unread: false } : m));
-    // Undo puts back exactly these, in DELT and in Gmail (#47)
-    const undo = () => {
-      updateAll((m) => (set.has(m.id) ? { ...m, unread: true } : m));
-      fetch("/api/emails/bulk", { method: "POST", body: JSON.stringify({ ids, read: false }) }).then((r) => !r.ok && setToast({ text: "Couldn't update Gmail" }));
-    };
-    setToast({ text: `${ids.length} marked read`, undo });
-    const r = await fetch("/api/emails/bulk", { method: "POST", body: JSON.stringify({ ids, read: true }) });
-    if (!r.ok) setToast({ text: "Couldn't update Gmail" });
-  }
 
-  // ---------- derived ----------
+  // ---------- what's shown ----------
   const all = useMemo(() => mails ?? [], [mails]);
   const counts = useMemo(() => pileCounts(all), [all]);
   const searchable = useMemo(() => (hits ? mergeMore(all, hits) : all), [all, hits]);
@@ -413,105 +88,22 @@ export default function InboxApp({ email, name, signOutAction, signInAction }: P
     return ids.size ? shown.filter((m) => !ids.has(m.id)) : shown;
   }, [shown, pinned]);
   const days = useMemo(() => groupByDay(rest, now), [rest, now]);
-  // #60: after a filter change, draw the first screens of rows at once and the rest right
-  // after, as an interruptible update, so the tap answers quickly even with hundreds of mails.
-  const FIRST_ROWS = 24;
-  const filterKey = `${route.tab}|${pile}|${unreadOnly}|${query}`;
-  const [cap, setCap] = useState({ key: filterKey, n: FIRST_ROWS });
-  if (cap.key !== filterKey) setCap({ key: filterKey, n: FIRST_ROWS });
-  useEffect(() => {
-    if (cap.n === Infinity) return;
-    let t = 0;
-    const f = requestAnimationFrame(() => {
-      t = window.setTimeout(() => startTransition(() => setCap((c) => (c.key === cap.key ? { ...c, n: Infinity } : c))));
-    });
-    return () => {
-      cancelAnimationFrame(f);
-      clearTimeout(t);
-    };
-  }, [cap]);
-  const drawnDays = useMemo(() => {
-    let left = cap.n - pinned.length;
-    return days.map((d) => {
-      const draw = left <= 0 ? [] : d.mails.slice(0, left);
-      left -= draw.length;
-      return { ...d, draw };
-    }).filter((d) => d.draw.length > 0);
-  }, [days, cap.n, pinned.length]);
   // Grid look: each row's place in the list, and the newest mail to measure gaps from
   const posOf = useMemo(() => new Map([...pinned, ...rest].map((m, i) => [m.id, i + 1])), [pinned, rest]);
-  const leaderAt = shown[0]?.received_at ?? "";
   const buckets = useMemo(() => deadlineBuckets(mergeMore(all, due), now), [all, due, now]);
   const dueCount = openDeadlines(buckets);
   const open = route.mailId ? findMail(route.mailId) : null;
-
-  // load the next page when the end of the list comes near
-  const sentinel = useRef<HTMLDivElement>(null);
-  const canLoadOlder = route.tab === "inbox" && !query.trim() && more && mails !== null && cap.n === Infinity;
-  useEffect(() => {
-    const el = sentinel.current;
-    if (!canLoadOlder || !el || typeof IntersectionObserver === "undefined") return;
-    const io = new IntersectionObserver((es) => es[0]?.isIntersecting && loadOlder(), { rootMargin: "900px 0px" });
-    io.observe(el);
-    return () => io.disconnect();
-  }, [canLoadOlder, loadOlder, mails?.length]);
-
-  useEffect(() => {
-    if (!window.matchMedia("(pointer: coarse)").matches) return;
-    let startY: number | null = null, dist = 0;
-    const down = (e: TouchEvent) => {
-      startY = window.scrollY <= 0 && !route.mailId && route.tab === "inbox" ? e.touches[0].clientY : null;
-      dist = 0;
-    };
-    const move = (e: TouchEvent) => {
-      if (startY === null) return;
-      dist = Math.max(0, Math.min(120, (e.touches[0].clientY - startY) * 0.5));
-      setPull(dist);
-    };
-    const up = () => {
-      if (startY !== null && dist >= PULL_AT) sync(true);
-      startY = null;
-      dist = 0;
-      setPull(0);
-    };
-    window.addEventListener("touchstart", down, { passive: true });
-    window.addEventListener("touchmove", move, { passive: true });
-    window.addEventListener("touchend", up);
-    window.addEventListener("touchcancel", up);
-    return () => {
-      window.removeEventListener("touchstart", down);
-      window.removeEventListener("touchmove", move);
-      window.removeEventListener("touchend", up);
-      window.removeEventListener("touchcancel", up);
-    };
-  }, [route.mailId, route.tab, sync]);
-
-  // account menu: Esc or a click/tab outside closes it (issue #8)
-  const acct = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    if (!menu) return;
-    acct.current?.querySelector<HTMLElement>(".menu-item")?.focus();
-    const key = (e: KeyboardEvent) => {
-      if (e.key !== "Escape") return;
-      setMenu(false);
-      acct.current?.querySelector<HTMLElement>(".avatar")?.focus();
-    };
-    const out = (e: Event) => !acct.current?.contains(e.target as Node) && setMenu(false);
-    document.addEventListener("keydown", key);
-    document.addEventListener("pointerdown", out);
-    document.addEventListener("focusin", out);
-    return () => {
-      document.removeEventListener("keydown", key);
-      document.removeEventListener("pointerdown", out);
-      document.removeEventListener("focusin", out);
-    };
-  }, [menu]);
-  const unreadShown = shown.filter((m) => m.unread).map((m) => m.id);
-  const gmailLink = (m: EmailRow) => `https://mail.google.com/mail/?authuser=${encodeURIComponent(email)}#all/${m.thread_id ?? m.id}`;
+  const order = route.tab === "deadlines" ? BUCKETS.flatMap((b) => buckets[b]) : [...pinned, ...rest];
+  const at = route.mailId ? order.findIndex((m) => m.id === route.mailId) : -1;
+  const openSettings = (section?: "data" | "rules") => {
+    setSettingsSection(section);
+    transition(() => setSettingsOpen(true));
+  };
+  const gmailHome = `https://mail.google.com/mail/?authuser=${encodeURIComponent(email)}`;
+  const { syncProblem } = data;
 
   return (
     <div className={`shell ${route.mailId && wide ? "reading" : ""} ${swipeHint ? "hinting" : ""}`}>
-      {/* ---------- top bar ---------- */}
       <header className="appbar">
         <a href="#/inbox" className="logo" onClick={() => goTab("inbox")} aria-label="DELT inbox">
           <span>DELT</span>
@@ -530,357 +122,63 @@ export default function InboxApp({ email, name, signOutAction, signInAction }: P
         </button>
         <div className="appbar-r">
           <Appearance />
-          <div className="acct" ref={acct}>
-            <button className="avatar me" onClick={() => setMenu((m) => !m)} aria-label="Account" aria-expanded={menu} aria-controls="acct-menu">
-              {initials(name)}
-            </button>
-            {menu && (
-              <div className="menu" id="acct-menu">
-                <div className="menu-who">
-                  <b>{name}</b>
-                  <small>{email}</small>
-                </div>
-                <button
-                  className="menu-item"
-                  onClick={() => {
-                    setMenu(false);
-                    setSettingsSection(undefined);
-                    transition(() => setSettingsOpen(true));
-                  }}
-                >
-                  Settings
-                </button>
-                <button
-                  className="menu-item"
-                  onClick={() => {
-                    setMenu(false);
-                    setSettingsSection("rules");
-                    transition(() => setSettingsOpen(true));
-                  }}
-                >
-                  Sorting rules
-                </button>
-                <a className="menu-item" href={`https://mail.google.com/mail/?authuser=${encodeURIComponent(email)}`} target="_blank" rel="noreferrer">
-                  Open Gmail ↗
-                </a>
-                {/* #53: everyday items, then signing out, then the one that can't be undone, kept apart */}
-                <hr className="menu-sep" />
-                <form action={signOutAction} onSubmit={() => void clearOffline()}>
-                  <button className="menu-item">Sign out</button>
-                </form>
-                <hr className="menu-sep" />
-                <button
-                  className="menu-item danger"
-                  onClick={() => {
-                    setMenu(false);
-                    setSettingsSection("data");
-                    transition(() => setSettingsOpen(true));
-                  }}
-                >
-                  Delete my data
-                </button>
-              </div>
-            )}
-          </div>
+          <AccountMenu name={name} email={email} signOutAction={signOutAction} onSettings={openSettings} />
         </div>
       </header>
 
-      {appUpdate && (
-        <section className="banner update" aria-labelledby="app-update">
-          <span>
-            <b id="app-update">A new version of the DELT app is ready.</b> Tap Update, then Install when Android asks. You stay signed in.
-          </span>
-          <span className="ask-btns">
-            <a className="pillbtn on" href={APK_URL} onClick={() => setTimeout(() => setAppUpdate(null), 500)}>
-              Update
-            </a>
-            <button
-              className="pillbtn"
-              onClick={() => {
-                snoozeAppUpdate();
-                setAppUpdate(null);
-              }}
-            >
-              Later
-            </button>
-          </span>
-        </section>
-      )}
-      {aiConsent === null && !offline && (
-        <section className="banner ask" aria-labelledby="ai-ask">
-          <span>
-            <b id="ai-ask">Let AI double-check unclear mail?</b> DELT sorts with simple rules. For mail they aren&apos;t sure about, it can ask Google&apos;s Gemini (free
-            tier), which may use what it&apos;s sent to improve its models.{" "}
-            <a className="link" href="/privacy" target="_blank">
-              Privacy
-            </a>
-          </span>
-          <span className="ask-btns">
-            {/* #44: a consent question gets two equal answers, no nudge; the one that shares nothing comes first */}
-            <button className="pillbtn" onClick={() => answerAi(false)}>
-              Rules only
-            </button>
-            <button className="pillbtn" onClick={() => answerAi(true)}>
-              Allow AI
-            </button>
-          </span>
-        </section>
-      )}
-      {offline && (
-        <div className="banner offline" role="status">
-          <span>
-            <b>You&apos;re offline.</b> {savedAt ? `Showing your inbox from ${ago(savedAt, now)}.` : "Nothing saved on this phone yet."} Changes are paused until you&apos;re back online.
-          </span>
-        </div>
-      )}
-      {reauth && (
-        <div className="banner" role="alert">
-          <span>
-            <b>DELT can&apos;t reach your Gmail.</b> Its access was removed in your Google account, so new mail won&apos;t show up. Sign in again to fix it.
-          </span>
-          {signInAction && (
-            <form action={signInAction}>
-              <button className="pillbtn on">Sign in again</button>
-            </form>
-          )}
-        </div>
-      )}
+      <Banners aiConsent={data.aiConsent} onAnswerAi={answerAi} offline={offline} savedAt={data.savedAt} now={now} reauth={data.reauth} signInAction={signInAction} />
 
       {pull > 0 && (
         <div className="pull" style={{ height: pull }} aria-hidden="true">
           <span>{pull >= PULL_AT ? "Release to check for mail" : "Pull to check for mail"}</span>
         </div>
       )}
-      <nav className="mast" aria-label="Sections">
-        <button className={route.tab === "inbox" ? "on" : ""} onClick={() => goTab("inbox")} aria-current={route.tab === "inbox" ? "page" : undefined} title={counts.all.unread > 0 ? `${counts.all.unread} unread` : undefined}>
-          Inbox{counts.all.unread > 0 && <sup><span className="sr-only">, </span>{counts.all.unread > 99 ? "99+" : counts.all.unread}<span className="sr-only"> unread</span></sup>}
-        </button>
-        <button className={route.tab === "deadlines" ? "on" : ""} onClick={() => goTab("deadlines")} aria-current={route.tab === "deadlines" ? "page" : undefined} title={dueCount > 0 ? `${dueCount} open deadline${dueCount === 1 ? "" : "s"}` : undefined}>
-          Deadlines{dueCount > 0 && <sup><span className="sr-only">, </span>{dueCount}<span className="sr-only"> open</span></sup>}
-        </button>
-      </nav>
+      <TopTabs tab={route.tab} unread={counts.all.unread} dueCount={dueCount} />
 
-      {/* ======================= INBOX ======================= */}
       {route.tab === "inbox" && (
-        <main className="page" key="inbox">
-          <label className="searchbar">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 18a7 7 0 1 1 0-14 7 7 0 0 1 0 14Zm5-2 5 5" /></svg>
-            <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search mail" aria-label="Search mail" />
-            {query && <button onClick={() => setQuery("")} aria-label="Clear search">✕</button>}
-          </label>
-
-          <nav className="chips" aria-label="Filter by pile" ref={chipsMount} onScroll={chipsMore}>
-            {(["all", ...PILES.map((p) => p.key)] as const).map((k) => (
-              <button key={k} className={`fchip p-${k} ${pile === k ? "on" : ""}`} onClick={() => setPile(k)} aria-pressed={pile === k}>
-                {k !== "all" && <i className="tagdot" />}
-                {k === "all" ? "All" : pileLabel(k)}
-                <span className="n">{counts[k].total}</span>
-              </button>
-            ))}
-          </nav>
-
-          <div className="listbar">
-            <label className="toggle">
-              <input type="checkbox" checked={unreadOnly} onChange={(e) => setUnreadOnly(e.target.checked)} />
-              <span className="knob" aria-hidden="true" />
-              Unread only <span className="muted">({counts[pile].unread})</span>
-            </label>
-            {unreadShown.length > 0 && (
-              <button className="link" onClick={() => markAllRead(unreadShown)}>
-                Mark all read
-              </button>
-            )}
-          </div>
-
-          {mails === null ? (
-            <Skeleton />
-          ) : shown.length === 0 ? (
-            <Empty
-              title={
-                query && searching
-                  ? "Searching…"
-                  : query
-                    ? `Nothing matches “${query.trim()}”${pile !== "all" || unreadOnly ? ` in ${[pile !== "all" ? pileLabel(pile) : "", unreadOnly ? "unread mail" : ""].filter(Boolean).join(", ")}` : ""}`
-                    : unreadOnly
-                      ? "No unread mail"
-                      : "No mail here"
-              }
-              hint={query && !searching && pile === "all" && !unreadOnly ? "Try a sender or a word from the subject." : ""}
-            >
-              {/* #57: one tap to widen an empty search or filter */}
-              {!searching && pile !== "all" && (
-                <button className="pillbtn" onClick={() => setPile("all")}>
-                  {query ? "Search all piles" : "Show all piles"}
-                </button>
-              )}
-              {!searching && unreadOnly && (
-                <button className="pillbtn" onClick={() => setUnreadOnly(false)}>
-                  Include read mail
-                </button>
-              )}
-              {query && !searching && (
-                <button className="pillbtn" onClick={() => setQuery("")}>
-                  Clear search
-                </button>
-              )}
-            </Empty>
-          ) : (
-            <>
-            {swipeHint && route.tab === "inbox" && (
-              <p className="swipe-hint">
-                <span>
-                  <b>Tip:</b> swipe a mail right to mark it read, left when it&apos;s done.
-                </span>
-                <button className="link" onClick={dismissSwipeHint}>
-                  Got it
-                </button>
-              </p>
-            )}
-            {pinned.length > 0 && (
-              <section className="day needs" aria-labelledby="needs-you">
-                <h2 className="dayhead" id="needs-you">
-                  Needs you
-                </h2>
-                <ul className="rows">
-                  {pinned.map((m) => (
-                    <MailRow key={m.id} m={m} now={now} pos={posOf.get(m.id) ?? 0} leaderAt={leaderAt} on={rowActions} current={route.mailId === m.id} query={query} look={look} hover={canHover} />
-                  ))}
-                </ul>
-              </section>
-            )}
-            {drawnDays.map((d) => (
-              <section key={d.key} className="day">
-                <h2 className="dayhead">
-                  {d.label}
-                  <span className="muted">
-                    {d.mails.length} · {d.mails.filter((m) => m.unread).length} unread
-                  </span>
-                </h2>
-                <ul className="rows">
-                  {d.draw.map((m) => (
-                    <MailRow key={m.id} m={m} now={now} pos={posOf.get(m.id) ?? 0} leaderAt={leaderAt} on={rowActions} current={route.mailId === m.id} query={query} look={look} hover={canHover} />
-                  ))}
-                </ul>
-              </section>
-            ))}
-            </>
-          )}
-          {mails !== null && !query.trim() && (
-            <div ref={sentinel} className="foot muted" aria-live="polite">
-              {more ? (
-                <button className="link" onClick={loadOlder} disabled={loadingOlder}>
-                  {loadingOlder ? "Loading older mail…" : "Load older mail"}
-                </button>
-              ) : (
-                <span className="finish">That&apos;s all your mail in DELT</span>
-              )}
-            </div>
-          )}
-          {query.trim() && shown.length > 0 && (
-            <p className="foot muted" aria-live="polite">
-              {searching ? "Searching all your mail…" : `${shown.length} result${shown.length === 1 ? "" : "s"}`}
-            </p>
-          )}
-        </main>
+        <InboxList
+          key="inbox"
+          filters={filters}
+          setFilters={setFilters}
+          loaded={mails !== null}
+          total={all.length}
+          shown={shown}
+          pinned={pinned}
+          days={days}
+          counts={counts}
+          posOf={posOf}
+          leaderAt={shown[0]?.received_at ?? ""}
+          searching={searching}
+          more={data.more}
+          loadingOlder={data.loadingOlder}
+          loadOlder={data.loadOlder}
+          onMarkAllRead={markAllRead}
+          swipeHint={swipeHint}
+          dismissSwipeHint={dismissSwipeHint}
+          rowActions={rowActions}
+          currentId={route.mailId}
+          now={now}
+          look={look}
+          hover={canHover}
+        />
       )}
+      {route.tab === "deadlines" && <DeadlinesList key="deadlines" loaded={mails !== null} buckets={buckets} now={now} onOpen={(m) => openMail(m)} onPatch={(id, p) => patch(id, p)} />}
 
-      {/* ======================= DEADLINES ======================= */}
-      {route.tab === "deadlines" && (
-        <main className="page" key="deadlines">
-          <div className="pagehead">
-            <h1>Deadlines</h1>
-            <p className="muted">Due dates found in your mail.</p>
-          </div>
-          {mails === null ? (
-            <Skeleton />
-          ) : BUCKETS.every((b) => buckets[b].length === 0) ? (
-            <Empty title="No deadlines" hint="" />
-          ) : (
-            BUCKETS.filter((b) => buckets[b].length > 0).map((b) => (
-              <section key={b} className={`day bucket b-${b.replace(" ", "")}`}>
-                <h2 className="dayhead">
-                  {b}
-                  <span className="muted">{buckets[b].length}</span>
-                  {b === "Done" && (
-                    <button className="link" onClick={() => setShowDone((s) => !s)}>
-                      {showDone ? "Hide" : "Show"}
-                    </button>
-                  )}
-                </h2>
-                {(b !== "Done" || showDone) && (
-                  <ul className="rows">
-                    {buckets[b].map((m) => (
-                      <li key={m.id} className={`row due-row p-${m.priority} ${m.is_done ? "done" : ""}`} data-mail={m.id}>
-                        <button className="row-main" onClick={() => openMail(m)}>
-                          <span className={`datebox lv-${dueLevel(m.deadline!, now)}`}>
-                            <b>{F.dayNum.format(Date.parse(m.deadline!))}</b>
-                            <small>{F.monthShort.format(Date.parse(m.deadline!))}</small>
-                          </span>
-                          <span className="row-text">
-                            <span className="subj">{cleanSubject(m.subject)}</span>
-                            <span className="meta">
-                              <span className={`due lv-${dueLevel(m.deadline!, now)}`}>{dueInBucket(m.deadline!, b, now)}</span>
-                              <span className={`tag p-${m.priority}`}>{pileLabel(m.priority)}</span>
-                              <span className="muted ell">{cleanSender(m.from_name)}</span>
-                            </span>
-                          </span>
-                        </button>
-                        <div className="row-acts">
-                          {/* #55: icons with words, not just tooltips phones never show */}
-                          <a className="iconbtn labelled" href={calendarLink(cleanSubject(m.subject), m.deadline!, m.summary)} target="_blank" rel="noreferrer" aria-label="Add to Google Calendar">
-                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16v14H4zM4 10h16M8 3v4m8-4v4" /></svg>
-                            <small aria-hidden="true">Calendar</small>
-                          </a>
-                          <button className={`iconbtn labelled check ${m.is_done ? "on" : ""}`} onClick={() => patch(m.id, { is_done: !m.is_done })} aria-label={m.is_done ? "Mark not done" : "Mark done"}>
-                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 5 5 9-10" /></svg>
-                            <small aria-hidden="true">{m.is_done ? "Undo" : "Done"}</small>
-                          </button>
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </section>
-            ))
-          )}
-          {mails !== null && BUCKETS.some((b) => b !== "Done" && buckets[b].length > 0) && <p className="foot muted">Nothing else is due.</p>}
-        </main>
-      )}
+      <TabBar tab={route.tab} unread={counts.all.unread} dueCount={dueCount} />
 
-      {/* ---------- bottom tabs ---------- */}
-      <nav className="tabbar" aria-label="Sections">
-        <button className={route.tab === "inbox" ? "on" : ""} onClick={() => goTab("inbox")}>
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 13h5l2 3h4l2-3h5M5 5h14l2 8v6H3v-6z" /></svg>
-          Inbox
-          {counts.all.unread > 0 && <span className="badge">{counts.all.unread > 99 ? "99+" : counts.all.unread}</span>}
-        </button>
-        <button className={route.tab === "deadlines" ? "on" : ""} onClick={() => goTab("deadlines")}>
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 7v5l3 2M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>
-          Deadlines
-          {dueCount > 0 && <span className="badge">{dueCount}</span>}
-        </button>
-      </nav>
-
-      {/* ---------- full-screen mail ---------- */}
       {route.mailId && (
         <MailView
           pane={wide}
           onStep={(dir) => {
-            const order = route.tab === "deadlines" ? BUCKETS.flatMap((b) => buckets[b]) : [...pinned, ...rest];
-            const i = order.findIndex((m) => m.id === route.mailId);
-            const to = i < 0 ? null : order[i + dir];
+            const to = at < 0 ? null : order[at + dir];
             if (to) openMail(to, true);
             return !!to;
           }}
-          position={(() => {
-            const order = route.tab === "deadlines" ? BUCKETS.flatMap((b) => buckets[b]) : [...pinned, ...rest];
-            const i = order.findIndex((m) => m.id === route.mailId);
-            return i < 0 ? null : { index: i, total: order.length };
-          })()}
+          position={at < 0 ? null : { index: at, total: order.length }}
           id={route.mailId}
           row={open}
           now={now}
-          gmailLink={open ? gmailLink(open) : `https://mail.google.com/mail/?authuser=${encodeURIComponent(email)}`}
+          gmailLink={open ? `${gmailHome}#all/${open.thread_id ?? open.id}` : gmailHome}
           onClose={closeMail}
           onPatch={(p) => patch(route.mailId!, p)}
           onReauth={() => setReauth(true)}
@@ -890,235 +188,7 @@ export default function InboxApp({ email, name, signOutAction, signInAction }: P
 
       <Welcome ready={mails !== null && mails.length > 0} />
       <Settings open={settingsOpen} section={settingsSection} onClose={() => transition(() => setSettingsOpen(false))} onToast={(text) => setToast({ text })} />
-
-      {toast && (
-        <div className="toast" role="status" aria-live="polite" key={toast.text} style={{ "--life": `${toast.alt ? 8000 : toast.undo ? 5000 : 2600}ms` } as React.CSSProperties}>
-          <b className="rc" aria-hidden="true">
-            Race control
-          </b>
-          <span>{toast.text}</span>
-          {toast.alt && (
-            <button
-              onClick={() => {
-                const run = toast.alt!.run;
-                setToast(null);
-                run();
-              }}
-            >
-              {toast.alt.label}
-            </button>
-          )}
-          {toast.undo && (
-            <button
-              onClick={() => {
-                toast.undo!();
-                setToast(null);
-              }}
-            >
-              Undo
-            </button>
-          )}
-        </div>
-      )}
+      <Toast toast={toast} onClose={() => setToast(null)} />
     </div>
-  );
-}
-
-function apply(m: EmailRow, p: { read?: boolean; is_done?: boolean; priority?: Priority; teach?: boolean; deadline?: null }): EmailRow {
-  return {
-    ...m,
-    ...(p.read !== undefined ? { unread: !p.read } : {}),
-    ...(p.is_done !== undefined ? { is_done: p.is_done } : {}),
-    ...(p.priority ? { priority: p.priority, user_corrected: p.teach !== false } : {}),
-    ...(p.deadline === null ? { deadline: null } : {}),
-  };
-}
-
-// ---------- one mail row: tap to open, swipe to act ----------
-type RowActions = { open: (m: EmailRow) => void; read: (m: EmailRow) => void; done: (m: EmailRow) => void };
-
-// memo: a row re-renders only when its own mail, position, gap or the minute changes (#20)
-// #61: a row renders only what the current look shows (Glyph: avatar, pile tag, unread dot;
-// Minimal: time column; Grid: position, sender code, gap), the swipe background only while
-// swiping, and the hover buttons only on devices with a mouse.
-const MailRow = memo(function MailRow({ m, now, pos = 0, leaderAt = "", on, current = false, query = "", look = "minimal", hover = false }: { m: EmailRow; now: number; pos?: number; leaderAt?: string; on: RowActions; current?: boolean; query?: string; look?: Look; hover?: boolean }) {
-  const glyph = look === "glyph", grid = look === "grid";
-  const onOpen = () => on.open(m), onRead = () => on.read(m), onDone = () => on.done(m);
-  const [dx, setDx] = useState(0);
-  const drag = useRef<{ x: number; y: number; on: boolean; moved: boolean; dx: number } | null>(null);
-  const moved = useRef(false);
-  const LIMIT = 84;
-
-  const down = (e: RPointerEvent) => {
-    if (e.pointerType === "mouse") return; // desktop uses the hover buttons
-    drag.current = { x: e.clientX, y: e.clientY, on: false, moved: false, dx: 0 };
-  };
-  const move = (e: RPointerEvent) => {
-    const d = drag.current;
-    if (!d) return;
-    const x = e.clientX - d.x, y = e.clientY - d.y;
-    if (!d.on) {
-      if (Math.abs(y) > 10 && Math.abs(y) > Math.abs(x)) return void (drag.current = null); // a scroll
-      if (Math.abs(x) < 10) return;
-      d.on = true;
-      try {
-        (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
-      } catch {}
-    }
-    d.moved = true;
-    const was = Math.abs(d.dx) > LIMIT;
-    d.dx = Math.max(-140, Math.min(140, x));
-    if (!was && Math.abs(d.dx) > LIMIT) navigator.vibrate?.(10); // #50: you can feel it's armed
-    setDx(d.dx);
-  };
-  const up = () => {
-    const d = drag.current;
-    drag.current = null;
-    if (d?.on) {
-      if (d.dx > LIMIT) onRead();
-      else if (d.dx < -LIMIT) onDone();
-    }
-    setDx(0);
-    if (d?.moved) {
-      moved.current = true; // swallow the click that follows a swipe
-      setTimeout(() => (moved.current = false), 0);
-    }
-  };
-  const sender = cleanSender(m.from_name);
-  // What a screen reader says for the row (the time and pile are only shown visually).
-  const label = [
-    m.unread ? "Unread." : "",
-    `${sender}: ${cleanSubject(m.subject)}.`,
-    `${pileLabel(m.priority)}, ${shortTime(m.received_at, now) === timeOfDay(m.received_at) ? "today" : shortTime(m.received_at, now)} at ${timeOfDay(m.received_at)}.`,
-    m.deadline && !m.is_done ? `Due ${dueText(m.deadline, now)}.` : "",
-    m.is_done ? "Done." : "",
-  ].filter(Boolean).join(" ");
-
-  return (
-    <li className={`row ink-${m.priority} ${m.unread ? "unread" : ""} ${m.is_done ? "done" : ""} ${dx ? "dragging" : ""}`} data-mail={m.id} data-pos={pos} style={{ "--i": Math.min(pos, 14) } as React.CSSProperties}>
-      {dx !== 0 && (
-      <div className={`swipe-bg ${dx > 0 ? "r" : "l"} ${Math.abs(dx) > LIMIT ? "armed" : ""}`} aria-hidden="true">
-        <span>
-          {dx > 0 ? (
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16v12H4zM4 7l8 6 8-6" /></svg>
-          ) : (
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 5 5 9-10" /></svg>
-          )}
-          {dx > 0 ? (m.unread ? "Read" : "Unread") : m.is_done ? "Not done" : "Done"}
-        </span>
-      </div>
-      )}
-      <div className="row-slide" style={{ transform: dx ? `translateX(${dx}px)` : undefined }} onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={up}>
-        <button className="row-main" onClick={() => !moved.current && onOpen()} aria-current={current || undefined} aria-label={label} aria-describedby={m.summary || m.snippet ? `sum-${m.id}` : undefined}>
-          {glyph && (
-            <span className={`avatar p-${m.priority}`} aria-hidden="true">
-              {initials(sender)}
-            </span>
-          )}
-          {grid && (
-            <span className="pos" aria-hidden="true">
-              {pos}
-            </span>
-          )}
-          {look === "minimal" && (
-            <span className="when" aria-hidden="true">
-              {timeOfDay(m.received_at)}
-            </span>
-          )}
-          <span className="row-text">
-            <span className="line1" data-same={senderCode(m.from_name) === sender.toUpperCase() || undefined}>
-              {glyph && <i className={`tagdot pdot p-${m.priority}`} title={pileLabel(m.priority)} aria-hidden="true" />}
-              {grid && (
-                <span className="code" aria-hidden="true">
-                  {senderCode(m.from_name)}
-                </span>
-              )}
-              <span className="from ell">
-                <Marked text={sender} query={query} />
-              </span>
-              {glyph && <span className="time">{timeOfDay(m.received_at)}</span>}
-            </span>
-            <span className="subj ell">
-              <Marked text={cleanSubject(m.subject)} query={query} />
-            </span>
-            <span className="sum ell" id={`sum-${m.id}`}>
-              {m.summary || m.snippet}
-            </span>
-            {(glyph || m.is_done || (m.deadline && !m.is_done)) && (
-            <span className="meta">
-              {glyph && (
-                <span className={`tag p-${m.priority}`}>
-                  <i className="tagdot" />
-                  {pileLabel(m.priority)}
-                </span>
-              )}
-              {m.deadline && !m.is_done && <span className={`due lv-${dueLevel(m.deadline, now)}`}>Due {dueText(m.deadline, now)}</span>}
-              {m.is_done && <span className="donemark">✓ Done</span>}
-            </span>
-            )}
-          </span>
-          {grid && (
-            <span className="gap" aria-hidden="true">
-              {leaderAt ? gapText(m.received_at, leaderAt) : ""}
-            </span>
-          )}
-        </button>
-        {hover && (
-        <div className="row-acts hover-only">
-          <button className="iconbtn" onClick={onRead} title={m.unread ? "Mark read" : "Mark unread"} aria-label={m.unread ? "Mark read" : "Mark unread"}>
-            <svg viewBox="0 0 24 24" aria-hidden="true">{m.unread ? <path d="M4 6h16v12H4zM4 7l8 6 8-6" /> : <path d="M4 10l8-6 8 6v9H4zM4 10l8 5 8-5" />}</svg>
-          </button>
-          <button className={`iconbtn check ${m.is_done ? "on" : ""}`} onClick={onDone} title={m.is_done ? "Mark not done" : "Mark done"} aria-label={m.is_done ? "Mark not done" : "Mark done"}>
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 5 5 9-10" /></svg>
-          </button>
-        </div>
-        )}
-        {glyph && m.unread && <i className="unread-dot" aria-hidden="true" />}
-      </div>
-    </li>
-  );
-});
-
-function Skeleton() {
-  return (
-    <ul className="rows skeleton" aria-label="Loading mail">
-      {Array.from({ length: 6 }, (_, i) => (
-        <li key={i} className="row">
-          <div className="row-main">
-            <span className="avatar sk" />
-            <span className="row-text">
-              <span className="sk" style={{ width: "40%" }} />
-              <span className="sk" style={{ width: "85%" }} />
-              <span className="sk" style={{ width: "65%" }} />
-            </span>
-          </div>
-        </li>
-      ))}
-    </ul>
-  );
-}
-
-function Empty({ title, hint, children }: { title: string; hint: string; children?: React.ReactNode }) {
-  return (
-    <div className="empty" role="status">
-      <b>{title}</b>
-      {hint && <span className="muted">{hint}</span>}
-      {children && <span className="empty-acts">{children}</span>}
-    </div>
-  );
-}
-
-/** #57: the searched words, marked in a subject or sender. */
-function Marked({ text, query }: { text: string; query: string }) {
-  const q = query.trim();
-  if (q.length < 2) return <>{text}</>;
-  const i = text.toLowerCase().indexOf(q.toLowerCase());
-  if (i < 0) return <>{text}</>;
-  return (
-    <>
-      {text.slice(0, i)}
-      <mark>{text.slice(i, i + q.length)}</mark>
-      {text.slice(i + q.length)}
-    </>
   );
 }
