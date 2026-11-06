@@ -17,7 +17,7 @@ import { transition } from "./motion";
 import AccountMenu from "./account-menu";
 import Banners from "./banners";
 import DeadlinesList from "./deadlines-list";
-import InboxList, { type Filters } from "./inbox-list";
+import InboxList, { SearchBox, type Filters } from "./inbox-list";
 import type { RowActions } from "./mail-row";
 import { TabBar, TopTabs } from "./tabs";
 import { Toast, useToast } from "./toast";
@@ -117,6 +117,17 @@ export default function InboxApp({ email, name, signOutAction, signInAction }: P
           <span>DELT</span>
           <i />
         </a>
+        {/* #76: on wide screens the bar spans the window and holds the sections and search */}
+        {wide && <TopTabs tab={route.tab} unread={counts.all.unread} dueCount={dueCount} />}
+        {wide && (
+          <SearchBox
+            query={query}
+            onChange={(q) => {
+              setFilters({ query: q });
+              if (route.tab !== "inbox") goTab("inbox");
+            }}
+          />
+        )}
         <button className={`sync ${syncProblem && !syncing ? "warn" : ""}`} onClick={() => sync(true)} disabled={syncing} title={syncProblem ? `${syncProblem}. Tap to try again.` : "Check for new mail"}>
           <span className={syncing ? "spin" : ""} aria-hidden="true">↻</span>
           <span className="lights" aria-hidden="true">
@@ -141,7 +152,7 @@ export default function InboxApp({ email, name, signOutAction, signInAction }: P
           <span>{pull >= PULL_AT ? "Release to check for mail" : "Pull to check for mail"}</span>
         </div>
       )}
-      <TopTabs tab={route.tab} unread={counts.all.unread} dueCount={dueCount} />
+      {!wide && <TopTabs tab={route.tab} unread={counts.all.unread} dueCount={dueCount} />}
 
       {route.tab === "inbox" && (
         <InboxList
@@ -167,6 +178,7 @@ export default function InboxApp({ email, name, signOutAction, signInAction }: P
           now={now}
           look={look}
           hover={canHover}
+          searchInBar={wide}
         />
       )}
       {route.tab === "deadlines" && <DeadlinesList key="deadlines" loaded={mails !== null} buckets={buckets} now={now} onOpen={(m) => openMail(m)} onPatch={(id, p) => patch(id, p)} />}

@@ -32,9 +32,21 @@ type Props = {
   now: number;
   look: Look;
   hover: boolean;
+  /** #76: on wide screens search sits in the top bar instead */
+  searchInBar?: boolean;
 };
 
 const FIRST_ROWS = 24;
+
+export function SearchBox({ query, onChange }: { query: string; onChange: (q: string) => void }) {
+  return (
+    <label className="searchbar">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 18a7 7 0 1 1 0-14 7 7 0 0 1 0 14Zm5-2 5 5" /></svg>
+      <input value={query} onChange={(e) => onChange(e.target.value)} placeholder="Search mail" aria-label="Search mail" />
+      {query && <button onClick={() => onChange("")} aria-label="Clear search">✕</button>}
+    </label>
+  );
+}
 
 export default function InboxList(p: Props) {
   const { filters, setFilters, loaded, shown, pinned, days, counts, now } = p;
@@ -99,11 +111,7 @@ export default function InboxList(p: Props) {
 
   return (
     <main className="page">
-      <label className="searchbar">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 18a7 7 0 1 1 0-14 7 7 0 0 1 0 14Zm5-2 5 5" /></svg>
-        <input value={query} onChange={(e) => setFilters({ query: e.target.value })} placeholder="Search mail" aria-label="Search mail" />
-        {query && <button onClick={() => setFilters({ query: "" })} aria-label="Clear search">✕</button>}
-      </label>
+      {!p.searchInBar && <SearchBox query={query} onChange={(q) => setFilters({ query: q })} />}
 
       <nav className="chips" aria-label="Filter by pile" ref={chipsMount} onScroll={chipsMore}>
         {(["all", ...PILES.map((p) => p.key)] as const).map((k) => (

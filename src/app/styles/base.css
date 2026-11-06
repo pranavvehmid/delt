@@ -618,3 +618,36 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 .ap-row:has(.seg) { flex-direction: column; align-items: stretch; gap: 8px; padding: 12px 0; }
 .ap-row:has(.seg) .seg { display: flex; }
 .ap-row:has(.seg) .seg button { flex: 1; padding: 0 8px; }
+
+/* #76: a laptop gets a desktop mail layout, not a stretched phone.
+   - one top bar across the window: logo, sections, search, sync, appearance and account (at the right edge)
+   - the list column scales with the window; the reading pane fills the rest under the bar
+   - on short laptop windows the spacing tightens so more mail fits
+   Phones and narrow windows keep the phone layout. */
+@media (min-width: 1000px) {
+  :root { --list: clamp(380px, 32vw, 520px); --top: 60px; }
+  .shell.reading { max-width: none; width: var(--list); margin: 0; padding-top: var(--top); }
+  .shell.reading .appbar {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 85; height: var(--top); gap: 16px;
+    padding: 0 24px; background: var(--bg); backdrop-filter: none; border-bottom: 1px solid var(--line);
+  }
+  .shell.reading .appbar .mast { flex: none; margin: 0 8px 0 16px; padding: 0; gap: 16px; align-self: stretch; align-items: stretch; }
+  .shell.reading .appbar .mast button { display: inline-flex; align-items: center; height: auto; padding: 0 4px; font-size: 18px !important; line-height: 1; }
+  .shell.reading .appbar .searchbar { flex: 1 1 auto; max-width: 560px; height: 40px; margin: 0; }
+  .shell.reading .appbar .sync { margin-right: 0; margin-left: auto; }
+  .mailview.pane { top: var(--top); left: var(--list); }
+  .mv-empty { top: var(--top); left: var(--list); }
+  .shell.reading ~ .toast, body:has(.shell.reading) .toast { left: calc(var(--list) / 2); }
+}
+@media (min-width: 1000px) and (max-height: 800px) {
+  .shell.reading .chips { margin-top: 8px; }
+  .shell.reading .dayhead { padding-top: 16px; }
+  .mailview.pane .mv-page { padding-top: 8px; }
+}
+/* deadline titles wrap to two lines instead of being cut off */
+.due-row .subj { white-space: normal; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+@media (min-width: 1000px) {
+  /* Glyph's sections are pills: centred in the bar at the bar's control height */
+  :root[data-look="glyph"] .shell.reading .appbar .mast { align-self: center; align-items: center; }
+  :root[data-look="glyph"] .shell.reading .appbar .mast button { height: 40px; padding: 0 16px; font-size: 16px !important; }
+}
