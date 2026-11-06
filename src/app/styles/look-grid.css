@@ -206,3 +206,8 @@
 @media (max-width: 479px) {
 :root[data-look="grid"] .mv-acts .pillbtn { padding: 0 10px; }
 }
+
+/* #67: the slanted avatar's top corner overhangs by 17px * tan(12deg); pull it in so its right edge
+   lines up with the search bar and rows below */
+:root[data-look="grid"] .avatar.me { margin-right: calc(17px * tan(12deg)); }
+:root[data-look="grid"] .mast button.on { box-shadow: none; }

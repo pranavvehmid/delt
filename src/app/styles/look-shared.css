@@ -204,3 +204,13 @@
    look's own sizes; uppercase labels get less tracking so they don't grow too wide. */
 :root:is([data-look="minimal"], [data-look="grid"]) :is(.sync, .sync span, .mast sup, .dayhead, .row .from, .finish, .foot, .when, .gap) { font-size: 12.5px !important; }
 :root:is([data-look="minimal"], [data-look="grid"]) :is(.dayhead, .row .from, .sync) { letter-spacing: 0.06em !important; }
+
+/* #67: the active section has the same underline as the active filter, and both titles keep one
+   weight so switching doesn't shift the layout. The red "needs you" dash no longer pushes the time
+   down: the time lines up with the sender, and the unread square hangs in the gap so every subject
+   starts on the same edge as its sender. */
+:root:is([data-look="minimal"], [data-look="grid"]) .mast button { font-weight: 400; }
+:root[data-look="minimal"] .mast button.on { box-shadow: inset 0 -2px 0 rgb(var(--ink)); }
+:root:is([data-look="minimal"], [data-look="grid"]) .when { position: relative; padding-top: 0; line-height: inherit; }
+:root:is([data-look="minimal"], [data-look="grid"]) .when::before { position: absolute; left: 0; top: -8px; margin: 0; }
+:root:is([data-look="minimal"], [data-look="grid"]) .row-main { column-gap: 24px; }

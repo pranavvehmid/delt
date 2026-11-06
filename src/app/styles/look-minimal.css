@@ -17,3 +17,11 @@
 :root[data-look="minimal"] .row.unread .subj::before { content: ""; display: inline-block; width: 7px; height: 7px; margin: 0 9px 0 0; vertical-align: 0.18em; background: rgb(var(--ink)); }
 :root[data-look="minimal"] .row.unread.ink-very_important .subj::before { background: var(--accent); }
 :root[data-look="minimal"] .doc a:not(.logo) { color: var(--text); text-decoration-color: currentColor; }
+
+/* #67: the unread square hangs to the left of the subject, so read and unread subjects share an edge.
+   The subject clips its overflow (to stay two lines), so the square is drawn on the row text instead,
+   centred on the subject's first line: sender line (12.5px x 1.45) + 1px gap + 3px margin + half a line. */
+:root[data-look="minimal"] .row.unread .subj::before { content: none; }
+:root[data-look="minimal"] .row-text { position: relative; }
+:root[data-look="minimal"] .row.unread .row-text::before { content: ""; position: absolute; left: -16px; top: calc(12.5px * 1.45 + 4px + var(--subj) * 0.65 - 3.5px); width: 7px; height: 7px; background: rgb(var(--ink)); }
+:root[data-look="minimal"] .row.unread.ink-very_important .row-text::before { background: var(--accent); }

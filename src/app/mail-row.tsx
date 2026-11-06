@@ -98,7 +98,6 @@ export const MailRow = memo(function MailRow({ m, now, pos = 0, leaderAt = "", o
           )}
           <span className="row-text">
             <span className="line1" data-same={senderCode(m.from_name) === sender.toUpperCase() || undefined}>
-              {glyph && <i className={`tagdot pdot p-${m.priority}`} title={pileLabel(m.priority)} aria-hidden="true" />}
               {grid && (
                 <span className="code" aria-hidden="true">
                   {senderCode(m.from_name)}

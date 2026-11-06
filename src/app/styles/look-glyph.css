@@ -74,3 +74,15 @@
    so its words use the accent's own text colour instead of hard-coded ink */
 :root[data-look="glyph"] .fchip.p-all.on, :root[data-look="glyph"] .fchip.p-all.on .n { color: var(--on-accent); }
 :root[data-look="glyph"] .doc a:not(.logo) { color: var(--text); text-decoration-color: currentColor; }
+
+/* #67: the sender starts on the subject's edge (the pile already shows in the avatar colour and the
+   tag), and on wide screens the sections are tabs at the top, not a phone bar floating at the bottom */
+@media (min-width: 720px) {
+  :root[data-look="glyph"] .tabbar { display: none; }
+  :root[data-look="glyph"] .mast { display: flex; gap: 8px; padding: 4px 24px 2px; }
+  :root[data-look="glyph"] .mast button { display: inline-flex; align-items: center; gap: 8px; height: 44px; padding: 0 18px; border-radius: 99px; border: 2.5px solid transparent; font: 600 15px/1 var(--font); color: var(--muted); }
+  :root[data-look="glyph"] .mast button:hover { color: var(--text); }
+  :root[data-look="glyph"] .mast button.on { background: var(--accent); color: var(--on-accent); border-color: var(--ink); box-shadow: 3px 3px 0 var(--ink); }
+  :root[data-look="glyph"] .mast sup { top: 0; min-width: 22px; height: 22px; padding: 0 6px; border-radius: 99px; display: inline-grid; place-items: center; background: var(--surface2); color: var(--text); font-size: 12.5px; font-weight: 700; }
+  :root[data-look="glyph"] .mast button.on sup { background: var(--on-accent); color: var(--accent); }
+}

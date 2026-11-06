@@ -62,3 +62,4 @@ android/local.properties
 
 # local screenshot helpers
 /e2e/zz-*.spec.ts
+shots/

@@ -563,3 +563,24 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 .doc ul li::marker { color: var(--muted); }
 .doc p + p, .doc p + ul, .doc ul + p { margin-top: 0.8em; }
 .doc a:not(.logo) { color: var(--accent); text-decoration-color: color-mix(in srgb, var(--accent) 45%, transparent); }
+
+/* #67: alignment
+   - header controls share one height (the avatar's), with the 44px touch area added invisibly
+   - labelled icon buttons (Deadlines: Calendar, Done) stack icon over label the same way, link or button
+   - the sign-in wordmark's first letter starts on the text's left edge (Plex Bold D has a 0.05em side bearing)
+   - phone sheets use the page's 16px side margin; Settings toggles sit on their title's line
+   - the open mail's top bar lines up with the mail text under it, at any width */
+.sync { height: 34px; }
+@media (pointer: coarse) {
+  .sync { min-height: 0; position: relative; }
+  .sync::after { content: ""; position: absolute; left: 0; right: 0; top: 50%; height: 44px; transform: translateY(-50%); }
+}
+.iconbtn.labelled { display: inline-flex; flex-direction: column; justify-content: center; align-items: center; }
+.signin .logo { margin-left: -0.05em; }
+@media (max-width: 719px) { .sheet { padding-left: 16px; padding-right: 16px; } }
+.settings .set-row { align-items: flex-start; }
+.settings .set-row > .toggle { margin-top: 1px; }
+.mv-bar { --mv-side: max(0px, (100% - 780px) / 2); padding-left: calc(var(--mv-side) + 4px); padding-right: calc(var(--mv-side) + 16px); }
+@media (max-width: 479px) { .mv-bar { padding-right: 8px; } }
+.tabbar { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); width: min(340px, calc(100vw - 32px)); }
+.tabbar button { justify-content: center; padding: 0 12px; }
