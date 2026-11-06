@@ -279,3 +279,11 @@ test("A03: on a laptop, Minimal's unread count sits at the top of its title, not
   expect(sup.bottom).toBeLessThanOrEqual(word.bottom);
   expect(b.height).toBeGreaterThan(0);
 });
+
+test("A10: Minimal marks urgent mail with a red time and no floating dash", async ({ page }) => {
+  await open(page, "minimal");
+  const when = page.locator("li.row.ink-very_important .when").first();
+  expect(await when.evaluate((e) => getComputedStyle(e, "::before").display)).toBe("none");
+  const [c, other] = [await when.evaluate((e) => getComputedStyle(e).color), await page.locator("li.row:not(.ink-very_important) .when").first().evaluate((e) => getComputedStyle(e).color)];
+  expect(c).not.toBe(other);
+});

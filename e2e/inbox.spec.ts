@@ -89,8 +89,8 @@ test("Deadlines tab lists mail with a due date", async ({ page }) => {
   await page.goto("/e2e");
   await page.getByRole("navigation", { name: "Sections" }).first().getByRole("button", { name: /Deadlines/ }).filter({ visible: true }).click();
   await expect(page).toHaveURL(/#\/deadlines$/);
-  await expect(page.getByText("Hostel fee payment: last date")).toBeVisible();
-  await expect(page.getByText("CAT-1 exam schedule released")).toHaveCount(0);
+  await expect(page.locator("main").getByText("Hostel fee payment: last date")).toBeVisible();
+  await expect(page.locator("main").getByText("CAT-1 exam schedule released")).toHaveCount(0);
 });
 
 test("a busy inbox loads older mail on scroll, and search finds mail that isn't loaded", async ({ page }) => {
