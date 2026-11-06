@@ -3,6 +3,7 @@
 Newest first. Commit SHAs in brackets.
 
 ## 2026-11-07 (audit fixes; not deployed yet)
+- Esc and J/K work while focus is inside the mail itself (A19) [7728b4b].
 - Grid sign-in page in the Grid look (A16) [fff7a08]; Glyph preview dots quieter (A17) [3ed46b1].
 - Loading rows fill the row and pulse on the GPU; they were squeezed into a 28–52px column (A09) [1c181ce].
 - Empty states with a mark, a real title and a useful hint (A08) [c069ed7].

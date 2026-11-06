@@ -5,7 +5,7 @@ laptop 1366×657 and 1536×730, all three looks. F1-specific items wait for `doc
 Status: open / fixed (SHA) / blocked.
 
 ## Summary
-Critical 2 · Major 9 · Minor 7 · Blocked on references 6
+Critical 2 · Major 10 · Minor 7 · Blocked on references 6 (A19 added 2026-11-07)
 
 ## Items
 
@@ -29,6 +29,7 @@ Critical 2 · Major 9 · Minor 7 · Blocked on references 6
 | A16 | minor | Sign-in page | Not reviewed in Grid since #73; still uses Minimal's layout | Unchecked screen | fixed (fff7a08) |
 | A17 | minor | Glyph look cards preview | Dotted texture in a 120px thumbnail looks like noise | Texture without a purpose at that size | fixed (3ed46b1) |
 | A18 | minor | All looks, laptop | Mail column capped at 780px, centred in the pane, leaving uneven side space on 1536px | Width not tied to the grid | fixed (97a319e) |
+| A19 | major | Open mail, keyboard (`mail-frame.tsx`) | With focus on a link inside the mail, Esc and J/K did nothing (found by CI) | Keyboard users get stuck in the mail | fixed (7728b4b) |
 
 ### Blocked on F1 references (to be specified in `docs/F1_STYLE_SPEC.md`)
 | ID | What |
