@@ -53,6 +53,9 @@ function mail(id: string, hoursAgo: number, p: Partial<FakeMail> = {}): FakeMail
 }
 
 /** A small, varied inbox: every pile, unread and read, one deadline. */
+/** #71: a typical college circular: white table, grey footer, red date, a dark header block, a link. */
+export const CIRCULAR = `<table width="100%" style="background:#ffffff;border:1px solid #dddddd"><tr><td style="background:#1f2a44;color:#ffffff;padding:12px"><b>VIT Library</b></td></tr><tr><td style="padding:12px;color:#333333"><p>Library timings this week are changed.</p><p style="color:#c00000"><b>Closed on 12 Nov.</b></p><p style="background:#fff8e1;color:#7a5c00">Return books before the break.</p><p><a href="https://vit.ac.in" style="color:#1a73e8">Library portal</a></p><p style="color:#999999;font-size:12px">This is an automated mail. Do not reply.</p><p style="color:#cccccc;font-size:11px">Unsubscribe from library notices</p></td></tr></table>`;
+
 export function smallInbox(): FakeMail[] {
   return [
     mail("cat1", 1, { subject: "CAT-1 exam schedule released", from_name: "COE", priority: "very_important", unread: true, summary: "Exams start 18 Nov. Check your slot." }),
@@ -142,7 +145,7 @@ export async function mockApi(page: Page, mails: FakeMail[], opts: { reauth?: bo
       const m = api.mails.find((x) => x.id === id);
       if (!m) return route.fulfill(json({ error: "Not found" }, 404));
       return route.fulfill(
-        json({ subject: m.subject, from: m.from_name, to: ME, cc: "", date: m.received_at, html: /webinar/i.test(m.subject) ? `<p>Join us online.</p><img src="https://tracker.example/pixel.gif" alt=""><meta http-equiv="refresh" content="0;url=https://phish.example/">` : /newsletter/i.test(m.subject) ? Array.from({ length: 40 }, (_, i) => `<p>Paragraph ${i + 1} of a long newsletter.</p>`).join("") : `<p>Full text of <b>${m.subject}</b>.</p>`, text: null, attachments: [], unsubscribe: null }),
+        json({ subject: m.subject, from: m.from_name, to: ME, cc: "", date: m.received_at, html: /library/i.test(m.subject) ? CIRCULAR : /webinar/i.test(m.subject) ? `<p>Join us online.</p><img src="https://tracker.example/pixel.gif" alt=""><meta http-equiv="refresh" content="0;url=https://phish.example/">` : /newsletter/i.test(m.subject) ? Array.from({ length: 40 }, (_, i) => `<p>Paragraph ${i + 1} of a long newsletter.</p>`).join("") : `<p>Full text of <b>${m.subject}</b>.</p>`, text: null, attachments: [], unsubscribe: null }),
       );
     }
 

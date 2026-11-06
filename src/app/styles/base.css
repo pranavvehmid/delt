@@ -391,7 +391,7 @@ body { min-height: 100dvh; }
 .mv-scroll { overscroll-behavior: contain; }
 
 /* dark mail in dark themes */
-.mv-frame.dim { filter: invert(1) hue-rotate(180deg); background: transparent; box-shadow: none !important; border-color: transparent !important; }
+.mv-frame.dim { background: transparent; box-shadow: none !important; border-color: transparent !important; }
 .mv-colours { display: block; margin: 0 0 8px auto; font-size: 12.5px; }
 
 /* the Grid card's preview in Appearance */

@@ -1,8 +1,9 @@
 "use client";
 
 // The original mail, read live from Gmail and shown in a locked-down frame (never stored).
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { FullMessage } from "@/lib/gmail";
+import { darkenMail, parseColor, type RGB } from "./mail-dark";
 
 const esc = (s: string) =>
   s.replace(
@@ -15,10 +16,20 @@ const esc = (s: string) =>
 const linkify = (s: string) =>
   s.replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1">$1</a>');
 
-// In dark themes the mail is shown dark (issue #26): the whole frame is colour-inverted, and pictures
-// are inverted back so photos and logos keep their real colours. "Original colours" turns it off.
+// In dark themes the mail is shown dark (#26). #71: element by element (see mail-dark.ts), on the
+// look's own background, so every text passes 4.5:1 and pictures keep their colours.
+// "Original colours" turns it off.
 const DARK_MAIL_KEY = "delt-mail-original";
-const KEEP = "img,video,picture,svg,canvas,iframe,[style*='background-image']";
+
+/** The colour behind the mail: the first solid background above the frame. */
+function pageColour(el: Element | null): RGB {
+  for (; el; el = el.parentElement) {
+    const c = parseColor(getComputedStyle(el).backgroundColor);
+    if (c && c[3] > 0.9) return c.slice(0, 3) as RGB;
+  }
+  const b = parseColor(getComputedStyle(document.body).backgroundColor);
+  return b && b[3] > 0.9 ? (b.slice(0, 3) as RGB) : [0, 0, 0];
+}
 
 // The mail runs in a sandbox with no scripts at all; links open outside DELT.
 // #32: a mail can't redirect the frame (meta refresh) or change where its links point (<base>).
@@ -29,9 +40,8 @@ export const cleanMailHtml = (html: string) =>
 /** Does the mail load anything from the internet (images, stylesheets, backgrounds)? */
 export const hasRemoteContent = (html: string | null) =>
   !!html &&
-  /(src|href|background)\s*=\s*["']?\s*(https?:)?\/\/|url\(\s*["']?\s*(https?:)?\/\//i.test(
-    html,
-  );
+  // pictures, backgrounds and stylesheets; a plain link (<a href>) loads nothing until it's tapped (#71)
+  /(?<![\w-])(src|background)\s*=\s*["']?\s*(https?:)?\/\/|<link\b[^>]*\bhref\s*=\s*["']?\s*(https?:)?\/\/|url\(\s*["']?\s*(https?:)?\/\//i.test(html);
 
 /** #59: "Text: Large" also makes the mail itself bigger, not only DELT around it. */
 const large = () =>
@@ -54,7 +64,7 @@ function frameDoc(m: FullMessage, darkBg: string | null, remote: boolean) {
   img{max-width:100%!important;height:auto!important} table{max-width:100%!important} td{word-break:break-word}
   a{color:#5b3fd6} pre{white-space:pre-wrap;font:15px/1.6 system-ui,sans-serif;margin:0}
   blockquote{margin:8px 0;padding-left:12px;border-left:3px solid #ddd;color:#555}
-${darkBg ? `html,body{background:${darkBg}!important} ${KEEP}{filter:invert(1) hue-rotate(180deg)}` : ""}
+${darkBg ? `html,body{background:${darkBg};color:#e9e9ec} a{color:#a9b8ff} blockquote{border-left-color:#555;color:#bbb}` : ""}
 </style></head><body>${body}</body></html>`;
 }
 
@@ -81,6 +91,10 @@ export default function MailFrame({ msg }: { msg: FullMessage }) {
     return () => watch.disconnect();
   }, []);
   const dimMail = darkTheme && !original;
+  const [bg, setBg] = useState("rgb(0,0,0)");
+  useLayoutEffect(() => {
+    if (dimMail && frame.current) setBg(`rgb(${pageColour(frame.current.parentElement).join(",")})`);
+  }, [dimMail, darkTheme]);
   const toggleOriginal = () => {
     setOriginal((o) => {
       try {
@@ -94,6 +108,10 @@ export default function MailFrame({ msg }: { msg: FullMessage }) {
   function fit() {
     const doc = frame.current?.contentDocument;
     if (!doc?.body) return;
+    if (dimMail && !doc.body.dataset.dark) {
+      doc.body.dataset.dark = "1";
+      darkenMail(doc, parseColor(bg)!.slice(0, 3) as RGB);
+    }
     // The mail's own height (#45). documentElement.scrollHeight is never smaller than the frame,
     // so a short mail used to keep the frame's starting height and leave a tall empty box.
     const body = doc.body,
@@ -138,8 +156,7 @@ export default function MailFrame({ msg }: { msg: FullMessage }) {
         // same-origin only so the height can be measured; no allow-scripts, so nothing in the mail can run
         sandbox="allow-same-origin allow-popups allow-popups-to-escape-sandbox"
         referrerPolicy="no-referrer"
-        // "transparent": the page shows through, exactly its own colour
-        srcDoc={frameDoc(msg, dimMail ? "transparent" : null, remote)}
+        srcDoc={frameDoc(msg, dimMail ? bg : null, remote)}
         onLoad={fit}
         style={{ height }}
       />

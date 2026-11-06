@@ -106,6 +106,53 @@ test("Extra dark: the mail itself is shown dark, with a switch back to original 
   await expect(frame).toHaveClass(/dim/);
 });
 
+// #71: every piece of text in the mail passes 4.5:1 on the colour it actually sits on, in every dark theme
+for (const [look, mode] of [["minimal", "black"], ["minimal", "dark"], ["glyph", "dark"], ["glyph", "black"], ["grid", "dark"], ["grid", "black"]] as const) {
+  test(`${look} ${mode}: every line of a dark mail is readable (#71)`, async ({ page }) => {
+    await page.addInitScript(([l, m]) => {
+      localStorage.setItem("delt-prefs", JSON.stringify({ look: l, mode: m, accent: "auto", size: "normal", density: "comfortable" }));
+      localStorage.setItem("delt-welcomed", "1");
+    }, [look, mode]);
+    await mockApi(page, smallInbox());
+    await page.goto("/e2e");
+    await page.locator('li.row[data-mail="notice"] .row-main').click();
+    const frame = page.frameLocator(".mv-frame");
+    await expect(frame.getByText("Closed on 12 Nov.")).toBeVisible();
+    await expect(frame.locator("body[data-dark]")).toHaveCount(1);
+    const page_bg = await page.locator(".mv-frame").evaluate((f) => {
+      for (let e: Element | null = f.parentElement; e; e = e.parentElement) {
+        const c = getComputedStyle(e).backgroundColor;
+        if (c !== "rgba(0, 0, 0, 0)" && c !== "transparent") return c;
+      }
+      return getComputedStyle(document.body).backgroundColor;
+    });
+    const results = await frame.locator("body").evaluate((body, pageBg) => {
+      const parse = (s: string) => s.match(/[\d.]+/g)!.map(Number);
+      const lin = (c: number) => ((c /= 255) <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4);
+      const lum = (c: number[]) => 0.2126 * lin(c[0]) + 0.7152 * lin(c[1]) + 0.0722 * lin(c[2]);
+      const out: { text: string; ratio: number; bg: string }[] = [];
+      const win = body.ownerDocument.defaultView!;
+      for (const el of body.querySelectorAll("*")) {
+        const own = [...el.childNodes].filter((n) => n.nodeType === 3 && n.textContent!.trim()).map((n) => n.textContent!.trim()).join(" ");
+        if (!own) continue;
+        let bg = parse(pageBg);
+        for (let e: Element | null = el; e; e = e.parentElement) {
+          const c = parse(win.getComputedStyle(e).backgroundColor);
+          if (c.length < 4 || c[3] > 0.5) { bg = c; break; }
+        }
+        const fg = parse(win.getComputedStyle(el).color);
+        const [a, b] = [lum(fg), lum(bg)];
+        out.push({ text: own.slice(0, 30), ratio: (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05), bg: bg.join(",") });
+      }
+      return out;
+    }, page_bg);
+    expect(results.length).toBeGreaterThanOrEqual(6);
+    for (const r of results) expect(r.ratio, `"${r.text}" on ${r.bg}`).toBeGreaterThanOrEqual(4.5);
+    // white boxes became dark, not a bright block on a dark screen
+    for (const r of results) expect(Math.max(...r.bg.split(",").slice(0, 3).map(Number)), `"${r.text}" box ${r.bg}`).toBeLessThan(90);
+  });
+}
+
 test("Light theme: mail keeps its own colours", async ({ page }) => {
   await mockApi(page, smallInbox());
   await page.goto("/e2e");
