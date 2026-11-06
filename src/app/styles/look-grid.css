@@ -251,3 +251,15 @@
 :root[data-look="grid"] .skeleton { margin-top: 24px; background: var(--surface); }
 :root[data-look="grid"] .skeleton .row-text { box-shadow: inset 3px 0 0 var(--surface2); }
 :root[data-look="grid"] .skeleton .row-slide { background: var(--surface); }
+
+/* A16: the sign-in page in Grid: the headline set like a title card and the example inbox as a
+   little timing tower (flag bars, upright caps) */
+:root[data-look="grid"] .signin h1 { font: 700 28px/1.15 var(--font); letter-spacing: 0; }
+:root[data-look="grid"] .signin .preview { background: var(--surface); border-radius: 0 var(--corner) 0 0; padding: 0 16px; }
+:root[data-look="grid"] .signin .pv:last-child { border-bottom: 0; }
+:root[data-look="grid"] .pv small { display: flex; align-items: center; gap: 8px; font: 700 12.5px/1 var(--font); letter-spacing: 0.04em; color: rgb(var(--ink)); }
+:root[data-look="grid"] .pv small::before { content: ""; flex: none; width: 3px; height: 14px; background: var(--flag-blue); }
+:root[data-look="grid"] .pv.urgent small::before { background: var(--flag-red); }
+:root[data-look="grid"] .pv.priority small::before { background: var(--flag-yellow); }
+:root[data-look="grid"] .pv.later small::before { background: var(--flag-green); }
+:root[data-look="grid"] .pv.urgent small { color: rgb(var(--ink)); }
