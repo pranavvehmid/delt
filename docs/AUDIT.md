@@ -164,3 +164,109 @@ Label `audit-2026-11-07`. Severity: 1 critical, 28 major, 79 minor.
 | #184 | minor | design | Stylesheets have become a log of fixes |
 | #185 | minor | infra | The package is still named vit-mail-organizer |
 | #186 | minor | accessibility | Touch users have no visible alternative to swiping |
+
+## Frontend audit, major issues (7 Nov 2026), label `frontend-audit`: #187–#236 (50)
+
+- #187 Settings is one long phone sheet, even on a laptop
+- #188 Preferences are split between two entry points
+- #189 The half-moon header button doesn't do what it looks like
+- #190 Where navigation lives changes with the look
+- #191 Deadlines on a laptop wastes the reading pane
+- #192 Glyph still cuts deadline titles off
+- #193 The laptop overview repeats the list next to it
+- #194 Every launch shows loading placeholders: the inbox isn't rendered on the server
+- #195 Every student downloads the CSS for all three looks
+- #196 On a laptop, Back walks through every mail you opened
+- #197 Switching tabs throws away your scroll position
+- #198 Grid's position numbers change all the time
+- #199 Grid's LEADER and +1D 2H gaps aren't explained anywhere
+- #200 The three looks are three layouts, not three skins
+- #201 The open mail jumps as its images load
+- #202 The laptop list and reading pane can't be resized
+- #203 On 1920px screens a third of the window is empty
+- #204 The app isn't designed or tested below 412px width
+- #205 Transparent logos disappear in dark mail
+- #206 The photo viewer can't zoom or swipe
+- #207 PDFs take you out of the app
+- #208 AI settings speak in developer jargon
+- #209 Sign-in doesn't prepare students for Google's permission screen
+- #210 If the server fails, the inbox shows loading placeholders forever
+- #211 The unread badge counts Noise and promotions
+- #212 A second action replaces the first action's Undo
+- #213 Icons mix SVG drawings, Unicode arrows and text symbols
+- #214 There are seven kinds of button
+- #215 Day headings scroll away in long lists
+- #216 Tapping the active tab doesn't scroll back to the top
+- #217 Appearance changes are previewed behind a dark veil
+- #218 Blocked notifications give no way forward
+- #219 Phones have no at-a-glance summary
+- #220 Counts appear in four places and mean four different things
+- #221 Grid's entrance animation replays on every app launch
+- #222 The sign-in page has no laptop design
+- #223 The browser tab never shows unread mail or the open subject
+- #224 The list never says why a mail is urgent
+- #225 AI-written summaries look like the sender's words
+- #226 Due dates don't show where they came from
+- #227 No sign of how sure DELT is about a pile
+- #228 A crash anywhere shows a blank screen
+- #229 There's no designed 404 page
+- #230 Filters and search are lost on reload or relaunch
+- #231 Failed actions look like they worked
+- #232 Rows don't show attachments
+- #233 Tablets get a stretched phone layout
+- #234 Choosing an accent colour changes the colour of urgency
+- #235 Banners stack above the list
+- #236 Keyboard users must tab through every row to reach the open mail
+
+## Feature proposals (7 Nov 2026), label `feature-idea`: #237–#286 (50)
+
+- #237 Reply and forward without leaving DELT
+- #238 Conversation view for mail threads
+- #239 Search with filters: sender, pile, date, attachments
+- #240 Select several mails and act on them at once
+- #241 Snooze a mail until a time
+- #242 Pin mails to the top
+- #243 Custom piles beyond the four
+- #244 Weekly look-ahead summary
+- #245 Morning briefing
+- #246 Calendar view of deadlines
+- #247 Calendar feed that syncs deadlines automatically
+- #248 Exam schedule view
+- #249 Fee and payment tracker
+- #250 Attendance warnings at a glance
+- #251 Placement and internship tracker
+- #252 Events and clubs calendar
+- #253 Clean up noisy senders
+- #254 Sender pages
+- #255 Home screen widget with next deadlines
+- #256 Quiet hours and per-pile notifications
+- #257 Share a deadline with classmates
+- #258 Share a mail summary to WhatsApp
+- #259 Translate a mail
+- #260 Ask your inbox a question
+- #261 One place for every attachment
+- #262 Use more than one account
+- #263 Open DELT to other colleges
+- #264 Tell DELT your interests to tune sorting
+- #265 Spot reschedules and cancellations
+- #266 Fold repeated reminders into one
+- #267 Inbox insights
+- #268 Download my data
+- #269 Maintainer dashboard
+- #270 Command palette
+- #271 DELT inside Gmail
+- #272 Turn a mail into a task
+- #273 Campus venues link to a map
+- #274 High-contrast theme
+- #275 Reading options: font and spacing
+- #276 App in Hindi, Tamil and Telugu
+- #277 Write your own sorting rules
+- #278 Activity history
+- #279 Tidy up past deadlines automatically
+- #280 Archive and delete from DELT
+- #281 Academic calendar overlay
+- #282 Warn about phishing and fake notices
+- #283 Read text in poster images
+- #284 One-tap actions: Register, Pay, Join
+- #285 Exam focus mode
+- #286 Remind me about this mail
