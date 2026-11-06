@@ -422,7 +422,7 @@ test("deadlines say only what the heading doesn't, label their icons, and a wron
   const r = page.locator('li.row[data-mail="fee"]');
   await expect(r.locator(".due")).not.toContainText(/tomorrow/i);
   await expect(r.getByText("Calendar")).toBeVisible();
-  await expect(page.getByText("Nothing else is due.")).toBeVisible();
+  await expect(page.getByText("Nothing else is due")).toBeVisible();
   await r.locator(".row-main").click();
   await page.getByRole("button", { name: "Wrong date? Remove" }).click();
   expect(api.patches.at(-1)).toEqual({ id: "fee", deadline: null });

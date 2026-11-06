@@ -21,6 +21,7 @@ export function Skeleton() {
 export function Empty({ title, hint, children }: { title: string; hint: string; children?: React.ReactNode }) {
   return (
     <div className="empty" role="status">
+      <span className="empty-mark" aria-hidden="true" />
       <b>{title}</b>
       {hint && <span className="muted">{hint}</span>}
       {children && <span className="empty-acts">{children}</span>}

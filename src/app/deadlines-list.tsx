@@ -27,7 +27,7 @@ export default function DeadlinesList({ loaded, buckets, now, onOpen, onPatch }:
       {!loaded ? (
         <Skeleton />
       ) : BUCKETS.every((b) => buckets[b].length === 0) ? (
-        <Empty title="No deadlines" hint="" />
+        <Empty title="No deadlines" hint="When a mail mentions a due date, it shows up here." />
       ) : (
         BUCKETS.filter((b) => buckets[b].length > 0).map((b) => (
           <section key={b} className={`day bucket b-${b.replace(" ", "")}`}>
@@ -76,7 +76,7 @@ export default function DeadlinesList({ loaded, buckets, now, onOpen, onPatch }:
           </section>
         ))
       )}
-      {loaded && BUCKETS.some((b) => b !== "Done" && buckets[b].length > 0) && <p className="foot muted">Nothing else is due.</p>}
+      {loaded && BUCKETS.some((b) => b !== "Done" && buckets[b].length > 0) && <p className="foot muted"><span className="finish">Nothing else is due</span></p>}
     </main>
   );
 }
