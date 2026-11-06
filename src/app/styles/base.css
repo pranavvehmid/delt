@@ -124,7 +124,7 @@ svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width:
 .lp-minimal { background: #fff; border: 1px solid #ecebf0; }
 .lp-minimal i { background: #e9e7ef; height: 8px; }
 .lp-minimal i:first-child { width: 60%; background: #1d1b22; height: 8px; }
-.lp-glyph { background: #17112b radial-gradient(rgba(245, 200, 66, 0.25) 1px, transparent 1.2px) 0 0 / 7px 7px; }
+.lp-glyph { background: #17112b radial-gradient(rgba(245, 200, 66, 0.12) 1px, transparent 1.2px) 0 0 / 8px 8px; } /* A17: the page's dot grid, quiet at thumbnail size */
 .lp-glyph i { background: #261c45; border: 2px solid #0b0716; box-shadow: 2px 2px 0 #0b0716; }
 .lp-glyph i:first-child { background: #f5c842; width: 48%; }
 .ap-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 52px; border-bottom: 1px solid var(--line); }
