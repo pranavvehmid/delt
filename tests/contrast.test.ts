@@ -1,10 +1,18 @@
 // Issue #7: every row's text must be readable (WCAG 4.5:1 for normal text, 3:1 for 24px+),
-// while the four piles still look clearly different. Reads the real numbers from app.css.
+// while the four piles still look clearly different. Reads the real numbers from the style files.
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 
-const css = readFileSync("src/app/app.css", "utf8");
+// app.css only imports the style files; read them in the same order.
+const files = [...readFileSync("src/app/app.css", "utf8").matchAll(/@import "\.\/(styles\/[\w-]+\.css)";/g)].map((m) => m[1]);
+const css = files.map((f) => readFileSync(`src/app/${f}`, "utf8")).join("\n");
+
+test("the styles are split into one file per look, in cascade order", () => {
+  assert.deepEqual(files, ["styles/base.css", "styles/look-shared.css", "styles/look-minimal.css", "styles/look-glyph.css", "styles/themes.css", "styles/look-grid.css"]);
+  assert.ok(!css.includes(":not([data-look"), "say which looks a rule is for, not which it isn't");
+  assert.ok(!/data-look/.test(readFileSync("src/app/styles/base.css", "utf8")), "base.css has no look-specific rules");
+});
 
 type RGB = [number, number, number];
 const lin = (c: number) => ((c /= 255) <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4);
@@ -27,7 +35,7 @@ function vars(sel: string) {
   const body = css.slice(i, css.indexOf("}", i));
   return Object.fromEntries([...body.matchAll(/--([\w-]+):\s*([^;]+);/g)].map((m) => [m[1], m[2].trim()]));
 }
-const M = ':root:not([data-look="glyph"])';
+const M = ':root:is([data-look="minimal"], [data-look="grid"])';
 const light = vars(M);
 const dark = { ...light, ...vars(`${M}[data-theme="dark"]`) };
 const black = { ...dark, ...vars(`${M}[data-tone="black"]`) };

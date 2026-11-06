@@ -1,0 +1,206 @@
+/* Rules Minimal and Grid both use (Grid is built on Minimal's layout and ink).
+   Grid's own differences are in look-grid.css, which comes after this file. */
+
+/* =========================================================
+   Minimal look, Swiss (International Typographic) style.
+   - One typeface (IBM Plex Sans) at light / regular / medium; never bold.
+   - Importance is ink, size and weight: Urgent is full ink, each pile below is lighter,
+     a little smaller and thinner. Ink never drops below --floor, the lowest level that
+     still reads at 4.5:1 on this background (checked in tests/contrast.test.ts).
+   - One accent (Swiss red, the DELT dot) for signals only: urgent, due soon.
+   - No cards, pills or dividers: an 8px grid and whitespace do the grouping.
+   - Square corners. Sections are a typographic masthead, not a tab bar.
+   ========================================================= */
+
+:root:is([data-look="minimal"], [data-look="grid"]) {
+  --ink: 28 25 23;
+  --bg: #fafaf9;
+  --surface: #f5f5f4;
+  --surface2: #e7e5e4;
+  --text: rgb(var(--ink));
+  --muted: rgb(var(--ink) / var(--floor));
+  --line: rgb(var(--ink) / 0.08);
+  --accent: #c8102e;
+  --on-accent: #fff;
+  --due-soon: #c8102e;
+  --due-week: rgb(var(--ink) / 0.7);
+  --font: var(--font-plex), system-ui, -apple-system, "Segoe UI", sans-serif;
+  --head: var(--font);
+  --shadow: 0 1px 0 rgb(var(--ink) / 0.06);
+  --floor: 0.64; /* 4.5:1 for small text on --bg */
+  --floor-lg: 0.5; /* 3:1, only for text 24px and up */
+}
+:root:is([data-look="minimal"], [data-look="grid"])[data-theme="dark"] {
+  --floor: 0.54;
+  --floor-lg: 0.4;
+  --ink: 245 244 242;
+  --bg: #161412;
+  --surface: #211e1b;
+  --surface2: #34302c;
+  --accent: #ff4d5e;
+  --due-soon: #ff4d5e;
+  --shadow: 0 1px 0 rgb(0 0 0 / 0.4);
+}
+:root:is([data-look="minimal"], [data-look="grid"]) body { font-weight: 400; letter-spacing: 0.005em; }
+:root:is([data-look="minimal"], [data-look="grid"]) :is(.tabbar, .row .avatar, .pdot, .row .meta .tag, .unread-dot, .line1 .time, .fchip .n, .fchip .tagdot, .dayhead .muted, .toggle .muted, .pagehead h1, .pchip .tagdot) { display: none !important; }
+:root:is([data-look="minimal"], [data-look="grid"]) :is(.iconbtn, .avatar.me, .searchbar, .fchip, .pchip, .pillbtn, .toast, .menu, .sheet, .seg, .seg button, .look-card, .look-prev, .swatch, .mv-frame, .att, .cta, .menu-item, .datebox, .toggle .knob, .toggle .knob::after, .sk) { border-radius: 0 !important; }
+
+/* top bar: the brand mark stays heavy (the one bold thing on screen) */
+:root:is([data-look="minimal"], [data-look="grid"]) .appbar { background: var(--bg); backdrop-filter: none; padding-bottom: 4px; }
+:root:is([data-look="minimal"], [data-look="grid"]) .sync { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; padding: 6px 8px; border-radius: 0; }
+:root:is([data-look="minimal"], [data-look="grid"]) .avatar.me { background: rgb(var(--ink)); color: var(--bg); font-weight: 500; }
+
+/* masthead: the two sections as type */
+:root:is([data-look="minimal"], [data-look="grid"]) .mast { display: flex; gap: 22px; padding: 6px 16px 2px; }
+:root:is([data-look="minimal"], [data-look="grid"]) .mast button { font: 300 34px/1.1 var(--font); letter-spacing: -0.025em; color: rgb(var(--ink) / var(--floor-lg)); transition: color 0.3s var(--ease); }
+:root:is([data-look="minimal"], [data-look="grid"]) .mast button:hover { color: rgb(var(--ink) / 0.8); }
+:root:is([data-look="minimal"], [data-look="grid"]) .mast button.on { color: rgb(var(--ink)); }
+:root:is([data-look="minimal"], [data-look="grid"]) .mast sup { font-size: 11.5px; font-weight: 500; letter-spacing: 0.02em; margin-left: 4px; vertical-align: top; position: relative; top: 0.5em; line-height: 1; font-variant-numeric: tabular-nums; }
+
+/* search: a single rule, no box */
+:root:is([data-look="minimal"], [data-look="grid"]) .searchbar { background: none; padding: 0; height: 44px; border-bottom: 1px solid rgb(var(--ink) / 0.16); transition: border-color 0.2s; }
+:root:is([data-look="minimal"], [data-look="grid"]) .searchbar:focus-within { border-bottom-color: rgb(var(--ink)); }
+:root:is([data-look="minimal"], [data-look="grid"]) .searchbar input { font-size: 15px; font-weight: 300; }
+
+/* filters: words, underlined when chosen */
+:root:is([data-look="minimal"], [data-look="grid"]) .chips { gap: 20px; margin-top: 14px; margin-bottom: 0; }
+:root:is([data-look="minimal"], [data-look="grid"]) .fchip { background: none !important; border: 0 !important; padding: 0; height: 34px; font-size: 14px; font-weight: 400; color: rgb(var(--ink) / var(--floor)); }
+:root:is([data-look="minimal"], [data-look="grid"]) .fchip:hover { color: rgb(var(--ink) / 0.85); }
+:root:is([data-look="minimal"], [data-look="grid"]) .fchip.on { color: rgb(var(--ink)); box-shadow: inset 0 -2px 0 rgb(var(--ink)); }
+:root:is([data-look="minimal"], [data-look="grid"]) .listbar { margin-top: 6px; }
+:root:is([data-look="minimal"], [data-look="grid"]) .toggle { font-size: 13px; color: rgb(var(--ink) / max(0.7, var(--floor))); }
+:root:is([data-look="minimal"], [data-look="grid"]) .toggle .knob { width: 28px; height: 14px; background: rgb(var(--ink) / 0.14); }
+:root:is([data-look="minimal"], [data-look="grid"]) .toggle .knob::after { width: 10px; height: 10px; box-shadow: none; }
+:root:is([data-look="minimal"], [data-look="grid"]) .toggle input:checked + .knob { background: rgb(var(--ink)); }
+:root:is([data-look="minimal"], [data-look="grid"]) .link { color: rgb(var(--ink)); font-size: 13px; font-weight: 400; text-decoration: underline; text-underline-offset: 3px; text-decoration-thickness: 1px; }
+:root:is([data-look="minimal"], [data-look="grid"]) .foot .link:disabled { text-decoration: none; } /* the base rule, which this file would otherwise override */
+
+/* day labels: small capitals */
+:root:is([data-look="minimal"], [data-look="grid"]) .dayhead { position: static; font: 500 11px/1 var(--font); text-transform: uppercase; letter-spacing: 0.12em; color: rgb(var(--ink) / var(--floor)); padding-top: 30px; padding-bottom: 6px; background: none; }
+:root:is([data-look="minimal"], [data-look="grid"]) .day.needs .dayhead { color: var(--due-soon); } /* #23, as in base */
+
+/* rows on a two-column grid: time | mail */
+:root:is([data-look="minimal"], [data-look="grid"]) .rows { display: flex; flex-direction: column; gap: 4px; }
+:root:is([data-look="minimal"], [data-look="grid"]) .row-slide { background: var(--bg); }
+:root:is([data-look="minimal"], [data-look="grid"]) .row-main { grid-template-columns: 52px minmax(0, 1fr); gap: 14px; padding: 12px 0; border-bottom: 0; }
+:root:is([data-look="minimal"], [data-look="grid"]) .row-acts { border-bottom: 0; }
+/* --lv: 1 Urgent, 0.6 Priority, 0.3 Later, 0 Noise. --a is the main ink, --a2 the quieter lines. */
+:root:is([data-look="minimal"], [data-look="grid"]) .row { --lv: 1; --a: calc(var(--floor) + (1 - var(--floor)) * var(--lv)); --a2: calc(var(--floor) + (1 - var(--floor)) * var(--lv) * 0.45); --subj: 17px; --w: 400; }
+:root:is([data-look="minimal"], [data-look="grid"]) .ink-priority { --lv: 0.6; }
+:root:is([data-look="minimal"], [data-look="grid"]) .ink-later { --lv: 0.3; --subj: 16px; }
+:root:is([data-look="minimal"], [data-look="grid"]) .ink-noise { --lv: 0; --subj: 15px; --w: 300; }
+:root:is([data-look="minimal"], [data-look="grid"]) .when { display: block; padding-top: 2px; font-size: 11.5px; letter-spacing: 0.02em; font-variant-numeric: tabular-nums; color: rgb(var(--ink) / var(--a2)); white-space: nowrap; }
+:root:is([data-look="minimal"], [data-look="grid"]) .when::before { content: ""; display: block; width: 14px; height: 2px; margin-bottom: 7px; background: transparent; }
+:root:is([data-look="minimal"], [data-look="grid"]) .ink-very_important .when::before { background: var(--accent); }
+:root:is([data-look="minimal"], [data-look="grid"]) .row.unread .when { color: rgb(var(--ink) / var(--a)); font-weight: 500; }
+:root:is([data-look="minimal"], [data-look="grid"]) .from { font-size: 11px; font-weight: 400; text-transform: uppercase; letter-spacing: 0.08em; color: rgb(var(--ink) / var(--a2)); }
+:root:is([data-look="minimal"], [data-look="grid"]) .subj { font-size: var(--subj); line-height: 1.3; font-weight: var(--w); letter-spacing: -0.012em; color: rgb(var(--ink) / var(--a)); margin-top: 3px; white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+:root:is([data-look="minimal"], [data-look="grid"]) .sum { font-size: 13.5px; font-weight: 300; color: rgb(var(--ink) / var(--a2)); margin-top: 2px; }
+:root:is([data-look="minimal"], [data-look="grid"]) .row.unread :is(.subj, .from) { font-weight: 500; }
+:root:is([data-look="minimal"], [data-look="grid"]) .meta { margin-top: 6px; }
+:root:is([data-look="minimal"], [data-look="grid"]) .row-text > .meta:not(:has(.due, .donemark)) { display: none; }
+:root:is([data-look="minimal"], [data-look="grid"]) :is(.due, .donemark) { background: none !important; padding: 0; height: auto; font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.08em; color: rgb(var(--ink) / max(0.7, var(--floor))); }
+:root:is([data-look="minimal"], [data-look="grid"]) .due:is(.lv-over, .lv-soon) { color: var(--accent); }
+:root:is([data-look="minimal"], [data-look="grid"]) .row.done { --lv: 0; }
+:root:is([data-look="minimal"], [data-look="grid"]) .row.done .subj { text-decoration: line-through; text-decoration-thickness: 1px; }
+:root:is([data-look="minimal"], [data-look="grid"]) .swipe-bg.r { background: rgb(var(--ink)); color: var(--bg); }
+:root:is([data-look="minimal"], [data-look="grid"]) .swipe-bg.l { background: rgb(var(--ink) / 0.5); color: var(--bg); }
+:root:is([data-look="minimal"], [data-look="grid"]) .foot { font-size: 11px; letter-spacing: 0.04em; padding-top: 36px; }
+
+/* deadlines: big light day numbers, like a poster */
+:root:is([data-look="minimal"], [data-look="grid"]) .pagehead { padding-top: 0; }
+:root:is([data-look="minimal"], [data-look="grid"]) .pagehead p { font-size: 13px; font-weight: 300; }
+:root:is([data-look="minimal"], [data-look="grid"]) .due-row .row-main { grid-template-columns: 52px minmax(0, 1fr); align-items: start; }
+:root:is([data-look="minimal"], [data-look="grid"]) .datebox { width: auto; height: auto; align-items: flex-start; background: none !important; color: rgb(var(--ink)); }
+:root:is([data-look="minimal"], [data-look="grid"]) .datebox b { font: 300 34px/0.9 var(--font); letter-spacing: -0.04em; font-variant-numeric: tabular-nums; }
+:root:is([data-look="minimal"], [data-look="grid"]) .datebox small { font-size: 10.5px; letter-spacing: 0.12em; color: rgb(var(--ink) / var(--floor)); margin-top: 4px; }
+:root:is([data-look="minimal"], [data-look="grid"]) .datebox:is(.lv-over, .lv-soon) b { color: var(--accent); }
+:root:is([data-look="minimal"], [data-look="grid"]) .datebox.lv-week { color: rgb(var(--ink)); }
+:root:is([data-look="minimal"], [data-look="grid"]) .due-row .subj { font-size: 16px; -webkit-line-clamp: 2; }
+:root:is([data-look="minimal"], [data-look="grid"]) .b-Overdue .dayhead { color: var(--accent); }
+:root:is([data-look="minimal"], [data-look="grid"]) .iconbtn.check.on { color: rgb(var(--ink)); }
+
+/* the open mail */
+:root:is([data-look="minimal"], [data-look="grid"]) .mv-bar { border-bottom: 0; }
+:root:is([data-look="minimal"], [data-look="grid"]) .pillbtn { background: none; border: 1px solid rgb(var(--ink) / 0.16); height: 32px; font-size: 12.5px; font-weight: 400; letter-spacing: 0.02em; }
+:root:is([data-look="minimal"], [data-look="grid"]) .pillbtn:hover { border-color: rgb(var(--ink)); background: none; }
+:root:is([data-look="minimal"], [data-look="grid"]) .pillbtn.on { background: rgb(var(--ink)); border-color: rgb(var(--ink)); color: var(--bg); }
+:root:is([data-look="minimal"], [data-look="grid"]) .mv-page { padding-top: 8px; }
+:root:is([data-look="minimal"], [data-look="grid"]) .mv-subj { font: 300 30px/1.14 var(--font); letter-spacing: -0.025em; margin-bottom: 14px; }
+:root:is([data-look="minimal"], [data-look="grid"]) .mv-from { font-size: 13px; }
+:root:is([data-look="minimal"], [data-look="grid"]) .mv-from b { font-weight: 500; }
+:root:is([data-look="minimal"], [data-look="grid"]) .lbl { font-size: 10.5px; font-weight: 500; letter-spacing: 0.12em; }
+:root:is([data-look="minimal"], [data-look="grid"]) .mv-pile { gap: 0; margin-top: 22px; }
+:root:is([data-look="minimal"], [data-look="grid"]) .pchip { border: 0; background: none !important; padding: 0; margin-right: 16px; height: 28px; font-size: 14px; color: rgb(var(--ink) / var(--floor)); }
+:root:is([data-look="minimal"], [data-look="grid"]) .pchip.on { color: rgb(var(--ink)); font-weight: 500; box-shadow: inset 0 -2px 0 currentColor; }
+:root:is([data-look="minimal"], [data-look="grid"]) .pchip.on.p-very_important { color: var(--accent); }
+:root:is([data-look="minimal"], [data-look="grid"]) :is(.mv-due, .mv-sum) { background: none; border-radius: 0; padding: 2px 0 2px 14px; margin-top: 18px; border-left: 2px solid rgb(var(--ink) / 0.14); }
+:root:is([data-look="minimal"], [data-look="grid"]) .mv-due:is(.lv-over, .lv-soon) { border-left-color: var(--accent); }
+:root:is([data-look="minimal"], [data-look="grid"]) .mv-due b { font-weight: 500; }
+:root:is([data-look="minimal"], [data-look="grid"]) .mv-sum { font-weight: 300; font-size: 15px; }
+:root:is([data-look="minimal"], [data-look="grid"]) .mv-frame { box-shadow: 0 0 0 1px rgb(var(--ink) / 0.1); }
+:root:is([data-look="minimal"], [data-look="grid"]) .att { background: none; border: 1px solid rgb(var(--ink) / 0.14); }
+
+/* panels and messages */
+:root:is([data-look="minimal"], [data-look="grid"]) .toast { background: rgb(var(--ink)); color: var(--bg); box-shadow: none; }
+:root:is([data-look="minimal"], [data-look="grid"]) .toast button { color: var(--bg); text-decoration: underline; }
+:root:is([data-look="minimal"], [data-look="grid"]) .menu { box-shadow: 0 0 0 1px rgb(var(--ink) / 0.1), 0 16px 32px -16px rgb(0 0 0 / 0.25); border: 0; }
+:root:is([data-look="minimal"], [data-look="grid"]) .sheet { box-shadow: 0 -1px 0 rgb(var(--ink) / 0.1); }
+:root:is([data-look="minimal"], [data-look="grid"]) .sheet-head h2 { font-weight: 300; font-size: 26px; letter-spacing: -0.02em; }
+:root:is([data-look="minimal"], [data-look="grid"]) .look-card { border-width: 1px; }
+:root:is([data-look="minimal"], [data-look="grid"]) .look-card.on { border-color: rgb(var(--ink)); background: none; }
+:root:is([data-look="minimal"], [data-look="grid"]) .seg button.on { box-shadow: none; background: rgb(var(--ink)); color: var(--bg); }
+:root:is([data-look="minimal"], [data-look="grid"]) .lp-minimal { background: #fafaf9; }
+:root:is([data-look="minimal"], [data-look="grid"]) .lp-minimal i { background: rgb(28 25 23 / 0.25); height: 3px; }
+:root:is([data-look="minimal"], [data-look="grid"]) .lp-minimal i:first-child { background: #c8102e; width: 14px; height: 2px; }
+:root:is([data-look="minimal"], [data-look="grid"]) .lp-minimal i:nth-child(2) { background: #1c1917; width: 80%; height: 5px; }
+
+/* sign-in */
+:root:is([data-look="minimal"], [data-look="grid"]) .signin h1 { font-weight: 300; font-size: 30px; letter-spacing: -0.025em; line-height: 1.15; }
+:root:is([data-look="minimal"], [data-look="grid"]) .signin li { font-weight: 300; }
+:root:is([data-look="minimal"], [data-look="grid"]) .cta { background: rgb(var(--ink)); color: var(--bg); font-weight: 500; letter-spacing: 0.01em; }
+:root:is([data-look="minimal"], [data-look="grid"]) .fine { font-weight: 300; }
+
+@media (min-width: 720px) {
+  :root:is([data-look="minimal"], [data-look="grid"]) .mast { padding-left: 24px; padding-right: 24px; }
+  :root:is([data-look="minimal"], [data-look="grid"]) .mast button { font-size: 44px; }
+  :root:is([data-look="minimal"], [data-look="grid"]) .row-main { grid-template-columns: 72px minmax(0, 1fr); }
+}
+
+/* =========================================================
+   Extra dark (Nothing OS style): pure black, white ink, red signal.
+   It is a dark theme (data-theme="dark") with data-tone="black".
+   ========================================================= */
+:root:is([data-look="minimal"], [data-look="grid"])[data-tone="black"] {
+  --ink: 255 255 255;
+  --bg: #000;
+  --surface: #0c0c0c;
+  --surface2: #1d1d1d;
+  --accent: #ff2e3e;
+  --due-soon: #ff2e3e;
+}
+
+/* sign-in in Minimal: the big mark, and pile dots as ink (red only for Urgent) */
+:root:is([data-look="minimal"], [data-look="grid"]) .signin .p-priority .tagdot { background: rgb(var(--ink) / 0.72); }
+:root:is([data-look="minimal"], [data-look="grid"]) .signin .p-later .tagdot { background: rgb(var(--ink) / 0.48); }
+:root:is([data-look="minimal"], [data-look="grid"]) .signin .p-noise .tagdot { background: rgb(var(--ink) / 0.3); }
+:root:is([data-look="minimal"], [data-look="grid"]) .signin .p-very_important .tagdot { background: var(--accent); }
+:root:is([data-look="minimal"], [data-look="grid"]) .settings b { font-weight: 500; }
+:root:is([data-look="minimal"], [data-look="grid"]) .settings .keyform input { border-radius: 0; background: none; border: 0; border-bottom: 1px solid rgb(var(--ink) / 0.2); padding: 0; }
+:root:is([data-look="minimal"], [data-look="grid"]) .banner { border-radius: 0; background: none; border-left: 2px solid var(--accent); padding: 4px 0 4px 14px; }
+@media (pointer: coarse) {
+:root:is([data-look="minimal"], [data-look="grid"]) .searchbar input { font-size: 16px; }
+}
+:root:is([data-look="minimal"], [data-look="grid"]) .toggle .knob::after { border-radius: 0; }
+
+/* #54: due dates read like the rest of the app (lowercase am/pm), not in shouted capitals */
+:root:is([data-look="minimal"], [data-look="grid"]) :is(.due, .donemark) { text-transform: none; letter-spacing: 0.01em; font-size: 12.5px; }
+
+/* #59: small visual inconsistencies */
+/* focus rings follow the control's shape: square in Minimal and Grid */
+:root:is([data-look="minimal"], [data-look="grid"]) :focus-visible { border-radius: 0; }
+
+/* #63: nothing that carries information is under 12.5 px. Comes last so it wins over each
+   look's own sizes; uppercase labels get less tracking so they don't grow too wide. */
+:root:is([data-look="minimal"], [data-look="grid"]) :is(.sync, .sync span, .mast sup, .dayhead, .row .from, .finish, .foot, .when, .gap) { font-size: 12.5px !important; }
+:root:is([data-look="minimal"], [data-look="grid"]) :is(.dayhead, .row .from, .sync) { letter-spacing: 0.06em !important; }

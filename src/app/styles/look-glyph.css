@@ -1,0 +1,76 @@
+/* Glyph only: chunky ink cards, dot-matrix type, hard shadows. */
+
+/* =========================================================
+   Glyph look: same layout, chunky Nothing-style skin
+   ========================================================= */
+:root[data-look="glyph"] {
+  --bg: #17112b;
+  --surface: #261c45;
+  --surface2: #31255a;
+  --text: #f7f1e3;
+  --muted: #b3a8cf;
+  --line: #0b0716;
+  --accent: #f5c842;
+  --on-accent: #1b1238;
+  --t-urgent: #f5c842;
+  --t-priority: #ffe6a1;
+  --t-later: #b9a2ff;
+  --t-noise: #e3dff0;
+  --due-soon: #ff7a82; /* 4.5:1 on its own tint (issue #7) */
+  --due-week: #ffb84d;
+  --ink: #0b0716;
+  --head: var(--font-dot), monospace;
+  --font: var(--font-grotesk), system-ui, sans-serif;
+}
+:root[data-look="glyph"][data-theme="light"] {
+  --bg: #fff8e8;
+  --surface: #ffffff;
+  --surface2: #f6eedc;
+  --text: #1b1238;
+  --muted: #62587a;
+  --line: #1b1238;
+  --accent: #1b1238;
+  --on-accent: #f5c842;
+  --due-soon: #b0141b;
+  --due-week: #8a4b00;
+  --ink: #1b1238;
+}
+:root[data-look="glyph"] body { background: var(--bg) radial-gradient(color-mix(in srgb, var(--gold) 14%, transparent) 1.4px, transparent 1.5px) 0 0 / 22px 22px; }
+:root[data-look="glyph"] :is(.dayhead, .pagehead h1, .mv-subj, .datebox b) { font-family: var(--font-dot), monospace; font-weight: 900; font-variation-settings: "ROND" 100; letter-spacing: 0.01em; }
+:root[data-look="glyph"] .appbar { background: transparent; backdrop-filter: none; }
+:root[data-look="glyph"] .dayhead { background: transparent; position: static; font-size: 17px; padding-top: 18px; }
+:root[data-look="glyph"] .rows { display: flex; flex-direction: column; gap: 10px; }
+:root[data-look="glyph"] .row { overflow: visible; }
+:root[data-look="glyph"] .row-slide { background: var(--surface); border: 2.5px solid var(--ink); border-radius: 16px; box-shadow: 4px 4px 0 var(--ink); transition: transform 0.15s cubic-bezier(0.3, 1.4, 0.6, 1), box-shadow 0.15s; }
+:root[data-look="glyph"] .row-slide:hover { transform: translate(-2px, -2px); box-shadow: 6px 6px 0 var(--ink); }
+:root[data-look="glyph"] .row-main, :root[data-look="glyph"] .row-acts { border-bottom: 0; padding: 12px 14px; }
+:root[data-look="glyph"] .row-acts.hover-only { background: linear-gradient(90deg, transparent, var(--surface) 22%); border-radius: 0 14px 14px 0; }
+:root[data-look="glyph"] .swipe-bg { border-radius: 16px; }
+:root[data-look="glyph"] .unread-dot { left: 42px; top: 14px; background: #ff5a63; border-color: var(--ink); }
+:root[data-look="glyph"] .avatar:not(.me) { background: var(--c); color: #1b1238; border: 2px solid var(--ink); }
+:root[data-look="glyph"] .tag { background: var(--c); color: #1b1238; border: 2px solid var(--ink); }
+:root[data-look="glyph"] .tag .tagdot { display: none; }
+:root[data-look="glyph"] :is(.fchip, .pchip, .searchbar, .pillbtn, .datebox, .mv-due, .mv-sum, .mv-err, .att) { border: 2.5px solid var(--ink); box-shadow: 3px 3px 0 var(--ink); }
+:root[data-look="glyph"] :is(.fchip, .pchip).on { background: var(--c); color: #1b1238; border-color: var(--ink); }
+:root[data-look="glyph"] :is(.fchip, .pchip).on .n { color: #1b1238; }
+:root[data-look="glyph"] :is(.fchip, .pchip, .pillbtn):active { transform: translate(3px, 3px); box-shadow: 0 0 0 var(--ink); }
+:root[data-look="glyph"] .tabbar { border: 3px solid var(--ink); box-shadow: 5px 5px 0 var(--ink); background: var(--surface); backdrop-filter: none; }
+:root[data-look="glyph"] .tabbar button.on { border: 2px solid var(--ink); }
+:root[data-look="glyph"] .mv-frame { border: 2.5px solid var(--ink); box-shadow: 4px 4px 0 var(--ink); }
+:root[data-look="glyph"] :is(.menu, .sheet, .look-card) { border: 2.5px solid var(--ink); box-shadow: 5px 5px 0 var(--ink); }
+:root[data-look="glyph"] .cta { border: 3px solid var(--ink); box-shadow: 4px 4px 0 var(--ink); background: var(--gold); color: #1b1238; }
+:root[data-look="glyph"][data-tone="black"] { --bg: #000; --surface: #0e0d12; --surface2: #1a1820; }
+:root[data-look="glyph"][data-tone="black"] body { background: #000 radial-gradient(color-mix(in srgb, var(--gold) 9%, transparent) 1.4px, transparent 1.5px) 0 0 / 22px 22px; }
+:root[data-density="compact"][data-look="glyph"] .rows { gap: 6px; }
+:root[data-look="glyph"] .banner { border: 2.5px solid var(--ink); box-shadow: 3px 3px 0 var(--ink); }
+:root[data-look="glyph"][data-tone="black"] :is(.sheet, .menu) { box-shadow: 5px 5px 0 var(--ink); border-color: #3a3550; }
+/* Glyph: the day's counts in the body face, not tiny dim dots */
+:root[data-look="glyph"] .dayhead .muted { font-family: var(--font); font-weight: 500; font-size: 13px; letter-spacing: 0; color: var(--muted); }
+/* Glyph: a fade says there are more chips to the right */
+:root[data-look="glyph"] .chips[data-more="true"] { mask-image: linear-gradient(to right, #000 calc(100% - 40px), transparent); }
+:root[data-look="glyph"] :is(.fchip .n, .line1 .time, .row .tag, .due, .finish, .foot) { font-size: 12.5px !important; }
+
+/* #64: the selected All chip is filled with the accent, which is dark ink in Glyph light,
+   so its words use the accent's own text colour instead of hard-coded ink */
+:root[data-look="glyph"] .fchip.p-all.on, :root[data-look="glyph"] .fchip.p-all.on .n { color: var(--on-accent); }
+:root[data-look="glyph"] .doc a:not(.logo) { color: var(--text); text-decoration-color: currentColor; }
