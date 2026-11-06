@@ -38,20 +38,14 @@ const mono = localFont({
     { path: "./fonts/mono/mono-700-normal.woff2", weight: "700", style: "normal" },
   ],
 });
-// Grid (F1-inspired): Titillium Web.
+// Grid (F1-inspired, #73): Saira, one variable file with weight 100–900 and width 50–125%. Its squared,
+// wide capitals are the closest free match to F1's own broadcast face; headings use it at 125% width.
 const race = localFont({
   variable: "--font-race",
   preload: false,
   display: "swap",
-  src: [
-    { path: "./fonts/titillium/titillium-400-normal.woff2", weight: "400", style: "normal" },
-    { path: "./fonts/titillium/titillium-600-normal.woff2", weight: "600", style: "normal" },
-    { path: "./fonts/titillium/titillium-700-normal.woff2", weight: "700", style: "normal" },
-    { path: "./fonts/titillium/titillium-900-normal.woff2", weight: "900", style: "normal" },
-    { path: "./fonts/titillium/titillium-400-italic.woff2", weight: "400", style: "italic" },
-    { path: "./fonts/titillium/titillium-600-italic.woff2", weight: "600", style: "italic" },
-    { path: "./fonts/titillium/titillium-700-italic.woff2", weight: "700", style: "italic" },
-  ],
+  src: [{ path: "./fonts/saira/saira-variable.woff2", weight: "100 900", style: "normal" }],
+  declarations: [{ prop: "font-stretch", value: "50% 125%" }],
 });
 
 export const metadata: Metadata = {

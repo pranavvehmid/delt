@@ -178,8 +178,14 @@ test("Grid (F1-inspired): always dark, its own driver colours, and back to Minim
     await expect(html(page)).toHaveAttribute("data-accent", key);
   }
   expect(await noSideScroll(page)).toBe(true);
-  // the racing typeface is in use
-  expect(await page.evaluate(() => getComputedStyle(document.querySelector(".mast button")!).fontStyle)).toBe("italic");
+  // #73: F1's broadcast type: upright, extra wide, Saira
+  const mast = await page.evaluate(() => {
+    const s = getComputedStyle(document.querySelector(".mast button")!);
+    return { style: s.fontStyle, stretch: s.fontStretch, family: s.fontFamily };
+  });
+  expect(mast.style).toBe("normal");
+  expect(mast.stretch).toBe("125%");
+  expect(mast.family).toMatch(/race|Saira/i);
 
   // Minimal doesn't have papaya: it falls back to its default
   await panel.getByRole("radio", { name: /Minimal/ }).click();

@@ -20,7 +20,6 @@ type Props = {
   days: ReturnType<typeof groupByDay<EmailRow>>;
   counts: ReturnType<typeof pileCounts>;
   posOf: Map<string, number>;
-  leaderAt: string;
   searching: boolean;
   more: boolean;
   loadingOlder: boolean;
@@ -95,7 +94,7 @@ export default function InboxList(p: Props) {
 
   const unreadShown = shown.filter((m) => m.unread).map((m) => m.id);
   const row = (m: EmailRow) => (
-    <MailRow key={m.id} m={m} now={now} pos={p.posOf.get(m.id) ?? 0} leaderAt={p.leaderAt} on={p.rowActions} current={p.currentId === m.id} query={query} look={p.look} hover={p.hover} />
+    <MailRow key={m.id} m={m} now={now} pos={p.posOf.get(m.id) ?? 0} on={p.rowActions} current={p.currentId === m.id} query={query} look={p.look} hover={p.hover} />
   );
 
   return (

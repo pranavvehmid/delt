@@ -1,45 +1,49 @@
 /* Grid only (F1-inspired). Comes after look-shared.css and themes.css. */
 
 /* =========================================================
-   Grid: an F1-inspired look (race-day dark).
-   Built on the Minimal layout (masthead, ink rows, contrast floor) and adds:
-   - Flags as piles: red = Urgent (stop), yellow = Priority (caution),
-     green = Later (all clear), blue = Noise (let it pass).
-   - Timing-tower rows: a flag stripe on the left, a slanted right edge.
-   - Heavy italic racing type (Titillium Web), carbon-fibre ground,
-     a red-and-white kerb under the top bar, chequered day headers.
-   - "Driver colours": the accent picks a paddock colour.
-   Always dark; Extra dark makes it pure black.
+   Grid: Formula 1's TV graphics (#73, #74).
+   What the broadcast does, and so what this look does:
+   - Upright type, never italic. Titles, positions and codes in extra-wide heavy capitals
+     (Saira at 125% width, the closest free face to F1's own); reading text at normal width.
+   - Flat carbon panels (#15151E), white text, F1 grey (#949498), F1 red used sparingly:
+     the header block, the leader, what's selected. No textures, kerbs or chequered flags.
+   - One shape: a panel with a rounded top-right corner, as on F1's graphics and site.
+   - The list is a timing tower: hairline rows, position, a thin pile-colour bar like a team
+     colour, a three-letter code, and the gap (P1 is the LEADER).
+   - Flags as piles: red Urgent, yellow Priority, green Later, blue Noise.
+   - "Driver colours": the accent picks a team colour. Always dark; Extra dark is pure black.
    ========================================================= */
 :root[data-look="grid"][data-theme][data-tone] {
-  --ink: 240 240 242;
-  --bg: #0b0b0e;
-  --surface: #15151b;
-  --surface2: #22222a;
-  --line: #26262e;
+  --ink: 255 255 255;
+  --bg: #15151e;
+  --surface: #1f1f27;
+  --surface2: #2b2b35;
+  --line: #38383f;
+  --muted: #a3a3a8;
   --accent: #e10600;
   --on-accent: #ffffff;
-  --due-soon: #ff4d40;
+  --due-soon: #ff5a4f;
   --due-week: #ffd200;
-  --floor: 0.56;
-  --floor-lg: 0.42;
-  --font: var(--font-race), "Titillium Web", system-ui, sans-serif;
+  --floor: 0.58;
+  --floor-lg: 0.44;
+  --font: var(--font-race), "Saira", system-ui, sans-serif;
   --head: var(--font);
-  --flag-red: #ff2a1f;
+  --flag-red: #ff3b30;
   --flag-yellow: #ffd200;
   --flag-green: #00d26a;
   --flag-blue: #3d8bff;
+  --corner: 10px;
   --shadow: none;
 }
-:root[data-look="grid"][data-theme][data-tone="black"] { --bg: #000; --surface: #0e0e12; --surface2: #1b1b22; --line: #202027; }
+:root[data-look="grid"][data-theme][data-tone="black"] { --bg: #000000; --surface: #111116; --surface2: #1f1f27; --line: #2c2c33; }
 /* driver colours */
-:root[data-look="grid"][data-theme][data-accent="papaya"] { --accent: #ff8000; --on-accent: #0b0b0e; }
-:root[data-look="grid"][data-theme][data-accent="teal"] { --accent: #27f4d2; --on-accent: #0b0b0e; }
+:root[data-look="grid"][data-theme][data-accent="papaya"] { --accent: #ff8000; --on-accent: #15151e; }
+:root[data-look="grid"][data-theme][data-accent="teal"] { --accent: #27f4d2; --on-accent: #15151e; }
 :root[data-look="grid"][data-theme][data-accent="navy"] { --accent: #3671c6; --on-accent: #ffffff; }
-:root[data-look="grid"][data-theme][data-accent="racing"] { --accent: #229971; --on-accent: #0b0b0e; }
-:root[data-look="grid"][data-theme][data-accent="sky"] { --accent: #64c4ff; --on-accent: #0b0b0e; }
-:root[data-look="grid"][data-theme][data-accent="pink"] { --accent: #ff87bc; --on-accent: #0b0b0e; }
-:root[data-look="grid"][data-theme][data-accent="gold"] { --accent: #d4a017; --on-accent: #0b0b0e; }
+:root[data-look="grid"][data-theme][data-accent="racing"] { --accent: #229971; --on-accent: #15151e; }
+:root[data-look="grid"][data-theme][data-accent="sky"] { --accent: #64c4ff; --on-accent: #15151e; }
+:root[data-look="grid"][data-theme][data-accent="pink"] { --accent: #ff87bc; --on-accent: #15151e; }
+:root[data-look="grid"][data-theme][data-accent="gold"] { --accent: #d4a017; --on-accent: #15151e; }
 
 :root[data-look="grid"] :is(.p-very_important, .ink-very_important) { --c: var(--flag-red); }
 :root[data-look="grid"] :is(.p-priority, .ink-priority) { --c: var(--flag-yellow); }
@@ -47,169 +51,141 @@
 :root[data-look="grid"] :is(.p-noise, .ink-noise) { --c: var(--flag-blue); }
 :root[data-look="grid"] .p-all { --c: var(--accent); }
 
-/* ground: carbon weave and a glow of the driver colour from the top */
-:root[data-look="grid"] body { background: var(--bg); letter-spacing: 0; }
-/* one fixed layer, painted once, so scrolling and colour changes don't repaint the pattern */
-:root[data-look="grid"] body::before {
-  content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none; transform: translateZ(0);
-  background:
-    repeating-linear-gradient(45deg, rgb(255 255 255 / 0.022) 0 2px, transparent 2px 5px),
-    repeating-linear-gradient(-45deg, rgb(255 255 255 / 0.014) 0 2px, transparent 2px 5px),
-    radial-gradient(130% 50% at 0% 0%, color-mix(in srgb, var(--accent) 15%, transparent), transparent 62%);
-}
+/* type: one family, upright; the wide cut is for titles, numbers and codes */
+:root[data-look="grid"] body { background: var(--bg); letter-spacing: 0; font-stretch: 100%; }
+:root[data-look="grid"] :is(.mast button, .sheet-head h2, .pos, .code, .datebox b, .att-kind) { font-stretch: 125%; }
 
-/* top bar with a kerb */
-:root[data-look="grid"] .appbar { background: color-mix(in srgb, var(--bg) 94%, transparent); padding-bottom: 12px; }
-:root[data-look="grid"] .appbar::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: repeating-linear-gradient(90deg, var(--accent) 0 18px, #ededed 18px 36px); }
-:root[data-look="grid"] .sync { font: italic 700 12.5px/1 var(--font); letter-spacing: 0.12em; }
+/* the F1 corner: panels are square except the top right */
+:root[data-look="grid"] :is(.searchbar, .pillbtn, .menu, .sheet, .look-card, .mv-frame, .mv-due, .mv-sum, .mv-err, .att, .att-thumb, .toast, .day, .due-day, .banner, .cta, .seg) { border-radius: 0 var(--corner) 0 0 !important; }
+:root[data-look="grid"] :is(.att-kind, .mast sup, .swatch) { border-radius: 0 4px 0 0 !important; }
+
+/* top bar: flat carbon, a hairline with F1's red header block at its start */
+:root[data-look="grid"] .appbar { background: var(--bg); padding-bottom: 12px; }
+:root[data-look="grid"] .appbar::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 2px; background: linear-gradient(90deg, var(--accent) 0 72px, var(--line) 72px); }
+:root[data-look="grid"] .sync { font: 600 12.5px/1 var(--font); letter-spacing: 0.08em; border-color: transparent; color: var(--muted); }
 :root[data-look="grid"] .sync:not(:disabled) > span:first-child { display: none; }
-:root[data-look="grid"] .sync:not(:disabled)::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--flag-green); box-shadow: 0 0 8px var(--flag-green); animation: live 2.4s ease-in-out infinite; }
-@keyframes live { 50% { opacity: 0.35; } }
-:root[data-look="grid"] .avatar.me { background: var(--accent); color: var(--on-accent); font: italic 900 16px/1 var(--font); transform: skewX(-12deg); }
+:root[data-look="grid"] .sync:not(:disabled)::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--flag-green); }
+:root[data-look="grid"] .avatar.me { background: var(--accent); color: var(--on-accent); font: 800 14px/1 var(--font); font-stretch: 125%; border-radius: 0 8px 0 0 !important; }
 
-/* sections: big italic capitals, a slanted bar under the one you're on */
-:root[data-look="grid"] .mast { gap: 20px; padding-top: 16px; }
-:root[data-look="grid"] .mast button { position: relative; padding-bottom: 8px; font: italic 900 28px/1 var(--font); text-transform: uppercase; letter-spacing: 0; }
-:root[data-look="grid"] .mast button.on::after { content: ""; position: absolute; left: 2px; right: 14px; bottom: 0; height: 4px; background: var(--accent); transform: skewX(-28deg); }
-:root[data-look="grid"] .mast sup { top: 0.2em; margin-left: 8px; padding: 4px 8px 2px; font: italic 700 12.5px/1 var(--font); background: var(--surface2); color: rgb(var(--ink)); display: inline-block; transform: skewX(-12deg); }
+/* sections: wide heavy capitals; a red bar under the one you're on */
+:root[data-look="grid"] .mast { gap: 24px; padding-top: 16px; }
+:root[data-look="grid"] .mast button { position: relative; padding-bottom: 8px; font: 800 28px/1 var(--font); font-stretch: 125%; text-transform: uppercase; letter-spacing: 0; color: rgb(var(--ink) / var(--floor-lg)); }
+:root[data-look="grid"] .mast button.on { color: rgb(var(--ink)); box-shadow: none; }
+:root[data-look="grid"] .mast button.on::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 4px; background: var(--accent); }
+:root[data-look="grid"] .mast sup { top: 0.1em; margin-left: 8px; padding: 4px 8px; font: 700 12.5px/1 var(--font); background: var(--surface2); color: rgb(var(--ink)); display: inline-block; }
 :root[data-look="grid"] .mast button.on sup { background: var(--accent); color: var(--on-accent); }
-@media (min-width: 720px) { :root[data-look="grid"] .mast button { font-size: 44px; } }
+@media (min-width: 720px) { :root[data-look="grid"] .mast button { font-size: 34px; } }
 
+/* search: a carbon panel */
+:root[data-look="grid"] .searchbar { background: var(--surface); border-bottom: 2px solid var(--line); padding: 0 12px; }
 :root[data-look="grid"] .searchbar:focus-within { border-bottom-color: var(--accent); }
 
-/* pile chips show their flag */
-:root[data-look="grid"] :is(.chips .fchip, .mv-pile .pchip) .tagdot { display: inline-block !important; width: 4px; height: 13px; margin-right: 8px; border-radius: 0; background: var(--c); transform: skewX(-20deg); }
-:root[data-look="grid"] :is(.fchip, .pchip) { font: italic 600 14px/1 var(--font); text-transform: uppercase; letter-spacing: 0.08em; }
+/* pile filters: uppercase labels, each with its flag as an upright bar */
+:root[data-look="grid"] :is(.chips .fchip, .mv-pile .pchip) .tagdot { display: inline-block !important; width: 3px; height: 14px; margin-right: 8px; border-radius: 0; background: var(--c); }
+:root[data-look="grid"] :is(.fchip, .pchip) { font: 600 14px/1 var(--font); text-transform: uppercase; letter-spacing: 0.04em; }
 :root[data-look="grid"] .fchip.on { box-shadow: inset 0 -3px 0 var(--accent); }
 :root[data-look="grid"] .mv-pile .pchip.on { color: rgb(var(--ink)); box-shadow: inset 0 -3px 0 var(--c); }
 :root[data-look="grid"] .toggle input:checked + .knob { background: var(--accent); }
 
-/* day headers with a chequered flag */
-:root[data-look="grid"] .dayhead { display: flex; align-items: center; gap: 8px; font: italic 700 12.5px/1 var(--font); letter-spacing: 0.12em; }
-:root[data-look="grid"] .dayhead::before { content: ""; flex: none; width: 18px; height: 10px; opacity: 0.75; background: conic-gradient(#e6e6e6 25%, transparent 0 50%, #e6e6e6 0 75%, transparent 0) 0 0 / 6px 6px; }
-
-/* rows as a timing tower */
-:root[data-look="grid"] .rows { gap: 8px; }
-:root[data-look="grid"] .row { --w: 600; }
-:root[data-look="grid"] .ink-later { --w: 600; }
-:root[data-look="grid"] .ink-noise { --w: 400; }
-:root[data-look="grid"] .row-slide { background: linear-gradient(90deg, var(--surface), color-mix(in srgb, var(--surface) 40%, transparent)); box-shadow: inset 4px 0 0 var(--c); clip-path: polygon(0 0, 100% 0, calc(100% - 12px) 100%, 0 100%); }
-:root[data-look="grid"] .row-main { padding: 12px 24px 12px 16px; grid-template-columns: 54px minmax(0, 1fr); }
+/* ---------- the timing tower (#74) ---------- */
+/* each day is one panel: a header strip (like the tower's "LAP 12/57") over flush rows with hairlines */
+:root[data-look="grid"] .day { margin-top: 24px; background: var(--surface); overflow: hidden; }
+:root[data-look="grid"] .dayhead { display: flex; align-items: center; gap: 8px; height: 32px; margin: 0; padding: 0 12px !important; background: var(--surface2); font: 700 12.5px/1 var(--font); letter-spacing: 0.08em; color: rgb(var(--ink)); }
+:root[data-look="grid"] .day.needs .dayhead { background: var(--accent); color: var(--on-accent); }
+:root[data-look="grid"] .rows { gap: 0; }
+:root[data-look="grid"] .rows > li + li { box-shadow: inset 0 1px 0 var(--line); }
+:root[data-look="grid"] .row { --w: 400; }
+:root[data-look="grid"] .row-slide { background: var(--surface); transition: background-color 0.15s; }
+:root[data-look="grid"] .row-slide:hover { background: var(--surface2); }
+/* position | team-colour bar + code + subject | gap */
+:root[data-look="grid"] .row-main { grid-template-columns: 28px minmax(0, 1fr) auto; column-gap: 12px; padding: 12px 12px 12px 8px; }
 :root[data-look="grid"] .row-main:focus-visible { outline-offset: -3px; }
-:root[data-look="grid"] .row-acts.hover-only { background: linear-gradient(90deg, transparent, var(--surface) 24%); padding-right: 16px; }
-:root[data-look="grid"] .when { font: 600 12.5px/1.2 var(--font); letter-spacing: 0.04em; }
-:root[data-look="grid"] .when::before { display: none; }
-:root[data-look="grid"] .from { font: italic 700 12.5px/1.2 var(--font); letter-spacing: 0.12em; }
+:root[data-look="grid"] .when { display: none; }
+:root[data-look="grid"] .pos { display: block; align-self: start; padding-top: 1px; text-align: center; font: 800 16px/1.25 var(--font); font-stretch: 125%; font-variant-numeric: tabular-nums; color: rgb(var(--ink) / var(--a2)); }
+:root[data-look="grid"] .row.unread .pos { color: rgb(var(--ink)); }
+:root[data-look="grid"] .line1 { display: flex; align-items: baseline; gap: 0; }
+:root[data-look="grid"] .code { display: inline-flex; align-items: center; flex: none; margin-right: 8px; font: 700 14px/1.25 var(--font); font-stretch: 125%; letter-spacing: 0.04em; color: rgb(var(--ink) / var(--a2)); }
+:root[data-look="grid"] .row.unread .code { color: rgb(var(--ink)); }
+:root[data-look="grid"] .from { font: 500 12.5px/1.25 var(--font); text-transform: uppercase; letter-spacing: 0.04em; color: rgb(var(--ink) / var(--a2)); }
+:root[data-look="grid"] .line1[data-same] .from { display: none; }
 :root[data-look="grid"] .subj { font-family: var(--font); letter-spacing: 0; }
-:root[data-look="grid"] .row.unread :is(.subj, .from) { font-weight: 700; }
-:root[data-look="grid"] .row.unread .row-slide::after { content: ""; position: absolute; right: 24px; top: 15px; width: 7px; height: 7px; background: var(--accent); transform: skewX(-20deg); }
+/* the team-colour stripe: the pile's flag colour down the left of the row's text */
+:root[data-look="grid"] .row-text { padding-left: 12px; box-shadow: inset 3px 0 0 var(--c); }
 :root[data-look="grid"] .sum { font-family: var(--font); font-weight: 400; }
-:root[data-look="grid"] .swipe-bg { font: italic 900 12.5px/1 var(--font); letter-spacing: 0.12em; text-transform: uppercase; }
+:root[data-look="grid"] .row.unread .subj { font-weight: 600; }
+:root[data-look="grid"] .meta { margin-top: 4px; }
+:root[data-look="grid"] .gap { display: block; align-self: start; padding-top: 2px; text-align: right; white-space: nowrap; font: 600 12.5px/1.25 var(--font); letter-spacing: 0.04em; font-variant-numeric: tabular-nums; color: rgb(var(--ink) / var(--a2)); }
+:root[data-look="grid"] .row[data-pos="1"] .gap { color: rgb(var(--ink)); }
+:root[data-look="grid"] .row[data-pos="1"] .pos { color: var(--accent); }
+:root[data-look="grid"] .row-acts.hover-only { background: linear-gradient(90deg, transparent, var(--surface2) 24%); padding-right: 12px; }
+:root[data-look="grid"] .swipe-bg { font: 800 12.5px/1 var(--font); letter-spacing: 0.08em; text-transform: uppercase; }
 :root[data-look="grid"] .swipe-bg.r { background: var(--flag-green); color: #03140b; }
 :root[data-look="grid"] .swipe-bg.l { background: var(--accent); color: var(--on-accent); }
-:root[data-look="grid"] :is(.due, .donemark) { font: italic 700 12.5px/1 var(--font); letter-spacing: 0; } /* sizes as in look-shared (#54) */
+:root[data-look="grid"] :is(.due, .donemark) { font: 600 12.5px/1 var(--font); letter-spacing: 0; }
 :root[data-look="grid"] .due:is(.lv-over, .lv-soon) { color: var(--due-soon); }
 :root[data-look="grid"] .due.lv-week { color: var(--due-week); }
+/* wide screens: the open mail's row is lit, like the driver in focus */
+:root[data-look="grid"] .shell.reading li.row:has(.row-main[aria-current="true"]) .row-slide { background: var(--surface2); box-shadow: inset 3px 0 0 rgb(var(--ink)); }
 
-/* deadlines: the date like a race number */
-:root[data-look="grid"] .datebox b { font: italic 900 28px/1 var(--font); }
+/* deadlines: the same tower; the date reads like a race number */
+:root[data-look="grid"] .due-row { background: var(--surface); }
+:root[data-look="grid"] .due-row .row-main { padding-left: 12px; }
+:root[data-look="grid"] .datebox b { font: 800 28px/1 var(--font); font-stretch: 125%; }
+:root[data-look="grid"] .datebox small { font-weight: 600; }
 :root[data-look="grid"] .datebox:is(.lv-over, .lv-soon) b { color: var(--due-soon); }
 :root[data-look="grid"] .datebox.lv-week b { color: var(--due-week); }
 
-/* buttons lean forward */
-:root[data-look="grid"] .pillbtn { border: 0; background: var(--surface2); transform: skewX(-12deg); font: italic 700 12.5px/1 var(--font); text-transform: uppercase; letter-spacing: 0.08em; padding: 0 16px; }
-:root[data-look="grid"] .pillbtn:hover { background: #2d2d37; }
+/* buttons: flat panels, wide capitals */
+:root[data-look="grid"] .pillbtn { border: 0; background: var(--surface2); font: 700 12.5px/1 var(--font); text-transform: uppercase; letter-spacing: 0.08em; padding: 0 16px; transition: background-color 0.15s, transform 0.15s var(--ease); }
+:root[data-look="grid"] .pillbtn:hover { background: #3a3a45; border-color: transparent; }
 :root[data-look="grid"] .pillbtn.on { background: var(--accent); color: var(--on-accent); }
-:root[data-look="grid"] .toast { background: var(--accent); color: var(--on-accent); font: italic 700 12.5px/1.2 var(--font); letter-spacing: 0.08em; text-transform: uppercase; }
-:root[data-look="grid"] .toast button { color: inherit; text-decoration: underline; }
+:root[data-look="grid"] .pillbtn:active { transform: scale(0.97); }
+@media (max-width: 479px) { :root[data-look="grid"] .mv-acts .pillbtn { padding: 0 8px; } }
 
-/* the open mail */
-:root[data-look="grid"] .mv-bar { border-bottom: 3px solid var(--accent); }
-:root[data-look="grid"] .mv-subj { font: italic 700 28px/1.12 var(--font); letter-spacing: 0; }
-:root[data-look="grid"] .mv-due { border-left-color: var(--due-soon); }
-:root[data-look="grid"] .lbl { font: italic 700 12.5px/1 var(--font); letter-spacing: 0.12em; }
+/* the open mail: a red rule under the bar, the subject as a title card */
+:root[data-look="grid"] .mv-bar { border-bottom: 2px solid var(--line); }
+:root[data-look="grid"] .mailview .mv-bar { box-shadow: inset 0 -2px 0 var(--c, var(--accent)); }
+:root[data-look="grid"] .mv-subj { font: 700 28px/1.15 var(--font); letter-spacing: 0; }
+:root[data-look="grid"] :is(.mv-due, .mv-sum) { background: var(--surface); box-shadow: none; }
+:root[data-look="grid"] .mv-due:is(.lv-over, .lv-soon) { box-shadow: inset 3px 0 0 var(--due-soon); }
+:root[data-look="grid"] .lbl { font: 700 12.5px/1 var(--font); letter-spacing: 0.08em; text-transform: uppercase; }
+:root[data-look="grid"] .att { background: var(--surface); border: 0; }
 
 /* panels */
-:root[data-look="grid"] :is(.sheet, .menu) { background: var(--surface); box-shadow: 0 -3px 0 var(--accent), 0 20px 40px -20px #000; }
-:root[data-look="grid"] .sheet-head h2 { font: italic 900 28px/1 var(--font); text-transform: uppercase; }
+:root[data-look="grid"] :is(.sheet, .menu) { background: var(--surface); box-shadow: inset 0 3px 0 var(--accent), 0 24px 48px -24px #000; }
+:root[data-look="grid"] .sheet-head h2 { font: 800 28px/1 var(--font); font-stretch: 125%; text-transform: uppercase; }
 :root[data-look="grid"] .seg button.on { background: var(--accent); color: var(--on-accent); }
 :root[data-look="grid"] .look-card.on { border-color: var(--accent); }
-:root[data-look="grid"] .banner { border-left-color: var(--accent); }
-/* Grid: deadline rows on the timing tower too, and room for eight driver colours */
-:root[data-look="grid"] .due-row { background: linear-gradient(90deg, var(--surface), color-mix(in srgb, var(--surface) 40%, transparent)); box-shadow: inset 4px 0 0 var(--c); clip-path: polygon(0 0, 100% 0, calc(100% - 12px) 100%, 0 100%); padding-right: 12px; }
-:root[data-look="grid"] .due-row .row-main { padding-left: 16px; }
-:root[data-look="grid"] .swatch { border-radius: 0; transform: skewX(-12deg); }
-
-/* timing tower: position box | team stripe + code + subject | gap */
-:root[data-look="grid"] .row-main { grid-template-columns: 30px minmax(0, 1fr) auto; column-gap: 12px; padding-left: 16px; }
-:root[data-look="grid"] .when { display: none; }
-:root[data-look="grid"] .pos {
-  display: grid; place-items: center; align-self: start; width: 30px; height: 30px; margin-top: 1px;
-  font: italic 900 16px/1 var(--font); font-variant-numeric: tabular-nums; letter-spacing: -0.02em;
-  background: var(--surface2); color: rgb(var(--ink));
-}
-:root[data-look="grid"] .row.unread .pos { background: #f2f2f2; color: #0b0b0e; }
-:root[data-look="grid"] .row[data-pos="1"] .pos { background: var(--accent); color: var(--on-accent); }
-:root[data-look="grid"] .code { display: inline; margin-right: 8px; font: italic 900 12.5px/1 var(--font); letter-spacing: 0.08em; color: rgb(var(--ink)); }
-:root[data-look="grid"] .line1 { display: flex; align-items: baseline; gap: 0; }
-:root[data-look="grid"] .gap {
-  display: block; align-self: start; padding-top: 4px; text-align: right; white-space: nowrap;
-  font: italic 700 12.5px/1 var(--font); letter-spacing: 0.08em; font-variant-numeric: tabular-nums;
-  color: rgb(var(--ink) / var(--a2));
-}
-:root[data-look="grid"] .row[data-pos="1"] .gap { color: var(--accent); }
-:root[data-look="grid"] .row.unread .row-slide::after { right: 14px; top: auto; bottom: 14px; }
-
-/* the starting grid: rows take their places one after another, like the tower filling at lights out */
-:root[data-look="grid"] .rows > li { animation: tower-in 0.42s var(--ease) both; animation-delay: calc(var(--i, 0) * 32ms); }
-@keyframes tower-in { from { opacity: 0; transform: translateX(-24px); } }
+:root[data-look="grid"] .banner { border-left-color: var(--accent); background: var(--surface); }
+:root[data-look="grid"] .cta { background: var(--accent); color: var(--on-accent); font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
 
 /* lights out: while checking for mail, five reds come on one by one, then all go out */
 :root[data-look="grid"] .sync:disabled > span:first-child { display: none; }
 :root[data-look="grid"] .sync:disabled .lights { display: inline-flex; gap: 4px; }
-:root[data-look="grid"] .lights i { width: 7px; height: 7px; border-radius: 50%; background: #3b1010; animation-duration: 2.4s; animation-timing-function: steps(1, end); animation-iteration-count: infinite; }
+:root[data-look="grid"] .lights i { width: 8px; height: 8px; border-radius: 50%; background: #3b1010; animation-duration: 2.4s; animation-timing-function: steps(1, end); animation-iteration-count: infinite; }
 :root[data-look="grid"] .lights i:nth-child(1) { animation-name: light1; }
 :root[data-look="grid"] .lights i:nth-child(2) { animation-name: light2; }
 :root[data-look="grid"] .lights i:nth-child(3) { animation-name: light3; }
 :root[data-look="grid"] .lights i:nth-child(4) { animation-name: light4; }
 :root[data-look="grid"] .lights i:nth-child(5) { animation-name: light5; }
-@keyframes light1 { 12%, 82% { background: #ff1e1e; box-shadow: 0 0 6px #ff1e1e; } 83% { background: #3b1010; box-shadow: none; } }
-@keyframes light2 { 26%, 82% { background: #ff1e1e; box-shadow: 0 0 6px #ff1e1e; } 0%, 25%, 83% { background: #3b1010; box-shadow: none; } }
-@keyframes light3 { 40%, 82% { background: #ff1e1e; box-shadow: 0 0 6px #ff1e1e; } 0%, 39%, 83% { background: #3b1010; box-shadow: none; } }
-@keyframes light4 { 54%, 82% { background: #ff1e1e; box-shadow: 0 0 6px #ff1e1e; } 0%, 53%, 83% { background: #3b1010; box-shadow: none; } }
-@keyframes light5 { 68%, 82% { background: #ff1e1e; box-shadow: 0 0 6px #ff1e1e; } 0%, 67%, 83% { background: #3b1010; box-shadow: none; } }
+@keyframes light1 { 12%, 82% { background: #ff1e1e; } 83% { background: #3b1010; } }
+@keyframes light2 { 26%, 82% { background: #ff1e1e; } 0%, 25%, 83% { background: #3b1010; } }
+@keyframes light3 { 40%, 82% { background: #ff1e1e; } 0%, 39%, 83% { background: #3b1010; } }
+@keyframes light4 { 54%, 82% { background: #ff1e1e; } 0%, 53%, 83% { background: #3b1010; } }
+@keyframes light5 { 68%, 82% { background: #ff1e1e; } 0%, 67%, 83% { background: #3b1010; } }
 
-/* race control messages */
-:root[data-look="grid"] .toast { background: #121217; color: #f2f2f2; border-left: 4px solid var(--flag-yellow); text-transform: none; letter-spacing: 0; font: 600 14px/1.3 var(--font); gap: 8px; }
-:root[data-look="grid"] .toast .rc { display: block; flex: none; font: italic 900 12.5px/1 var(--font); letter-spacing: 0.12em; text-transform: uppercase; color: var(--flag-yellow); }
-:root[data-look="grid"] .toast button { color: #f2f2f2; font-weight: 700; }
+/* race control messages: F1's own message panel */
+:root[data-look="grid"] .toast { background: var(--surface2); color: #ffffff; box-shadow: inset 4px 0 0 var(--flag-yellow), 0 16px 32px -16px #000; text-transform: none; letter-spacing: 0; font: 500 14px/1.3 var(--font); gap: 8px; }
+:root[data-look="grid"] .toast .rc { display: block; flex: none; font: 800 12.5px/1 var(--font); font-stretch: 125%; letter-spacing: 0.04em; text-transform: uppercase; color: var(--flag-yellow); }
+:root[data-look="grid"] .toast button { color: #ffffff; font-weight: 700; text-decoration: underline; }
 
-/* chequered flag at the end of the list */
-:root[data-look="grid"] .finish { display: inline-flex; align-items: center; gap: 8px; font: italic 700 12.5px/1 var(--font); letter-spacing: 0.12em; text-transform: uppercase; }
-:root[data-look="grid"] .finish::before, :root[data-look="grid"] .finish::after { content: ""; width: 30px; height: 12px; background: conic-gradient(#e6e6e6 25%, transparent 0 50%, #e6e6e6 0 75%, transparent 0) 0 0 / 6px 6px; }
+/* the end of the list: a flat finish strip */
+:root[data-look="grid"] .finish { display: inline-flex; align-items: center; gap: 8px; font: 700 12.5px/1 var(--font); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+:root[data-look="grid"] .finish::before { content: ""; width: 3px; height: 14px; background: var(--accent); }
 
-/* the open mail carries its flag colour */
-:root[data-look="grid"] .mailview .mv-bar { border-bottom-color: var(--c, var(--accent)); }
-/* the code says it already ("COE COE"); the white position box already means unread */
-:root[data-look="grid"] .line1[data-same] .from { display: none; }
-:root[data-look="grid"] .row.unread .row-slide::after { display: none; }
-:root[data-look="grid"] .sync { border-color: transparent; }
-
-/* #65: Grid's slanted buttons stay inside their box. The button itself is no longer skewed
-   (a skew doesn't change layout size, so its corners poked out); a skewed ::before, inset by
-   the slant's overhang, draws the background instead. */
-:root[data-look="grid"] .pillbtn, :root[data-look="grid"] .pillbtn:hover, :root[data-look="grid"] .pillbtn.on { transform: none; background: none; position: relative; isolation: isolate; }
-:root[data-look="grid"] .pillbtn::before { content: ""; position: absolute; inset: 0 4px; z-index: -1; background: var(--surface2); transform: skewX(-12deg); transition: background-color 0.2s; }
-:root[data-look="grid"] .pillbtn:hover::before { background: #2d2d37; }
-:root[data-look="grid"] .pillbtn.on::before { background: var(--accent); }
-:root[data-look="grid"] .pillbtn:active::before { transform: skewX(-12deg) scale(0.96); }
-@media (max-width: 479px) {
-:root[data-look="grid"] .mv-acts .pillbtn { padding: 0 8px; }
-}
-
-/* #67: the slanted avatar's top corner overhangs by 17px * tan(12deg); pull it in so its right edge
-   lines up with the search bar and rows below */
-:root[data-look="grid"] .avatar.me { margin-right: calc(16px * tan(12deg)); }
-:root[data-look="grid"] .mast button.on { box-shadow: none; }
-:root[data-look="grid"] .meta { margin-top: 4px; } /* #68 */
-:root[data-look="grid"] .row-main { padding-top: 8px; padding-bottom: 8px; }
+/* titles and their counters stay on one line; in the wide split the list column is narrower */
+:root[data-look="grid"] .mast button { white-space: nowrap; }
+@media (min-width: 1000px) { :root[data-look="grid"] .shell.reading .mast button { font-size: 28px; } }
+/* the five pile filters fit a 360px phone */
+:root[data-look="grid"] .chips { gap: 16px; }
+:root[data-look="grid"] .fchip { font-size: 12.5px; letter-spacing: 0.04em; }

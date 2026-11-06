@@ -12,7 +12,7 @@ export type RowActions = { open: (m: EmailRow) => void; read: (m: EmailRow) => v
 // #61: a row renders only what the current look shows (Glyph: avatar, pile tag, unread dot;
 // Minimal: time column; Grid: position, sender code, gap), the swipe background only while
 // swiping, and the hover buttons only on devices with a mouse.
-export const MailRow = memo(function MailRow({ m, now, pos = 0, leaderAt = "", on, current = false, query = "", look = "minimal", hover = false }: { m: EmailRow; now: number; pos?: number; leaderAt?: string; on: RowActions; current?: boolean; query?: string; look?: Look; hover?: boolean }) {
+export const MailRow = memo(function MailRow({ m, now, pos = 0, on, current = false, query = "", look = "minimal", hover = false }: { m: EmailRow; now: number; pos?: number; on: RowActions; current?: boolean; query?: string; look?: Look; hover?: boolean }) {
   const glyph = look === "glyph", grid = look === "grid";
   const onOpen = () => on.open(m), onRead = () => on.read(m), onDone = () => on.done(m);
   const [dx, setDx] = useState(0);
@@ -129,7 +129,7 @@ export const MailRow = memo(function MailRow({ m, now, pos = 0, leaderAt = "", o
           </span>
           {grid && (
             <span className="gap" aria-hidden="true">
-              {leaderAt ? gapText(m.received_at, leaderAt) : ""}
+              {gapText(m.received_at, now, pos === 1)}
             </span>
           )}
         </button>

@@ -413,9 +413,9 @@ body { min-height: 100dvh; }
 .mv-colours { display: block; margin: 0 0 8px auto; font-size: 12.5px; }
 
 /* the Grid card's preview in Appearance */
-.lp-grid { position: relative; overflow: hidden; background: repeating-linear-gradient(45deg, #ffffff08 0 2px, transparent 2px 5px), #0b0b0e; }
-.lp-grid::after { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 3px; background: repeating-linear-gradient(90deg, #e10600 0 8px, #eee 8px 16px); }
-.lp-grid i { height: 9px; background: #1d1d24; box-shadow: inset 3px 0 0 #ff2a1f; border-radius: 0; }
+.lp-grid { position: relative; overflow: hidden; background: #15151e; gap: 1px !important; }
+.lp-grid::after { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 2px; background: linear-gradient(90deg, #e10600 0 30%, #38383f 30%); }
+.lp-grid i { height: 9px; background: #1f1f27; box-shadow: inset 3px 0 0 #ff3b30; border-radius: 0; }
 .lp-grid i:nth-child(2) { box-shadow: inset 3px 0 0 #ffd200; width: 82%; }
 .lp-grid i:nth-child(3) { box-shadow: inset 3px 0 0 #3d8bff; width: 64%; }
 .looks { grid-template-columns: repeat(3, minmax(0, 1fr)); }

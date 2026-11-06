@@ -146,8 +146,7 @@ export default function InboxApp({ email, name, signOutAction, signInAction }: P
           pinned={pinned}
           days={days}
           counts={counts}
-          posOf={posOf}
-          leaderAt={shown[0]?.received_at ?? ""}
+          posOf={posOf}
           searching={searching}
           more={data.more}
           loadingOlder={data.loadingOlder}

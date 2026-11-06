@@ -206,14 +206,16 @@ test("sender codes read like timing-tower driver codes", () => {
   assert.equal(senderCode("123"), "???");
   for (const n of ["The Placement Cell", "coursera", "Google Drive"]) assert.match(senderCode(n), /^[A-Z?]{3}$/);
 });
-test("gaps to the leader", () => {
-  const lead = "2026-11-05T12:00:00Z";
-  assert.equal(gapText(lead, lead), "LEADER");
-  assert.equal(gapText("2026-11-05T11:15:00Z", lead), "+45M");
-  assert.equal(gapText("2026-11-05T09:40:00Z", lead), "+2H 20M");
-  assert.equal(gapText("2026-11-05T10:00:00Z", lead), "+2H");
-  assert.equal(gapText("2026-11-03T09:00:00Z", lead), "+2D 3H");
-  assert.equal(gapText("2026-11-04T12:00:00Z", lead), "+1D");
+test("#74: P1 is always the LEADER; the rest show how long they have waited", () => {
+  const now = Date.parse("2026-11-05T12:00:00Z");
+  assert.equal(gapText("2026-11-01T12:00:00Z", now, true), "LEADER", "P1 leads even when it is older");
+  assert.equal(gapText("2026-11-05T12:00:00Z", now), "+0M");
+  assert.equal(gapText("2026-11-05T11:15:00Z", now), "+45M");
+  assert.equal(gapText("2026-11-05T09:40:00Z", now), "+2H 20M");
+  assert.equal(gapText("2026-11-05T10:00:00Z", now), "+2H");
+  assert.equal(gapText("2026-11-03T09:00:00Z", now), "+2D 3H");
+  assert.equal(gapText("2026-11-04T12:00:00Z", now), "+1D");
+  assert.equal(gapText("2026-11-06T12:00:00Z", now), "+0M", "a clock a little ahead never shows a negative gap");
 });
 
 // ---------- #42: rows show the time of day, not the day again ----------
