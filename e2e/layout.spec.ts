@@ -252,3 +252,30 @@ test("Appearance: each look's description fits on one line (#70)", async ({ page
   const lines = await page.locator(".look-card small").evaluateAll((s) => s.map((e) => Math.round(e.getBoundingClientRect().height / parseFloat(getComputedStyle(e).lineHeight))));
   expect(lines).toEqual(lines.map(() => 1));
 });
+
+for (const look of ["minimal", "grid"] as const) {
+  test(`${look}: A12: segmented choices start and end on the sheet's content edge`, async ({ page }) => {
+    await open(page, look);
+    await page.getByRole("button", { name: /Appearance/ }).first().click();
+    const sheet = page.getByRole("dialog", { name: "Appearance" });
+    await expect(sheet).toBeVisible();
+    const seg = sheet.locator(".seg").first();
+    const [s, first, last] = [await seg.boundingBox(), await seg.locator("button").first().boundingBox(), await seg.locator("button").last().boundingBox()];
+    expect(Math.abs(first!.x - s!.x)).toBeLessThanOrEqual(0.5);
+    expect(Math.abs(last!.x + last!.width - (s!.x + s!.width))).toBeLessThanOrEqual(0.5);
+  });
+}
+
+test("A03: on a laptop, Minimal's unread count sits at the top of its title, not below", async ({ page }, info) => {
+  test.skip(info.project.name !== "desktop");
+  await open(page, "minimal");
+  const [b, sup] = [await box(page, ".appbar .mast button.on"), await box(page, ".appbar .mast button.on sup")];
+  const word = await page.locator(".appbar .mast button.on").evaluate((el) => {
+    const r = document.createRange();
+    r.selectNodeContents(el.firstChild!);
+    return r.getBoundingClientRect().toJSON() as DOMRect;
+  });
+  expect(sup.top).toBeLessThanOrEqual(word.top + word.height * 0.35);
+  expect(sup.bottom).toBeLessThanOrEqual(word.bottom);
+  expect(b.height).toBeGreaterThan(0);
+});

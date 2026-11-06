@@ -226,3 +226,10 @@
 @media (min-width: 1000px) {
   :root:is([data-look="minimal"], [data-look="grid"]) .shell.reading .appbar .mast button:not(.on) { color: rgb(var(--ink) / var(--floor)); }
 }
+
+/* A03: in the laptop bar the titles are 18px; the count sits at the top of the word, not below it */
+@media (min-width: 1000px) {
+  :root[data-look="minimal"] .shell.reading .appbar .mast sup { top: 0; }
+}
+/* A12: a segmented choice starts and ends on the content edge like everything else; a hairline frames it */
+:root:is([data-look="minimal"], [data-look="grid"]) .seg { padding: 0; background: none; box-shadow: inset 0 0 0 1px rgb(var(--ink) / 0.16); }
