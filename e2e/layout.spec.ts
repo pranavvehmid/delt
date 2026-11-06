@@ -219,3 +219,29 @@ test("Minimal: day headings and sender names don't share a style (#69)", async (
   const style = (sel: string) => page.locator(sel).first().evaluate((e) => { const c = getComputedStyle(e); return `${c.fontSize} ${c.fontWeight} ${c.textTransform} ${c.letterSpacing}`; });
   expect(await style(".dayhead")).not.toEqual(await style(".from"));
 });
+
+// #70: small details
+test("the icons in the header and search bar are one size (#70)", async ({ page }) => {
+  await open(page, "minimal");
+  const sizes = await page.locator(".appbar svg:visible, .searchbar svg:visible").evaluateAll((s) => [...new Set(s.map((e) => Math.round(e.getBoundingClientRect().width)))]);
+  expect(sizes).toEqual([20]);
+});
+
+for (const look of LOOKS) {
+  test(`${look}: the summary and the mail under it are boxed the same way (#70)`, async ({ page }) => {
+    await open(page, look);
+    await page.locator('li.row[data-mail="cat1"] .row-main').click();
+    await expect(page.locator(".mv-frame")).toBeVisible();
+    const style = (sel: string) => page.locator(sel).evaluate((e) => { const c = getComputedStyle(e); return { radius: c.borderTopLeftRadius, left: c.borderLeftWidth }; });
+    const [sum, frame] = [await style(".mv-sum"), await style(".mv-frame")];
+    expect(sum.radius).toBe(frame.radius);
+    expect(sum.left).toBe(frame.left);
+  });
+}
+
+test("Appearance: each look's description fits on one line (#70)", async ({ page }) => {
+  await open(page, "minimal");
+  await page.getByRole("button", { name: /Appearance/ }).first().click();
+  const lines = await page.locator(".look-card small").evaluateAll((s) => s.map((e) => Math.round(e.getBoundingClientRect().height / parseFloat(getComputedStyle(e).lineHeight))));
+  expect(lines).toEqual(lines.map(() => 1));
+});

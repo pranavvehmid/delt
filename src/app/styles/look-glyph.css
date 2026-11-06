@@ -94,3 +94,6 @@
 :root[data-look="glyph"] .dayhead { font: 700 18px/1.2 var(--font); letter-spacing: -0.02em; }
 :root[data-look="glyph"] .mv-subj { font: 700 22px/1.25 var(--font); letter-spacing: -0.02em; }
 @media (min-width: 720px) { :root[data-look="glyph"] .mv-subj { font-size: 28px; } }
+
+/* #70: every box in the open mail has the list cards' 16px corners */
+:root[data-look="glyph"] :is(.mv-frame, .mv-sum, .mv-due, .mv-err) { border-radius: 16px; }
