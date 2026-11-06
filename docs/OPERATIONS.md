@@ -84,3 +84,12 @@ All live in `.env.local` for local runs (never committed) and in Vercel → Proj
 ## The longer-term fix
 
 A student-held app with access to every student's mailbox should ideally live under a VIT club or department, with VIT IT aware of it. Start that conversation early, before anything is blocked.
+
+## The Android app shows Chrome's address bar (#78)
+
+Android shows DELT full screen only after it verifies the app and the site belong together.
+1. Check the link: open `https://digitalassetlinks.googleapis.com/v1/assetlinks:check?source.web.site=https://delt-mu.vercel.app&relation=delegate_permission/common.handle_all_urls&target.android_app.package_name=in.delt.mail&target.android_app.certificate.sha256_fingerprint=<APK fingerprint>`. It should say `"linked": true`.
+2. The fingerprint in `public/.well-known/assetlinks.json` must match the key that signs `app-latest` (the `delt` key in the KEYSTORE_BASE64 secret).
+3. On the phone: update Chrome, then Settings → Apps → DELT → Storage → Clear storage, and open DELT again. A failed check from an older build can be remembered.
+4. During Google sign-in the bar is expected: those pages are Google's, not DELT's.
+DELT shows a note when the app opens as a plain tab (`openedAsTab` in `src/lib/app-update.ts`).

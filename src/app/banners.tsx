@@ -3,7 +3,7 @@
 // The notices above the list: app update, the AI question, offline, and lost Gmail access.
 import { useEffect, useState } from "react";
 import { ago } from "@/lib/inbox";
-import { APK_URL, checkAppUpdate, snoozeAppUpdate } from "@/lib/app-update";
+import { APK_URL, checkAppUpdate, openedAsTab, snoozeAppUpdate } from "@/lib/app-update";
 
 type Props = {
   aiConsent: boolean | null | undefined;
@@ -21,9 +21,24 @@ export default function Banners({ aiConsent, onAnswerAi, offline, savedAt, now, 
   useEffect(() => {
     checkAppUpdate().then(setAppUpdate);
   }, []);
+  // #78: the app fell back to a Chrome tab (address bar showing)
+  const [asTab, setAsTab] = useState(false);
+  useEffect(() => {
+    setAsTab(openedAsTab(location.search, matchMedia("(display-mode: standalone)").matches));
+  }, []);
 
   return (
     <>
+      {asTab && (
+        <section className="banner update" aria-labelledby="as-tab">
+          <span>
+            <b id="as-tab">Chrome is showing DELT with its address bar.</b> Update Chrome from the Play Store, then in Settings → Apps → DELT → Storage, clear storage and open DELT again.
+          </span>
+          <span className="ask-btns">
+            <button className="pillbtn" onClick={() => setAsTab(false)}>OK</button>
+          </span>
+        </section>
+      )}
       {appUpdate && (
         <section className="banner update" aria-labelledby="app-update">
           <span>

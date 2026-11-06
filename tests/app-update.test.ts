@@ -31,3 +31,11 @@ test("offers the update only when a newer build exists and it wasn't just dismis
 test("the app tells the site its build number when it opens", () => {
   assert.match(readFileSync("android/app/build.gradle", "utf8"), /startUrl: "https:\/\/\$\{siteHost\}\/\?app=\$\{versionCode\}#\/inbox"/);
 });
+
+import { openedAsTab } from "../src/lib/app-update";
+test("#78: an app launch shown as a plain Chrome tab is noticed; the full-screen app and the website aren't", () => {
+  assert.equal(openedAsTab("?app=12", false), true);
+  assert.equal(openedAsTab("?app=12", true), false);
+  assert.equal(openedAsTab("", false), false);
+  assert.equal(openedAsTab("?x=1&app=7", false), true);
+});

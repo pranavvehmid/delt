@@ -52,3 +52,9 @@ export function snoozeAppUpdate(now = Date.now()) {
     localStorage.setItem(KEY_SNOOZE, String(now + SNOOZE_MS));
   } catch {}
 }
+
+/** #78: the app opened DELT (its launch link carries ?app=) but Chrome is showing it as a plain tab
+ *  with an address bar, not as the full-screen app. A trusted app reports display-mode standalone. */
+export function openedAsTab(search: string, standalone: boolean): boolean {
+  return /[?&]app=\d+/.test(search) && !standalone;
+}
