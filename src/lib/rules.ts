@@ -206,7 +206,7 @@ export type RuleResult = Classification & { confidence: number };
 export function classifyByRules(
   msg: ParsedMessage,
   corrections: Correction[] = [],
-  profile: StudentProfile = { regNo: null, batch: null, branchCode: null, branch: null, year: 1 },
+  profile: StudentProfile = { regNo: null, batch: null, branchCode: null, branch: null, year: null }, // #87: unknown, not first-year
   now: number = Date.now(),
 ): RuleResult {
   const subject = msg.subject.toLowerCase();

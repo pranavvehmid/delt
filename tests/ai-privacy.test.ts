@@ -22,3 +22,17 @@ test("what the consent and privacy texts say matches what is sent", () => {
   assert.match(privacy, /sender domains you moved/);
   assert.match(readFileSync("src/app/settings-ai.tsx", "utf8"), /your year and programme and the sender domains/);
 });
+
+test("#87: a student whose register number can't be read isn't described as a first-year", async () => {
+  const { describeProfile, profileFromName } = await import("../src/lib/profile");
+  const unknown = describeProfile(profileFromName("Priya Sharma"));
+  assert.doesNotMatch(unknown, /first-year|B\.Tech/);
+  assert.match(unknown, /unknown/);
+});
+
+test("#81: the AI is told year and programme, never the register number", async () => {
+  const { describeProfile, profileFromName } = await import("../src/lib/profile");
+  const d = describeProfile(profileFromName("A B STUDENT NAME 26BCE0001", new Date("2026-11-07")));
+  assert.match(d, /first-year B\.Tech Computer Science and Engineering student \(2026 batch\)/);
+  assert.doesNotMatch(d, /26BCE0001/);
+});

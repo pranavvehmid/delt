@@ -42,8 +42,10 @@ export function profileFromName(name: string | null | undefined, now = new Date(
   };
 }
 
+/** How the AI is told who the student is. #87: an unreadable register number means "unknown",
+ *  not "first-year B.Tech". #81: the register number itself is never sent, only year and programme. */
 export function describeProfile(p: StudentProfile) {
-  if (!p.batch) return "a first-year B.Tech student at VIT Vellore, India";
+  if (!p.batch) return "a student at VIT Vellore, India, whose year and programme are unknown (don't assume either)";
   const ord = ["first", "second", "third", "fourth", "fifth"][(p.year ?? 1) - 1] ?? `${p.year}th`;
-  return `a ${ord}-year ${p.branch} student (${p.batch} batch, register number ${p.regNo}) at VIT Vellore, India`;
+  return `a ${ord}-year ${p.branch} student (${p.batch} batch) at VIT Vellore, India`;
 }
