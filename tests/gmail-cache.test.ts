@@ -41,3 +41,21 @@ test("labels are looked up once per access token", async () => {
   assert.deepEqual(one, two);
   assert.equal(calls.filter((c) => c === "labels").length, 1);
 });
+
+test("#107: if another sync created the label first (409), DELT uses that label", async () => {
+  let listed = 0;
+  globalThis.fetch = (async (url: string | URL, init?: RequestInit) => {
+    const u = String(url);
+    if (u.endsWith("/labels") && init?.method === "POST") return new Response('{"error":{"code":409,"message":"Label name exists or conflicts"}}', { status: 409 });
+    if (u.endsWith("/labels")) {
+      listed++;
+      // first look: nothing yet; second look: the other sync's labels are there
+      const names = listed === 1 ? [] : ["1 Very Important", "2 Priority", "3 Later", "4 Noise"];
+      return new Response(JSON.stringify({ labels: names.map((n, i) => ({ id: `X${i}`, name: `MailSort/${n}` })) }));
+    }
+    return new Response("{}", { status: 404 });
+  }) as typeof fetch;
+  const ids = await ensureLabels("at-race");
+  assert.equal(ids.very_important, "X0");
+  assert.equal(ids.noise, "X3");
+});

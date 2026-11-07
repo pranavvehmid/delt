@@ -233,16 +233,25 @@ export async function ensureLabels(token: string): Promise<Record<Priority, stri
       out[p] = existing.id;
       continue;
     }
-    const created = await gmail<{ id: string }>(token, "/labels", {
-      method: "POST",
-      body: JSON.stringify({
-        name: LABEL_NAMES[p],
-        labelListVisibility: "labelShow",
-        messageListVisibility: "show",
-        color: LABEL_COLORS[p],
-      }),
-    });
-    out[p] = created.id;
+    try {
+      const created = await gmail<{ id: string }>(token, "/labels", {
+        method: "POST",
+        body: JSON.stringify({
+          name: LABEL_NAMES[p],
+          labelListVisibility: "labelShow",
+          messageListVisibility: "show",
+          color: LABEL_COLORS[p],
+        }),
+      });
+      out[p] = created.id;
+    } catch (e) {
+      // #107: another sync (the app and the background job) created it a moment ago: use that one
+      if (!/\(409\)/.test((e as Error).message)) throw e;
+      const again = await gmail<{ labels?: { id: string; name: string }[] }>(token, "/labels");
+      const found = again.labels?.find((l) => l.name === LABEL_NAMES[p]);
+      if (!found) throw e;
+      out[p] = found.id;
+    }
   }
   labelCache.set(token, out);
   return out;
