@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
 import { auth } from "@/auth";
+import { serverError } from "@/lib/api-error";
 import { db, type Priority } from "@/lib/supabase";
 import { batchModify, ensureLabels, getAccessToken, LABEL_NAMES } from "@/lib/gmail";
 import { limited } from "@/lib/rate-limit";
@@ -44,7 +45,7 @@ export async function POST(req: NextRequest) {
   if (is_done !== undefined) update.is_done = is_done;
   for (const part of chunks(mine)) {
     const { error } = await db.from("emails").update(update).eq("user_email", email).in("id", part);
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    if (error) return serverError("bulk update", error);
   }
 
   // Mirror in Gmail with as few calls as possible.

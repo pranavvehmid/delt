@@ -107,3 +107,12 @@ test("#132: the 'Notifications are on' message goes only to a newly added device
   assert.ok(src.indexOf('select("endpoint").eq("endpoint", endpoint)') < src.indexOf(".upsert("), "checks before saving");
   assert.match(src, /if \(!had\) await sendToStudent/);
 });
+
+test("#133: routes a student calls never send raw database or Google errors to the browser", () => {
+  for (const f of API.filter((f) => !/health/.test(f))) {
+    const src = readFileSync(f, "utf8");
+    // the background-sync GET (cron secret only) may report details; everything students call may not
+    const studentPart = f.includes("api/sync") ? src.slice(0, src.indexOf("export async function GET")) : src;
+    assert.doesNotMatch(studentPart, /error: (error\.message|\(e as Error\)\.message)/, f);
+  }
+});

@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { auth } from "@/auth";
+import { GMAIL_DOWN, serverError } from "@/lib/api-error";
 import { db } from "@/lib/supabase";
 import { AccessRevoked, TooBig, attachmentHeaders, getAccessToken, getAttachment } from "@/lib/gmail";
 import { markRevoked } from "@/lib/sync";
@@ -32,6 +33,6 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
       await markRevoked(email);
       return NextResponse.json({ error: e.message, reauth: true }, { status: 409 });
     }
-    return NextResponse.json({ error: (e as Error).message.slice(0, 200) }, { status: 502 });
+    return serverError("attachment", e, 502, GMAIL_DOWN);
   }
 }

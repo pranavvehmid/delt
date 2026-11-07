@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
 import { auth } from "@/auth";
+import { serverError } from "@/lib/api-error";
 import { db, type Priority } from "@/lib/supabase";
 import { CATEGORIES } from "@/lib/types";
 import { PAGE_SIZE, searchPattern } from "@/lib/inbox";
@@ -41,7 +42,7 @@ export async function GET(req: NextRequest) {
   if (pattern) query = query.or(["subject", "from_name", "from_address", "summary"].map((c) => `${c}.ilike.${pattern}`).join(","));
 
   const { data, error } = await query.order("received_at", { ascending: false }).limit(limit + 1);
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) return serverError("emails", error);
   const more = (data?.length ?? 0) > limit;
 
   // Opening the app marks the student as active, so background sync checks them more often.
@@ -97,7 +98,7 @@ export async function PATCH(req: NextRequest) {
   if (read !== undefined) update.unread = !read;
 
   const { data: changed, error } = await db.from("emails").update(update).eq("id", id).eq("user_email", email).select("id");
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) return serverError("emails", error);
   // #112: a stale id (mail purged, or removed on another device) is not a silent success
   if (!changed?.length) return NextResponse.json({ error: "Mail not found" }, { status: 404 });
 

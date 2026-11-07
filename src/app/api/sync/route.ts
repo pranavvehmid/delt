@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { auth } from "@/auth";
+import { GMAIL_DOWN, serverError } from "@/lib/api-error";
 import { db } from "@/lib/supabase";
 import { claimSync, finishSync, syncUser } from "@/lib/sync";
 import { AccessRevoked } from "@/lib/gmail";
@@ -34,7 +35,7 @@ export async function POST(req: NextRequest) {
       const r = await syncUser(email, "later");
       return NextResponse.json({ resorted: r.rechecked, labeled: r.labeled });
     } catch (e) {
-      return NextResponse.json({ error: (e as Error).message }, { status: e instanceof AccessRevoked ? 409 : 500 });
+      return e instanceof AccessRevoked ? NextResponse.json({ error: e.message, reauth: true }, { status: 409 }) : serverError("sync later", e);
     }
   }
   // At most one sync per student every 10 s, and never two at once (#30): extra taps and tabs
@@ -49,7 +50,7 @@ export async function POST(req: NextRequest) {
   } catch (e) {
     // Google access removed: the app shows "Sign in again" (issue #10).
     if (e instanceof AccessRevoked) return NextResponse.json({ error: e.message, reauth: true }, { status: 409 });
-    return NextResponse.json({ error: (e as Error).message }, { status: 500 });
+    return serverError("sync", e, 500, GMAIL_DOWN);
   } finally {
     await finishSync(email);
   }

@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { auth } from "@/auth";
+import { serverError } from "@/lib/api-error";
 import { db } from "@/lib/supabase";
 import { senderRules } from "@/lib/inbox";
 import { limited } from "@/lib/rate-limit";
@@ -19,7 +20,7 @@ export async function GET() {
     .eq("user_email", email)
     .eq("user_corrected", true)
     .limit(2000);
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) return serverError("rules", error);
   return NextResponse.json({ rules: senderRules(data ?? []) });
 }
 
@@ -33,6 +34,6 @@ export async function DELETE(req: NextRequest) {
   if (!from || from.length > 320) return NextResponse.json({ error: "Bad request" }, { status: 400 });
 
   const { error } = await db.from("emails").update({ user_corrected: false }).eq("user_email", email).ilike("from_address", from.replace(/[%_\\]/g, "\\$&")); // exact address, any case
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) return serverError("rules", error);
   return NextResponse.json({ ok: true });
 }

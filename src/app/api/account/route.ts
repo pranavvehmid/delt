@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { auth, signOut } from "@/auth";
+import { serverError } from "@/lib/api-error";
 import { db } from "@/lib/supabase";
 import { deleteStudentData, type AccountDb } from "@/lib/account";
 import { getAccessToken, removeDeltLabels, revokeGoogleToken } from "@/lib/gmail";
@@ -25,6 +26,6 @@ export async function DELETE(req: NextRequest) {
     await signOut({ redirect: false });
     return NextResponse.json({ ok: true, ...report });
   } catch (e) {
-    return NextResponse.json({ error: (e as Error).message.slice(0, 200) }, { status: 500 });
+    return serverError("account delete", e);
   }
 }
