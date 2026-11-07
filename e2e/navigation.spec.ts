@@ -48,3 +48,13 @@ test("#230: the chosen pile and Unread only survive a reload", async ({ page }) 
   await expect(chips.getByRole("button", { name: /^Later/ })).toHaveAttribute("aria-pressed", "true");
   await expect(page.getByRole("checkbox", { name: /Unread only/ })).toBeChecked();
 });
+
+test("#211: the Inbox badge counts unread Urgent and Priority mail, not Later or Noise", async ({ page }) => {
+  const { smallInbox } = await import("./mock");
+  await mockApi(page, smallInbox()); // unread: 2 Urgent, 1 Priority, 1 Later
+  await page.goto("/e2e");
+  await expect(page.locator("li.row").first()).toBeVisible();
+  const badge = page.locator(".mast button, .tabbar button").filter({ visible: true, hasText: /^Inbox/ }).first();
+  await expect(badge.locator("sup, .badge").first()).toContainText("3");
+  await expect(badge).toHaveAttribute("title", "3 unread in Urgent and Priority");
+});

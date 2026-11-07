@@ -83,6 +83,8 @@ export default function InboxApp({ email, name, signOutAction, signInAction }: P
   // ---------- what's shown ----------
   const all = useMemo(() => mails ?? [], [mails]);
   const counts = useMemo(() => pileCounts(all), [all]);
+  // #211: the badge says something needs you: unread Urgent and Priority only, not promotions
+  const badge = counts.very_important.unread + counts.priority.unread;
   const searchable = useMemo(() => (hits ? mergeMore(all, hits) : all), [all, hits]);
   const shown = useMemo(() => filterMail(searchable, { pile, unreadOnly, query }), [searchable, pile, unreadOnly, query]);
   // #23: in All (no search), what needs you comes first; those mails move up instead of repeating
@@ -152,7 +154,7 @@ export default function InboxApp({ email, name, signOutAction, signInAction }: P
           <i />
         </a>
         {/* #76: on wide screens the bar spans the window and holds the sections and search */}
-        {wide && <TopTabs tab={route.tab} unread={counts.all.unread} dueCount={dueCount} />}
+        {wide && <TopTabs tab={route.tab} unread={badge} dueCount={dueCount} />}
         {wide && (
           <SearchBox
             query={query}
@@ -186,7 +188,7 @@ export default function InboxApp({ email, name, signOutAction, signInAction }: P
           <span>{pull >= PULL_AT ? "Release to check for mail" : "Pull to check for mail"}</span>
         </div>
       )}
-      {!wide && <TopTabs tab={route.tab} unread={counts.all.unread} dueCount={dueCount} />}
+      {!wide && <TopTabs tab={route.tab} unread={badge} dueCount={dueCount} />}
 
       {mails === null && loadError && (
         <main className="page">
@@ -222,7 +224,7 @@ export default function InboxApp({ email, name, signOutAction, signInAction }: P
       )}
       {route.tab === "deadlines" && !(mails === null && loadError) && <DeadlinesList key="deadlines" loaded={mails !== null} buckets={buckets} now={now} onOpen={(m) => openMail(m)} onPatch={(id, p) => patch(id, p)} />}
 
-      <TabBar tab={route.tab} unread={counts.all.unread} dueCount={dueCount} />
+      <TabBar tab={route.tab} unread={badge} dueCount={dueCount} />
 
       {/* #68: on a wide screen the list keeps its column and the space beside it waits for a mail */}
       {wide && !route.mailId && (

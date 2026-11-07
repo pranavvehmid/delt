@@ -8,8 +8,8 @@ type Props = { tab: Route["tab"]; unread: number; dueCount: number };
 export function TopTabs({ tab, unread, dueCount }: Props) {
   return (
     <nav className="mast" aria-label="Sections">
-      <button className={tab === "inbox" ? "on" : ""} onClick={() => goTab("inbox")} aria-current={tab === "inbox" ? "page" : undefined} title={unread > 0 ? `${unread} unread` : undefined}>
-        Inbox{unread > 0 && <sup><span className="sr-only">, </span>{unread > 99 ? "99+" : unread}<span className="sr-only"> unread</span></sup>}
+      <button className={tab === "inbox" ? "on" : ""} onClick={() => goTab("inbox")} aria-current={tab === "inbox" ? "page" : undefined} title={unread > 0 ? `${unread} unread in Urgent and Priority` : undefined}>
+        Inbox{unread > 0 && <sup><span className="sr-only">, </span>{unread > 99 ? "99+" : unread}<span className="sr-only"> unread in Urgent and Priority</span></sup>}
       </button>
       <button className={tab === "deadlines" ? "on" : ""} onClick={() => goTab("deadlines")} aria-current={tab === "deadlines" ? "page" : undefined} title={dueCount > 0 ? `${dueCount} open deadline${dueCount === 1 ? "" : "s"}` : undefined}>
         Deadlines{dueCount > 0 && <sup><span className="sr-only">, </span>{dueCount}<span className="sr-only"> open</span></sup>}
