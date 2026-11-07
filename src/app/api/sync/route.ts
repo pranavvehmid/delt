@@ -8,6 +8,7 @@ import { dueForSync } from "@/lib/schedule";
 import { markSeen, notifyStudent } from "@/lib/notify";
 import { purgeOldMail } from "@/lib/retention";
 import { timingSafeEqual } from "node:crypto";
+import { allRows } from "@/lib/all-rows";
 
 // #34: compare the cron secret in constant time
 function cronAllowed(header: string | null) {
@@ -67,10 +68,13 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const started = Date.now();
-  let { data: users, error } = await db.from("users").select("email, last_synced_at, last_seen_at, access_revoked");
+  // #82: every student, a page at a time (one select stops at 1,000 rows)
+  let { data: users, error } = await allRows<{ email: string; last_synced_at: string | null; last_seen_at: string | null; access_revoked: boolean | null }>((a, b) =>
+    db.from("users").select("email, last_synced_at, last_seen_at, access_revoked").order("email").range(a, b),
+  );
   if (error) {
     // Database not updated yet (no last_seen_at): treat everyone as daily.
-    const r = await db.from("users").select("email, last_synced_at");
+    const r = await allRows<{ email: string; last_synced_at: string | null }>((a, b) => db.from("users").select("email, last_synced_at").order("email").range(a, b));
     users = (r.data ?? []).map((u) => ({ ...u, last_seen_at: null, access_revoked: null }));
     error = r.error;
   }
@@ -109,7 +113,7 @@ export async function GET(req: NextRequest) {
   const synced = new Set(processed);
   for (const u of users ?? []) if (u.access_revoked) synced.add(u.email); // no reminders for students who left
   let reminders = 0;
-  const { data: subscribed } = await db.from("push_subscriptions").select("user_email");
+  const { data: subscribed } = await allRows<{ user_email: string }>((a, b) => db.from("push_subscriptions").select("user_email").order("endpoint").range(a, b));
   for (const email of new Set((subscribed ?? []).map((s) => s.user_email as string))) {
     if (synced.has(email) || Date.now() - started > BUDGET_MS + 20_000) continue;
     reminders += await notifyStudent(email);
