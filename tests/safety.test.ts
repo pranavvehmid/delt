@@ -112,7 +112,7 @@ test("#133: routes a student calls never send raw database or Google errors to t
   for (const f of API.filter((f) => !/health/.test(f))) {
     const src = readFileSync(f, "utf8");
     // the background-sync GET (cron secret only) may report details; everything students call may not
-    const studentPart = /api[\/]sync/.test(f) ? src.slice(0, src.indexOf("export async function GET")) : src;
+    const studentPart = /api[\\/]sync/.test(f) ? src.slice(0, src.indexOf("export async function GET")) : src;
     assert.doesNotMatch(studentPart, /error: (error\.message|\(e as Error\)\.message)/, f);
   }
 });
