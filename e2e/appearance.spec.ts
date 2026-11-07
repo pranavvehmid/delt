@@ -232,3 +232,17 @@ test.describe("with animations on", () => {
     expect(errors).toEqual([]);
   });
 });
+
+test("#234: a chosen accent colour never changes the colour of urgency", async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem("delt-prefs", JSON.stringify({ look: "minimal", mode: "light", accent: "green", size: "normal", density: "comfortable" })));
+  await mockApi(page, smallInbox());
+  await page.goto("/e2e");
+  const time = page.locator("li.row.ink-very_important .when").first();
+  await expect(time).toBeVisible();
+  const [urgent, accent] = await Promise.all([
+    time.evaluate((e) => getComputedStyle(e).color),
+    page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue("--accent").trim()),
+  ]);
+  expect(accent).toBe("#188038"); // green is really on
+  expect(urgent).toBe("rgb(200, 16, 46)"); // still the urgency red
+});

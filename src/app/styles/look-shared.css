@@ -91,7 +91,7 @@
 :root:is([data-look="minimal"], [data-look="grid"]) .ink-noise { --lv: 0; --subj: 14px; --w: 400; }
 :root:is([data-look="minimal"], [data-look="grid"]) .when { display: block; padding-top: 2px; font-size: 12.5px; letter-spacing: 0.04em; font-variant-numeric: tabular-nums; color: rgb(var(--ink) / var(--a2)); white-space: nowrap; }
 :root:is([data-look="minimal"], [data-look="grid"]) .when::before { content: ""; display: block; width: 14px; height: 2px; margin-bottom: 8px; background: transparent; }
-:root:is([data-look="minimal"], [data-look="grid"]) .ink-very_important .when::before { background: var(--accent); }
+:root:is([data-look="minimal"], [data-look="grid"]) .ink-very_important .when::before { background: var(--due-soon); }
 :root:is([data-look="minimal"], [data-look="grid"]) .row.unread .when { color: rgb(var(--ink) / var(--a)); font-weight: 500; }
 :root:is([data-look="minimal"], [data-look="grid"]) .from { font-size: 12.5px; font-weight: 400; text-transform: uppercase; letter-spacing: 0.08em; color: rgb(var(--ink) / var(--a2)); }
 :root:is([data-look="minimal"], [data-look="grid"]) .subj { font-size: var(--subj); line-height: 1.3; font-weight: var(--w); letter-spacing: 0; color: rgb(var(--ink) / var(--a)); margin-top: 4px; white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
@@ -100,7 +100,7 @@
 :root:is([data-look="minimal"], [data-look="grid"]) .meta { margin-top: 8px; }
 :root:is([data-look="minimal"], [data-look="grid"]) .row-text > .meta:not(:has(.due, .donemark)) { display: none; }
 :root:is([data-look="minimal"], [data-look="grid"]) :is(.due, .donemark) { background: none !important; padding: 0; height: auto; font-size: 12.5px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.08em; color: rgb(var(--ink) / max(0.7, var(--floor))); }
-:root:is([data-look="minimal"], [data-look="grid"]) .due:is(.lv-over, .lv-soon) { color: var(--accent); }
+:root:is([data-look="minimal"], [data-look="grid"]) .due:is(.lv-over, .lv-soon) { color: var(--due-soon); }
 :root:is([data-look="minimal"], [data-look="grid"]) .row.done { --lv: 0; }
 :root:is([data-look="minimal"], [data-look="grid"]) .row.done .subj { text-decoration: line-through; text-decoration-thickness: 1px; }
 :root:is([data-look="minimal"], [data-look="grid"]) .swipe-bg.r { background: rgb(var(--ink)); color: var(--bg); }
@@ -114,10 +114,10 @@
 :root:is([data-look="minimal"], [data-look="grid"]) .datebox { width: auto; height: auto; align-items: flex-start; background: none !important; color: rgb(var(--ink)); }
 :root:is([data-look="minimal"], [data-look="grid"]) .datebox b { font: 400 34px/0.9 var(--font); letter-spacing: -0.04em; font-variant-numeric: tabular-nums; }
 :root:is([data-look="minimal"], [data-look="grid"]) .datebox small { font-size: 12.5px; letter-spacing: 0.12em; color: rgb(var(--ink) / var(--floor)); margin-top: 4px; }
-:root:is([data-look="minimal"], [data-look="grid"]) .datebox:is(.lv-over, .lv-soon) b { color: var(--accent); }
+:root:is([data-look="minimal"], [data-look="grid"]) .datebox:is(.lv-over, .lv-soon) b { color: var(--due-soon); }
 :root:is([data-look="minimal"], [data-look="grid"]) .datebox.lv-week { color: rgb(var(--ink)); }
 :root:is([data-look="minimal"], [data-look="grid"]) .due-row .subj { font-size: 16px; -webkit-line-clamp: 2; }
-:root:is([data-look="minimal"], [data-look="grid"]) .b-Overdue .dayhead { color: var(--accent); }
+:root:is([data-look="minimal"], [data-look="grid"]) .b-Overdue .dayhead { color: var(--due-soon); }
 :root:is([data-look="minimal"], [data-look="grid"]) .iconbtn.check.on { color: rgb(var(--ink)); }
 
 /* the open mail */
@@ -133,9 +133,9 @@
 :root:is([data-look="minimal"], [data-look="grid"]) .mv-pile { gap: 0; margin-top: 24px; }
 :root:is([data-look="minimal"], [data-look="grid"]) .pchip { border: 0; background: none !important; padding: 0; margin-right: 16px; height: 28px; font-size: 14px; color: rgb(var(--ink) / var(--floor)); }
 :root:is([data-look="minimal"], [data-look="grid"]) .pchip.on { color: rgb(var(--ink)); font-weight: 500; box-shadow: inset 0 -2px 0 currentColor; }
-:root:is([data-look="minimal"], [data-look="grid"]) .pchip.on.p-very_important { color: var(--accent); }
+:root:is([data-look="minimal"], [data-look="grid"]) .pchip.on.p-very_important { color: var(--due-soon); }
 :root:is([data-look="minimal"], [data-look="grid"]) :is(.mv-due, .mv-sum) { background: none; border-radius: 0; padding: 2px 0 2px 16px; margin-top: 16px; border-left: 2px solid rgb(var(--ink) / 0.14); }
-:root:is([data-look="minimal"], [data-look="grid"]) .mv-due:is(.lv-over, .lv-soon) { border-left-color: var(--accent); }
+:root:is([data-look="minimal"], [data-look="grid"]) .mv-due:is(.lv-over, .lv-soon) { border-left-color: var(--due-soon); }
 :root:is([data-look="minimal"], [data-look="grid"]) .mv-due b { font-weight: 500; }
 :root:is([data-look="minimal"], [data-look="grid"]) .mv-sum { font-weight: 400; font-size: 16px; }
 :root:is([data-look="minimal"], [data-look="grid"]) .mv-frame { box-shadow: 0 0 0 1px rgb(var(--ink) / 0.1); }
@@ -184,7 +184,7 @@
 :root:is([data-look="minimal"], [data-look="grid"]) .signin .p-priority .tagdot { background: rgb(var(--ink) / 0.72); }
 :root:is([data-look="minimal"], [data-look="grid"]) .signin .p-later .tagdot { background: rgb(var(--ink) / 0.48); }
 :root:is([data-look="minimal"], [data-look="grid"]) .signin .p-noise .tagdot { background: rgb(var(--ink) / 0.3); }
-:root:is([data-look="minimal"], [data-look="grid"]) .signin .p-very_important .tagdot { background: var(--accent); }
+:root:is([data-look="minimal"], [data-look="grid"]) .signin .p-very_important .tagdot { background: var(--due-soon); }
 :root:is([data-look="minimal"], [data-look="grid"]) .settings b { font-weight: 500; }
 :root:is([data-look="minimal"], [data-look="grid"]) .settings .keyform input { border-radius: 0; background: none; border: 0; border-bottom: 1px solid rgb(var(--ink) / 0.2); padding: 0; }
 :root:is([data-look="minimal"], [data-look="grid"]) .banner { border-radius: 0; background: none; border-left: 2px solid var(--accent); padding: 4px 0 4px 16px; }
@@ -218,7 +218,7 @@
 /* #70: the summary and due date are boxed with the same hairline as the mail under them,
    instead of a left rule next to a full box. An urgent due date keeps a bar in the accent. */
 :root:is([data-look="minimal"], [data-look="grid"]) :is(.mv-due, .mv-sum) { border-left: 0; padding: 12px 16px; box-shadow: 0 0 0 1px rgb(var(--ink) / 0.1); }
-:root:is([data-look="minimal"], [data-look="grid"]) .mv-due:is(.lv-over, .lv-soon) { box-shadow: inset 2px 0 0 var(--accent), 0 0 0 1px rgb(var(--ink) / 0.1); }
+:root:is([data-look="minimal"], [data-look="grid"]) .mv-due:is(.lv-over, .lv-soon) { box-shadow: inset 2px 0 0 var(--due-soon), 0 0 0 1px rgb(var(--ink) / 0.1); }
 :root:is([data-look="minimal"], [data-look="grid"]) .mv-pile .lbl { margin-right: 12px; } /* #68: "Pile" no longer touches the first pile */
 
 /* #76: in the laptop top bar the section names are 18px, under the 24px "large text" line, so the

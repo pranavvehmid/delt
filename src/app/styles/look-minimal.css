@@ -20,7 +20,7 @@
    centred on the subject's first line: sender line (20px) + 1px gap + 4px margin + half a line. */
 :root[data-look="minimal"] .row-text { position: relative; }
 :root[data-look="minimal"] .row.unread .row-text::before { content: ""; position: absolute; left: -16px; top: calc(20px + 5px + var(--subj) * 0.65 - 3.5px); width: 7px; height: 7px; background: rgb(var(--ink)); }
-:root[data-look="minimal"] .row.unread.ink-very_important .row-text::before { background: var(--accent); }
+:root[data-look="minimal"] .row.unread.ink-very_important .row-text::before { background: var(--due-soon); }
 :root[data-look="minimal"] .rows { gap: 0; } /* #68: whitespace alone separates rows; 24px between them is enough */
 :root[data-look="minimal"] .row-main { padding-top: 8px; padding-bottom: 8px; }
 :root[data-look="minimal"] .meta { margin-top: 4px; }
@@ -31,4 +31,4 @@
 :root[data-look="minimal"] .dayhead { font-weight: 600; }
 /* A10: urgent mail is marked by a red time, not a dash floating above it between rows */
 :root[data-look="minimal"] .when::before { display: none; }
-:root[data-look="minimal"] .ink-very_important .when { color: var(--accent); }
+:root[data-look="minimal"] :is(.row, .row.unread).ink-very_important .when { color: var(--due-soon); } /* unread too (#234) */
