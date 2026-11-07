@@ -16,6 +16,7 @@ import type { Classification, Correction } from "./types";
 import { profileFromName, type StudentProfile } from "./profile";
 import { COOLDOWN_MS, bumpUsage, planAI } from "./ai-quota";
 import { needsReseal, open, openToken, seal } from "./secret";
+import { RULES_MAX } from "./inbox";
 import { BATCH, LIST_MAX, UNREAD_LIST_MAX, UNREAD_WINDOW_DAYS, isGone, nextSyncedAt, planSync, syncProblem, unreadChanges } from "./sync-plan";
 
 
@@ -99,7 +100,7 @@ export async function syncUser(email: string, mode: SyncMode = "full"): Promise<
     .eq("user_email", email)
     .eq("user_corrected", true)
     .order("received_at", { ascending: false })
-    .limit(300); // newest first, so the latest move for a sender wins (same as the Settings list)
+    .limit(RULES_MAX); // #114: newest first, the same rows and order as the Settings list
   const corrections: Correction[] = (corrected ?? []).map((c) => ({
     from: c.from_address ?? "",
     subject: c.subject ?? "",

@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { auth } from "@/auth";
 import { serverError } from "@/lib/api-error";
 import { db } from "@/lib/supabase";
-import { senderRules } from "@/lib/inbox";
+import { RULES_MAX, senderRules } from "@/lib/inbox";
 import { limited } from "@/lib/rate-limit";
 
 // Sender rules (issue #13). Moving a mail to another pile teaches DELT where that sender's
@@ -19,7 +19,8 @@ export async function GET() {
     .select("from_address, from_name, priority, received_at")
     .eq("user_email", email)
     .eq("user_corrected", true)
-    .limit(2000);
+    .order("received_at", { ascending: false }) // #114: newest move first, same as the sorter
+    .limit(RULES_MAX);
   if (error) return serverError("rules", error);
   return NextResponse.json({ rules: senderRules(data ?? []) });
 }

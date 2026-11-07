@@ -241,6 +241,8 @@ export function searchPattern(q: string): string {
 }
 
 // ---------- sender rules (issue #13) ----------
+/** #114: how many of a student's moves count as rules, for both the sorter and the Settings list. */
+export const RULES_MAX = 2000;
 export type SenderRule = { from: string; name: string; priority: Priority; mails: number };
 
 /** Moving a mail by hand teaches DELT "mail from this sender goes to this pile". The newest

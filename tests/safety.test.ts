@@ -125,3 +125,8 @@ test("#98: the public app-version route reads no student data and the app no lon
   assert.doesNotMatch(readFileSync("src/lib/app-update.ts", "utf8"), /fetch\(RELEASE_API/);
   assert.doesNotMatch(readFileSync("next.config.ts", "utf8"), /connect-src[^"]*api\.github\.com/);
 });
+
+test("#114: the sorter and the Settings list read the same moves, newest first", () => {
+  assert.match(readFileSync("src/lib/sync.ts", "utf8"), /order\("received_at", \{ ascending: false \}\)\s*\.limit\(RULES_MAX\)/);
+  assert.match(readFileSync("src/app/api/rules/route.ts", "utf8"), /order\("received_at", \{ ascending: false \}\)[^\n]*\n\s*\.limit\(RULES_MAX\)/);
+});
