@@ -2,6 +2,12 @@
 
 Newest first. Commit SHAs in brackets.
 
+## 2026-11-07 (fix round 1, 46 issues; not deployed yet)
+- Privacy: signed-in pages no longer cached in browser tabs (#80); AI gets only sender domains from past moves, no register number (#81, #87); attachments never kept on disk (#129); no raw server errors in the browser (#133).
+- Sync and data: every student synced past 1,000 (#82); timeouts on Google/Gemini (#84); daily batched purge (#90, #125); six-week first sync (#89); labels named DELT/… and labelled in bulk (#108, #109); Gmail failures retried and reported (#110, #111); label race fixed (#107).
+- Sorting: date ranges end on their last date (#86); AI deadlines and Urgent upgrades checked against the mail (#103, #104); unsure low-pile mail AI-checked (#85); entities and placeholder text parts (#116, #117); summaries tidied (#142); one rule list (#114).
+- App: error page and 404 (#228, #229); failed changes roll back (#231); server failures show Try again (#210); one banner at a time (#235); badge counts Urgent+Priority (#211); tab title, filters and scroll remembered (#223, #230, #197, #216); laptop Back leaves the pane (#196); deadline titles in full (#192); accent no longer recolours urgency (#234); transparent logos in dark mail (#205); deadlines downloaded only when needed (#92); app update check via DELT (#98); sign-in failures explained (#138); deleted accounts sign other devices out (#130).
+
 ## 2026-11-07 (audit fixes; not deployed yet)
 - Esc and J/K work while focus is inside the mail itself (A19) [7728b4b].
 - Grid sign-in page in the Grid look (A16) [fff7a08]; Glyph preview dots quieter (A17) [3ed46b1].

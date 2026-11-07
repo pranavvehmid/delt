@@ -18,7 +18,8 @@ Updated 2026-11-07.
 - #76 laptop layout (top bar across the window, scaling list column, pane under the bar).
 - #77 smoother screen changes (no page snapshot on open/tab switch, chunked rendering, 12 first rows).
 
-- Audit A03–A18 fixed (2026-11-07, see `docs/AUDIT.md`); A07 partial.
+- Audit A03–A19 fixed (2026-11-07); A07 partial.
+- Fix round 1 (2026-11-07): 46 issues from the full audit closed, each with a test (list in `docs/AUDIT.md`). 168 issues open.
 
 ## Half-done
 - A07/#77: Grid's first mail open of a session is 103–137ms at 4x slowdown; repeat opens 53–88ms.
@@ -35,6 +36,7 @@ Updated 2026-11-07.
 #1 real inboxes, #5 Gmail push, #15 staff accounts, #17 iPhone, #37 handover plan, #78 phone check.
 
 ## Next
+0. Deploy (needs the user's go-ahead): production is still at 436117a.
 1. User drops F1 references; write `docs/F1_STYLE_SPEC.md`; pick fonts side by side.
 2. F1 rebuild (F01–F06), then re-audit Grid against the references.
 3. Deploy when the user says so.

@@ -270,3 +270,54 @@ Label `audit-2026-11-07`. Severity: 1 critical, 28 major, 79 minor.
 - #284 One-tap actions: Register, Pay, Join
 - #285 Exam focus mode
 - #286 Remind me about this mail
+
+## Fixed on 7 Nov 2026 (fix round 1): 46 issues closed
+
+Each closed on GitHub with its commit and test.
+
+- #80 The service worker caches the signed-in inbox page in any browser, including shared computers
+- #81 AI requests send other mails' senders and subjects, which the privacy text doesn't say
+- #82 Background sync loads every user in one query, and Supabase returns at most 1,000 rows
+- #84 No network call has a timeout (Google token, Gmail, Gemini)
+- #85 The app's own sync never AI-checks new low-confidence mail that rules put in Later or Noise
+- #86 Deadline ranges pick the start date, so open registrations look closed
+- #87 Students whose register number can't be read are treated as first-years
+- #89 A first sync brings in only 14 days of mail
+- #90 Old mail purging can be skipped forever
+- #91 "Mark all read" sends up to 1,000 ids in one database URL
+- #92 The app re-downloads up to 300 deadline rows on every refresh
+- #98 The app's update check hits GitHub's 60-requests-per-hour limit on shared campus Wi-Fi
+- #103 An AI-picked deadline isn't checked against the mail
+- #104 Mail text can steer the AI's pile (prompt injection)
+- #107 Two syncs can both try to create the Gmail labels
+- #108 Gmail labels are still named "MailSort/…"
+- #109 Each new mail gets its own Gmail label call
+- #110 Bulk pile moves are marked as labelled before Gmail confirms
+- #111 Gmail updates after a move or read change fail silently
+- #112 Changing a mail that doesn't exist still returns OK
+- #113 A deadline can be set to any date, even 1970 or 9999
+- #114 Sender rules: Settings and the sorter see different lists
+- #116 The sorter reads the plain-text part even when it's only a placeholder
+- #117 HTML-to-text decoding misses most entities
+- #120 Mail list queries fetch every column
+- #125 The retention purge deletes across all students in one unbounded statement
+- #129 Attachments stay in the browser's disk cache for an hour
+- #130 Deleting data on one device leaves other devices signed in and broken
+- #132 Re-saving notifications sends the test message every time
+- #133 Raw error messages from the database and Google go to the browser
+- #138 A failed save of the Google token is only logged
+- #142 AI summaries aren't checked against the style rules
+- #192 Glyph still cuts deadline titles off
+- #196 On a laptop, Back walks through every mail you opened
+- #197 Switching tabs throws away your scroll position
+- #205 Transparent logos disappear in dark mail
+- #210 If the server fails, the inbox shows loading placeholders forever
+- #211 The unread badge counts Noise and promotions
+- #216 Tapping the active tab doesn't scroll back to the top
+- #223 The browser tab never shows unread mail or the open subject
+- #228 A crash anywhere shows a blank screen
+- #229 There's no designed 404 page
+- #230 Filters and search are lost on reload or relaunch
+- #231 Failed actions look like they worked
+- #234 Choosing an accent colour changes the colour of urgency
+- #235 Banners stack above the list
