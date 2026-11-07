@@ -1,6 +1,6 @@
 // "Delete my data" (issue #9). Removes everything DELT keeps about one student:
 // their Google refresh token, mail previews, deadlines and phone subscriptions.
-// Optionally removes the MailSort labels from their Gmail, then revokes DELT's Google access.
+// Optionally removes the DELT labels from their Gmail, then revokes DELT's Google access.
 // The database and Google calls are passed in, so tests can check it without a real database.
 
 /** Every table holding a student's data, and the column naming them. Users goes last. */

@@ -7,7 +7,7 @@ import { limited } from "@/lib/rate-limit";
 
 // DELETE /api/account  { removeLabels?: boolean }
 // "Delete my data" (issue #9): the signed-in student's rows go from every table, DELT's Google
-// access is revoked, and (if asked) the MailSort labels are removed from their Gmail.
+// access is revoked, and (if asked) the DELT labels are removed from their Gmail.
 export async function DELETE(req: NextRequest) {
   const session = await auth();
   const email = session?.user?.email?.toLowerCase();

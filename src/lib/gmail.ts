@@ -207,12 +207,21 @@ export async function getMessage(token: string, id: string): Promise<ParsedMessa
 
 // ---- Gmail labels -------------------------------------------------------
 
+// #108: named after DELT and its piles. Labels from before (MailSort/…) are renamed in place, so a
+// student's labelled mail keeps its label.
 export const LABEL_NAMES: Record<Priority, string> = {
+  very_important: "DELT/Urgent",
+  priority: "DELT/Priority",
+  later: "DELT/Later",
+  noise: "DELT/Noise",
+};
+export const OLD_LABEL_NAMES: Record<Priority, string> = {
   very_important: "MailSort/1 Very Important",
   priority: "MailSort/2 Priority",
   later: "MailSort/3 Later",
   noise: "MailSort/4 Noise",
 };
+const isDeltLabel = (name: string) => ["DELT", "MailSort"].some((p) => name === p || name.startsWith(`${p}/`));
 
 const LABEL_COLORS: Record<Priority, { backgroundColor: string; textColor: string }> = {
   very_important: { backgroundColor: "#cc3a21", textColor: "#ffffff" },
@@ -231,6 +240,13 @@ export async function ensureLabels(token: string): Promise<Record<Priority, stri
     const existing = labels.find((l) => l.name === LABEL_NAMES[p]);
     if (existing) {
       out[p] = existing.id;
+      continue;
+    }
+    // #108: an old MailSort label: rename it, keeping its id and the mail it's on
+    const old = labels.find((l) => l.name === OLD_LABEL_NAMES[p]);
+    if (old) {
+      await gmail(token, `/labels/${old.id}`, { method: "PATCH", body: JSON.stringify({ name: LABEL_NAMES[p] }) });
+      out[p] = old.id;
       continue;
     }
     try {
@@ -257,7 +273,7 @@ export async function ensureLabels(token: string): Promise<Record<Priority, stri
   return out;
 }
 
-/** Puts exactly one MailSort label on a message (removes the other three). */
+/** Puts exactly one DELT label on a message (removes the other three). */
 export async function setPriorityLabel(
   token: string,
   messageId: string,
@@ -388,11 +404,11 @@ export async function batchModify(token: string, ids: string[], addLabelIds: str
   }
 }
 
-/** Removes DELT's MailSort labels from the student's Gmail. Their mail stays where it is. */
+/** Removes DELT's labels (DELT/… and the old MailSort/…) from the student's Gmail. Their mail stays where it is. */
 export async function removeDeltLabels(token: string): Promise<number> {
   const { labels = [] } = await gmail<{ labels?: { id: string; name: string }[] }>(token, "/labels");
   let n = 0;
-  for (const l of labels.filter((l) => l.name === "MailSort" || l.name.startsWith("MailSort/"))) {
+  for (const l of labels.filter((l) => isDeltLabel(l.name))) {
     const res = await fetchWithin(`${API}/labels/${l.id}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` } }, TIMEOUT_MS.gmail, "Gmail");
     if (res.ok || res.status === 404) n++;
   }

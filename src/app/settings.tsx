@@ -132,7 +132,7 @@ export default function Settings({ open, onClose, onToast, section }: { open: bo
             <div className="confirm" role="group" aria-label="Confirm delete">
               <label className="check">
                 <input type="checkbox" checked={dropLabels} onChange={(e) => setDropLabels(e.target.checked)} />
-                Also remove the MailSort labels from Gmail
+                Also remove the DELT labels from Gmail
               </label>
               <p>This can&apos;t be undone.</p>
               <div>

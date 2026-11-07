@@ -23,7 +23,7 @@ export default function Privacy() {
         Trash. It does <b>not</b> allow deleting mail permanently.
       </p>
       <p>
-        DELT only reads your mail, adds its four <i>MailSort</i> labels, and marks mail read or unread when you do. It never sends, moves to Trash or deletes mail.
+        DELT only reads your mail, adds its four <i>DELT</i> labels (Urgent, Priority, Later, Noise), and marks mail read or unread when you do. It never sends, moves to Trash or deletes mail.
       </p>
 
       <h2>What DELT keeps</h2>
@@ -66,7 +66,7 @@ export default function Privacy() {
       <h2>Your choices</h2>
       <ul>
         <li>
-          <b>Delete everything:</b> Account menu → Delete my data. It removes all of the above, cancels DELT&apos;s access to your Gmail, and can remove the MailSort labels.
+          <b>Delete everything:</b> Account menu → Delete my data. It removes all of the above, cancels DELT&apos;s access to your Gmail, and can remove the DELT labels.
         </li>
         <li>
           <b>Cancel access only:</b> remove DELT at <a href="https://myaccount.google.com/permissions">myaccount.google.com/permissions</a>.

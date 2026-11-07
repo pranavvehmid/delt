@@ -52,7 +52,7 @@ For each new mail (`src/lib/sync.ts` → `src/lib/rules.ts`):
 11. A **deadline** is pulled from the text (every VIT date format, impossible dates rejected, IST 23:59 default).
 12. If the rules are unsure, Gemini's free tier gets a second look (rate-limited, never paid).
 
-Moving a mail to another pile teaches step 1 for that sender. Labels mirror to Gmail as `MailSort/1 Very Important` … `4 Noise`.
+Moving a mail to another pile teaches step 1 for that sender. Labels mirror to Gmail as `DELT/Urgent` … `4 Noise`.
 
 ## 5. The app (v2)
 
