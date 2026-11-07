@@ -40,7 +40,7 @@ export async function POST(req: NextRequest) {
 
   const update: Record<string, unknown> = {};
   if (read !== undefined) update.unread = !read;
-  if (priority) Object.assign(update, { priority, user_corrected: true, gmail_labeled: true });
+  if (priority) Object.assign(update, { priority, user_corrected: true, gmail_labeled: false }); // #110: true only once Gmail has it
   if (is_done !== undefined) update.is_done = is_done;
   for (const part of chunks(mine)) {
     const { error } = await db.from("emails").update(update).eq("user_email", email).in("id", part);
@@ -58,6 +58,8 @@ export async function POST(req: NextRequest) {
         const labels = await ensureLabels(token);
         const others = (Object.keys(LABEL_NAMES) as Priority[]).filter((p) => p !== priority).map((p) => labels[p]);
         await batchModify(token, mine, [labels[priority]], others);
+        // #110: Gmail has the new label; until here, sync would retry these rows
+        for (const part of chunks(mine)) await db.from("emails").update({ gmail_labeled: true }).eq("user_email", email).in("id", part);
       }
     } catch (e) {
       console.error("Gmail bulk update failed:", (e as Error).message);

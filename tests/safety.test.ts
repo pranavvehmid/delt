@@ -72,3 +72,9 @@ test("#91: id lists from a request are sent to the database in chunks, never all
   assert.doesNotMatch(src, /\.in\("id", (ids|mine)\)/);
   assert.match(src, /const ID_CHUNK = 200/);
 });
+
+test("#110: a bulk move is marked labelled only after Gmail confirms, so sync retries failures", () => {
+  const src = readFileSync("src/app/api/emails/bulk/route.ts", "utf8");
+  assert.match(src, /user_corrected: true, gmail_labeled: false/);
+  assert.ok(src.indexOf("batchModify(token, mine, [labels[priority]]") < src.indexOf("update({ gmail_labeled: true })"));
+});
