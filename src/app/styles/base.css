@@ -696,6 +696,6 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 @container (max-width: 480px) {
   .due-row { flex-wrap: wrap; }
   .due-row .row-main { flex: 1 1 100%; }
-  .due-row .row-acts { flex: 1 1 100%; justify-content: flex-start; gap: 8px; padding: 0 0 8px var(--due-indent, 78px); }
-  .due-row .row-acts .iconbtn.labelled { flex-direction: row; gap: 4px; width: auto; height: 32px; padding: 0 8px; }
+  .due-row .row-acts { flex: 1 1 100%; justify-content: flex-start; gap: 8px; padding: 0 0 4px var(--due-indent, 78px); }
+  .due-row .row-acts .iconbtn.labelled { flex-direction: row; gap: 4px; width: auto; height: 44px; padding: 0 8px; } /* 44px: a full tap target (#62) */
 }
