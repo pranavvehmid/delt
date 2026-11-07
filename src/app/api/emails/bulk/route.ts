@@ -14,6 +14,8 @@ const Bulk = z.object({
   is_done: z.boolean().optional(),
 });
 
+const ID_CHUNK = 200;
+
 export async function POST(req: NextRequest) {
   const session = await auth();
   const email = session?.user?.email?.toLowerCase();
@@ -27,16 +29,23 @@ export async function POST(req: NextRequest) {
   if (read === undefined && !priority && is_done === undefined) return NextResponse.json({ error: "Nothing to change" }, { status: 400 });
 
   // Only this user's mail.
-  const { data: owned } = await db.from("emails").select("id").eq("user_email", email).in("id", ids);
-  const mine = (owned ?? []).map((r) => r.id);
+  // #91: ids go in the request URL, so they are sent 200 at a time (1,000 would be ~17 KB)
+  const chunks = (list: string[]) => Array.from({ length: Math.ceil(list.length / ID_CHUNK) }, (_, i) => list.slice(i * ID_CHUNK, (i + 1) * ID_CHUNK));
+  const mine: string[] = [];
+  for (const part of chunks(ids)) {
+    const { data: owned } = await db.from("emails").select("id").eq("user_email", email).in("id", part);
+    mine.push(...(owned ?? []).map((r) => r.id));
+  }
   if (!mine.length) return NextResponse.json({ updated: 0 });
 
   const update: Record<string, unknown> = {};
   if (read !== undefined) update.unread = !read;
   if (priority) Object.assign(update, { priority, user_corrected: true, gmail_labeled: true });
   if (is_done !== undefined) update.is_done = is_done;
-  const { error } = await db.from("emails").update(update).eq("user_email", email).in("id", mine);
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  for (const part of chunks(mine)) {
+    const { error } = await db.from("emails").update(update).eq("user_email", email).in("id", part);
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  }
 
   // Mirror in Gmail with as few calls as possible.
   const { data: user } = await db.from("users").select("refresh_token").eq("email", email).single();

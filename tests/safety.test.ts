@@ -66,3 +66,9 @@ test("sign-in is open to every VIT student domain, nobody else", () => {
     assert.doesNotMatch(text, /\b2[0-9][A-Z]{3}0387\b/, `${f} has a real register number`);
   }
 });
+
+test("#91: id lists from a request are sent to the database in chunks, never all in one URL", () => {
+  const src = readFileSync("src/app/api/emails/bulk/route.ts", "utf8");
+  assert.doesNotMatch(src, /\.in\("id", (ids|mine)\)/);
+  assert.match(src, /const ID_CHUNK = 200/);
+});
