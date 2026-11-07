@@ -78,6 +78,13 @@ export function darkenMail(doc: Document, page: RGB) {
   const writes: [HTMLElement, string, string][] = [];
   const keyOf = new Map<Element, string>(); // text that inherits its parent's colour on the same background needs no write of its own
   for (const el of all) {
+    // #205: a picture on a now-dark background gets a light backing, so transparent logos and
+    // signatures (black on transparent) stay visible; opaque photos look the same
+    if (el.tagName.toUpperCase() === "IMG" && el instanceof win.HTMLElement) {
+      const under = el.parentElement && bgOf.has(el.parentElement) ? bgOf.get(el.parentElement) : page;
+      if (under && luminance(under) < 0.18) writes.push([el, "background-color", "rgb(245, 245, 245)"]);
+      continue;
+    }
     if (SKIP.has(el.tagName.toUpperCase()) || !(el instanceof win.HTMLElement)) continue;
     const st = win.getComputedStyle(el);
     const parent: RGB | null = el.parentElement && bgOf.has(el.parentElement) ? bgOf.get(el.parentElement)! : page;

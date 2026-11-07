@@ -246,3 +246,13 @@ test("#234: a chosen accent colour never changes the colour of urgency", async (
   expect(accent).toBe("#188038"); // green is really on
   expect(urgent).toBe("rgb(200, 16, 46)"); // still the urgency red
 });
+
+test("#205: in dark mail, pictures get a light backing so transparent logos stay visible", async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem("delt-prefs", JSON.stringify({ look: "minimal", mode: "black", accent: "auto", size: "normal", density: "comfortable" })));
+  await mockApi(page, smallInbox());
+  await page.goto("/e2e");
+  await page.locator('li.row[data-mail="notice"] .row-main').click();
+  const frame = page.frameLocator(".mv-frame");
+  await expect(frame.locator("body[data-dark]")).toHaveCount(1);
+  expect(await frame.getByAltText("Library seal").evaluate((e) => getComputedStyle(e).backgroundColor)).toBe("rgb(245, 245, 245)");
+});
