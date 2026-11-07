@@ -7,7 +7,7 @@
 // use-screen (route, screen size, gestures), inbox-list / deadlines-list (the two tabs).
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { EmailRow } from "@/lib/supabase";
-import { BUCKETS, ago, deadlineBuckets, filterMail, groupByDay, mergeMore, needsYou, openDeadlines, pileCounts } from "@/lib/inbox";
+import { BUCKETS, cleanSubject, ago, deadlineBuckets, filterMail, groupByDay, mergeMore, needsYou, openDeadlines, pileCounts } from "@/lib/inbox";
 import MailView from "./mail-view";
 import Appearance from "./appearance";
 import { useCanHover, useLook } from "./use-look";
@@ -92,6 +92,23 @@ export default function InboxApp({ email, name, signOutAction, signInAction }: P
     return ids.size ? shown.filter((m) => !ids.has(m.id)) : shown;
   }, [shown, pinned]);
   const days = useMemo(() => groupByDay(rest, now), [rest, now]);
+  // #230: the pile and "Unread only" are kept on this device, the search for this visit
+  const filtersLoaded = useRef(false);
+  useEffect(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem("delt-filters") || "{}");
+      const query = sessionStorage.getItem("delt-query") || "";
+      setFilters({ ...(["all", "very_important", "priority", "later", "noise"].includes(saved.pile) ? { pile: saved.pile } : {}), unreadOnly: saved.unreadOnly === true, query });
+    } catch {}
+    filtersLoaded.current = true;
+  }, [setFilters]);
+  useEffect(() => {
+    if (!filtersLoaded.current) return;
+    try {
+      localStorage.setItem("delt-filters", JSON.stringify({ pile: filters.pile, unreadOnly: filters.unreadOnly }));
+      sessionStorage.setItem("delt-query", filters.query);
+    } catch {}
+  }, [filters]);
   // #197: coming back to a tab returns to where you were on it
   const firstTab = useRef(true);
   useEffect(() => {
@@ -119,6 +136,11 @@ export default function InboxApp({ email, name, signOutAction, signInAction }: P
     setSettingsSection(section);
     transition(() => setSettingsOpen(true));
   };
+  // #223: the browser tab says what's waiting, or which mail is open
+  useEffect(() => {
+    const waiting = needsAll.filter((m) => m.unread).length;
+    document.title = open ? `${cleanSubject(open.subject)} · DELT` : waiting ? `(${waiting}) DELT` : "DELT";
+  }, [open, needsAll]);
   const gmailHome = `https://mail.google.com/mail/?authuser=${encodeURIComponent(email)}`;
   const { syncProblem } = data;
 

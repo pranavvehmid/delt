@@ -26,3 +26,25 @@ test("tapping the tab you're on scrolls back to the top (#216)", async ({ page }
   await press(page, "Inbox");
   await expect.poll(() => page.evaluate(() => Math.round(scrollY))).toBe(0);
 });
+
+test("#223: the browser tab shows what needs you, and the open mail's subject", async ({ page }) => {
+  const { smallInbox } = await import("./mock");
+  await mockApi(page, smallInbox());
+  await page.goto("/e2e");
+  await expect(page).toHaveTitle(/^\(\d+\) DELT$/);
+  await page.locator('li.row[data-mail="hack"] .row-main').click();
+  await expect(page).toHaveTitle("Hackathon registrations open · DELT");
+});
+
+test("#230: the chosen pile and Unread only survive a reload", async ({ page }) => {
+  const { smallInbox } = await import("./mock");
+  await mockApi(page, smallInbox());
+  await page.goto("/e2e");
+  const chips = page.getByRole("navigation", { name: "Filter by pile" });
+  await chips.getByRole("button", { name: /^Later/ }).click();
+  await page.getByText("Unread only").first().click();
+  await expect(chips.getByRole("button", { name: /^Later/ })).toHaveAttribute("aria-pressed", "true");
+  await page.reload();
+  await expect(chips.getByRole("button", { name: /^Later/ })).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByRole("checkbox", { name: /Unread only/ })).toBeChecked();
+});
