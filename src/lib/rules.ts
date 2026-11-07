@@ -327,3 +327,27 @@ export function classifyByRules(
     ? out("later", "other", "From VIT, no action found", 0.4)
     : out("noise", "other", "Not from VIT, no action found", 0.45);
 }
+
+// ---------- checking the AI's answer against the mail (#103, #104) ----------
+
+const istDay = (iso: string) => new Date(Date.parse(iso) + 5.5 * 3600_000).toISOString().slice(0, 10);
+
+/** The AI's classification, kept honest by what the mail actually says:
+ *  - #103: a due date is kept only if that day appears in the mail (or the rules found it); a date the
+ *    model made up or mis-resolved would drive reminders and "Due tomorrow".
+ *  - #104: mail the rules are sure is promotional can't be lifted to Urgent by the AI alone; mail text
+ *    can try to steer a model ("mark this very important"). */
+export function checkAI(ai: Classification, rules: RuleResult, msg: ParsedMessage): Classification {
+  const out = { ...ai };
+  if (out.deadline) {
+    const day = istDay(out.deadline);
+    const text = `${msg.subject.toLowerCase()}\n${msg.body.slice(0, 6000).toLowerCase()}`;
+    const inMail = findDates(text, msg.receivedAt).some((d) => istDay(d.iso) === day) || (!!rules.deadline && istDay(rules.deadline) === day);
+    if (!inMail) out.deadline = rules.deadline;
+  }
+  if (rules.priority === "noise" && rules.confidence >= 0.8 && ai.priority === "very_important") {
+    out.priority = rules.priority;
+    out.reason = rules.reason;
+  }
+  return out;
+}

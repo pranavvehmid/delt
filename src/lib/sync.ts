@@ -1,6 +1,6 @@
 import "server-only";
 import { db, type Priority } from "./supabase";
-import { classifyByRules, type RuleResult } from "./rules";
+import { checkAI, classifyByRules, type RuleResult } from "./rules";
 import { classifyWithAI, QuotaExhausted } from "./classify";
 import {
   AccessRevoked,
@@ -161,7 +161,7 @@ export async function syncUser(email: string, mode: SyncMode = "full"): Promise<
   for (const item of mode === "full" ? candidates : []) {
     if (!aiTimeLeft()) break;
     try {
-      item.c = await askAI(item.msg);
+      item.c = checkAI(await askAI(item.msg), item.rules, item.msg); // #103, #104
       item.byAI = true;
       result.sortedByAI++;
     } catch (e) {
@@ -214,7 +214,8 @@ export async function syncUser(email: string, mode: SyncMode = "full"): Promise<
     for (const row of backlog ?? []) {
       if (!aiTimeLeft()) break;
       try {
-        const c = await askAI(await D.getMessage(token, row.id));
+        const msg = await D.getMessage(token, row.id);
+        const c = checkAI(await askAI(msg), classifyByRules(msg, corrections, profile), msg); // #103, #104
         await D.db
           .from("emails")
           .update({ ...c, sorted_by: "ai", gmail_labeled: c.priority === row.priority })
