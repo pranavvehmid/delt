@@ -38,7 +38,7 @@ export async function getAccessToken(stored: string, attempt = 0): Promise<strin
   const key = keyOf(refreshToken);
   const hit = tokens.get(key);
   if (hit && hit.until > Date.now()) return hit.access;
-  const res = await fetch("https://oauth2.googleapis.com/token", {
+  const res = await fetchWithin("https://oauth2.googleapis.com/token", {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: new URLSearchParams({
@@ -47,7 +47,7 @@ export async function getAccessToken(stored: string, attempt = 0): Promise<strin
       refresh_token: refreshToken,
       grant_type: "refresh_token",
     }),
-  });
+  }, TIMEOUT_MS.token, "Google sign-in");
   if (!res.ok) {
     // Google sometimes answers 5xx or 429 for a moment: wait and try again.
     if ((res.status >= 500 || res.status === 429) && attempt < 3) {
@@ -64,15 +64,29 @@ export async function getAccessToken(stored: string, attempt = 0): Promise<strin
   return data.access_token;
 }
 
+/** #84: how long DELT waits for Google before giving up (a hung call would eat the whole sync). */
+export const TIMEOUT_MS = { token: 10_000, gmail: 15_000 } as const;
+
+/** fetch with a time limit; a timeout becomes a plain, readable error. */
+export async function fetchWithin(url: string, init: RequestInit, ms: number, what: string): Promise<Response> {
+  try {
+    return await fetch(url, { ...init, signal: init.signal ?? AbortSignal.timeout(ms) });
+  } catch (e) {
+    const name = (e as Error).name;
+    if (name === "TimeoutError" || name === "AbortError") throw new Error(`${what} didn't answer within ${ms / 1000}s`);
+    throw e;
+  }
+}
+
 async function gmail<T>(token: string, path: string, init?: RequestInit, attempt = 0): Promise<T> {
-  const res = await fetch(`${API}${path}`, {
+  const res = await fetchWithin(`${API}${path}`, {
     ...init,
     headers: {
       Authorization: `Bearer ${token}`,
       "Content-Type": "application/json",
       ...init?.headers,
     },
-  });
+  }, TIMEOUT_MS.gmail, "Gmail");
   if (!res.ok) {
     const text = await res.text();
     if (res.status === 401) forgetAccess(token); // revoked or expired early: get a fresh one next time
@@ -370,7 +384,7 @@ export async function removeDeltLabels(token: string): Promise<number> {
   const { labels = [] } = await gmail<{ labels?: { id: string; name: string }[] }>(token, "/labels");
   let n = 0;
   for (const l of labels.filter((l) => l.name === "MailSort" || l.name.startsWith("MailSort/"))) {
-    const res = await fetch(`${API}/labels/${l.id}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` } });
+    const res = await fetchWithin(`${API}/labels/${l.id}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` } }, TIMEOUT_MS.gmail, "Gmail");
     if (res.ok || res.status === 404) n++;
   }
   return n;
@@ -380,10 +394,10 @@ export async function removeDeltLabels(token: string): Promise<number> {
 export async function revokeGoogleToken(stored: string): Promise<boolean> {
   const token = openToken(stored);
   if (!token) return false;
-  const res = await fetch("https://oauth2.googleapis.com/revoke", {
+  const res = await fetchWithin("https://oauth2.googleapis.com/revoke", {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: new URLSearchParams({ token }),
-  });
+  }, TIMEOUT_MS.token, "Google");
   return res.ok || res.status === 400; // 400 = already revoked
 }

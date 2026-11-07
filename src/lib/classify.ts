@@ -9,6 +9,8 @@ import { describeProfile, profileFromName, type StudentProfile } from "./profile
 
 const MODEL = process.env.GEMINI_MODEL || "gemini-flash-lite-latest";
 const MAX_BODY_CHARS = 6000;
+/** #84: a slow Gemini answer must not hold up the sync; the rules result stays. */
+export const AI_TIMEOUT_MS = 20_000;
 
 export class QuotaExhausted extends Error {}
 
@@ -71,6 +73,7 @@ export async function classifyWithAI(
   const res = await fetch(
     `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`,
     {
+      signal: AbortSignal.timeout(AI_TIMEOUT_MS), // #84
       method: "POST",
       headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
       body: JSON.stringify({
