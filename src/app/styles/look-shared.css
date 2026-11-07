@@ -241,3 +241,6 @@
 :root[data-look="minimal"] .empty b { font-weight: 400; font-size: 28px; }
 /* A09: loading rows have no time or position column, so their bars take the full row */
 :root:is([data-look="minimal"], [data-look="grid"]) .skeleton .row-main { grid-template-columns: minmax(0, 1fr); }
+/* #192: the actions line starts where the deadline's text does (date column + gap) */
+:root:is([data-look="minimal"], [data-look="grid"]) { --due-indent: 76px; }
+:root[data-look="grid"] { --due-indent: 88px; }

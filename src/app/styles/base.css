@@ -689,3 +689,13 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   /* the Back arrow sits 14px inside its button: 26px puts the arrow itself on the 40px text edge */
   .mailview.pane .mv-bar { padding-left: 26px; padding-right: max(40px, calc(100% - 760px)); } /* the actions end on the content's right edge (800px page minus its 40px padding) */
 }
+
+/* #192: in a narrow deadline list (laptop column, phones) the Calendar and Done buttons go on a line
+   under the title, so the title gets the whole width instead of ~110px */
+.bucket { container-type: inline-size; }
+@container (max-width: 480px) {
+  .due-row { flex-wrap: wrap; }
+  .due-row .row-main { flex: 1 1 100%; }
+  .due-row .row-acts { flex: 1 1 100%; justify-content: flex-start; gap: 8px; padding: 0 0 8px var(--due-indent, 78px); }
+  .due-row .row-acts .iconbtn.labelled { flex-direction: row; gap: 4px; width: auto; height: 32px; padding: 0 8px; }
+}

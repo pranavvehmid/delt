@@ -114,3 +114,7 @@
 :root[data-look="glyph"] .ov-title { font-family: var(--font-dot), monospace; font-weight: 700; }
 /* A08: Glyph's empty state title in its dot face */
 :root[data-look="glyph"] .empty b { font-family: var(--font-dot), monospace; font-size: 28px; }
+/* #192: Glyph's deadline actions line starts under the title (card padding + date box + gap) */
+@container (max-width: 480px) {
+  :root[data-look="glyph"] .due-row .row-acts { padding: 0 16px 8px calc(16px + 46px + 12px); }
+}

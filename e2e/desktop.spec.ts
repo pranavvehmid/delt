@@ -63,15 +63,20 @@ for (const look of LOOKS) {
   });
 }
 
-test("deadline titles wrap instead of being cut off", async ({ page }, info) => {
-  test.skip(info.project.name !== "desktop");
-  await open(page, "glyph", SIZES[0], smallInbox());
-  await page.locator(".appbar .mast button", { hasText: "Deadlines" }).click();
-  const subj = page.locator(".due-row .subj").first();
-  await expect(subj).toBeVisible();
-  expect(await subj.evaluate((e) => e.scrollWidth <= e.clientWidth + 1 && getComputedStyle(e).textOverflow !== "ellipsis" || e.scrollHeight <= e.clientHeight + 1)).toBe(true);
-  expect(await subj.evaluate((e) => getComputedStyle(e).whiteSpace)).toBe("normal");
-});
+for (const look of LOOKS) {
+  for (const size of [SIZES[0], { width: 412, height: 915 }]) {
+    test(`${look} ${size.width}px: deadline titles are shown in full, not cut off (#192)`, async ({ page }, info) => {
+      test.skip(info.project.name !== "desktop");
+      await open(page, look, size, smallInbox());
+      await page.locator("button:visible", { hasText: /^Deadlines/ }).first().click();
+      const subj = page.locator(".due-row .subj").first();
+      await expect(subj).toBeVisible();
+      const fit = await subj.evaluate((e) => ({ clipped: e.scrollHeight > e.clientHeight + 1, width: e.getBoundingClientRect().width }));
+      expect(fit.clipped).toBe(false);
+      expect(fit.width).toBeGreaterThan(200);
+    });
+  }
+}
 
 test("typing in the bar's search from Deadlines goes to the inbox results", async ({ page }, info) => {
   test.skip(info.project.name !== "desktop");
@@ -119,3 +124,16 @@ test("A18: the open mail's action buttons end on the mail content's right edge",
   const [gmail, sum] = [await box(page, ".mv-gmail"), await box(page, ".mv-sum")];
   expect(Math.abs(gmail.right - sum.right)).toBeLessThanOrEqual(1);
 });
+
+for (const look of LOOKS) {
+  test(`${look}: in a narrow deadline list the actions line up under the title (#192)`, async ({ page }, info) => {
+    test.skip(info.project.name !== "desktop");
+    await open(page, look, SIZES[0], smallInbox());
+    await page.locator("button:visible", { hasText: /^Deadlines/ }).first().click();
+    const row = page.locator(".due-row").first();
+    await expect(row).toBeVisible();
+    const [subj, cal] = [await row.locator(".subj").boundingBox(), await row.locator(".iconbtn.labelled").first().boundingBox()];
+    expect(cal!.y).toBeGreaterThan(subj!.y + subj!.height - 1); // under the title
+    expect(Math.abs(cal!.x - subj!.x)).toBeLessThanOrEqual(10); // starts where the title starts (button has its own inner padding)
+  });
+}
