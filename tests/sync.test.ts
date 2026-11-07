@@ -147,3 +147,18 @@ test("#89: a first sync reaches back six weeks, not two", async () => {
   await syncUser(ME, "quick");
   assert.ok(mine().some((m) => m.id === "m7"), "a month-old mail is brought in on the first sync");
 });
+
+test("#85: the app's 'later' step AI-checks new mail the rules filed low but weren't sure about", async () => {
+  user().ai_consent = true;
+  inbox = [
+    msg(1, { subject: "Quick note", from: "someone@vit.ac.in", body: "Please see this." }), // unsure, lands low
+    msg(2, { subject: "50% off on online courses", from: "no-reply@coursera.org", body: "Enroll today and save." }), // sure: Noise
+  ];
+  await syncUser(ME, "quick");
+  const low = mine().filter((m) => m.priority === "later" || m.priority === "noise").map((m) => m.id);
+  assert.ok(low.length >= 1);
+  await syncUser(ME, "later");
+  const checked = mine().filter((m) => m.sorted_by === "ai").map((m) => m.id);
+  assert.ok(!checked.includes("m2"), "the confident Noise mail isn't sent to the AI");
+  if (low.includes("m1")) assert.ok(checked.includes("m1"), "the unsure low mail is checked");
+});

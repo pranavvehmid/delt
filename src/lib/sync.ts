@@ -190,6 +190,7 @@ export async function syncUser(email: string, mode: SyncMode = "full"): Promise<
           deadline: c.deadline,
           reason: c.reason,
           sorted_by: byAI ? "ai" : "rules",
+          user_corrected: false, // the database default, said explicitly (only new mail is saved here)
           unread: msg.unread,
           gmail_labeled: false,
         }, { onConflict: "user_email,id" }); // one row per student per mail
@@ -213,11 +214,26 @@ export async function syncUser(email: string, mode: SyncMode = "full"): Promise<
       .in("priority", ["very_important", "priority"])
       .order("received_at", { ascending: false })
       .limit(mode === "later" ? 25 : 10); // "later" is where new mail gets its AI check now
-    for (const row of backlog ?? []) {
+    // #85: new mail the rules filed low (Later, Noise) but weren't sure about gets its AI check here too;
+    // the rules are re-run on the message to see how sure they were (confidence isn't stored)
+    const { data: recentLow } = mode === "later" ? await D.db
+      .from("emails")
+      .select("id, priority")
+      .eq("user_email", email)
+      .eq("sorted_by", "rules")
+      .eq("user_corrected", false)
+      .in("priority", ["later", "noise"])
+      .gte("received_at", new Date(Date.now() - 3 * 86400_000).toISOString())
+      .order("received_at", { ascending: false })
+      .limit(15) : { data: [] as { id: string; priority: string }[] };
+    const rows = [...(recentLow ?? []).map((r) => ({ ...r, low: true })), ...(backlog ?? []).map((r) => ({ ...r, low: false }))];
+    for (const row of rows) {
       if (!aiTimeLeft()) break;
       try {
         const msg = await D.getMessage(token, row.id);
-        const c = checkAI(await askAI(msg), classifyByRules(msg, corrections, profile), msg); // #103, #104
+        const rules = classifyByRules(msg, corrections, profile);
+        if (row.low && rules.confidence >= 0.6) continue; // the rules were sure: leave it
+        const c = checkAI(await askAI(msg), rules, msg); // #103, #104
         await D.db
           .from("emails")
           .update({ ...c, sorted_by: "ai", gmail_labeled: c.priority === row.priority })
