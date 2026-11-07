@@ -43,3 +43,11 @@ test("old mail is cleaned up after 6 months, keeping mail the student moved (#38
   const { readFileSync } = await import("node:fs");
   assert.match(readFileSync("src/lib/retention.ts", "utf8"), /\.eq\("user_corrected", false\)/);
 });
+
+test("#90: the purge is due once a day, whatever the sync queue does", async () => {
+  const { purgeDue, PURGE_EVERY_MS } = await import("../src/lib/retention");
+  const now = Date.parse("2026-11-07T00:00:00Z");
+  assert.equal(purgeDue(null, now), true);
+  assert.equal(purgeDue(now - PURGE_EVERY_MS + 60_000, now), false);
+  assert.equal(purgeDue(now - PURGE_EVERY_MS, now), true);
+});

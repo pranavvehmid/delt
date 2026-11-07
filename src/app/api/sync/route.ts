@@ -6,7 +6,7 @@ import { AccessRevoked } from "@/lib/gmail";
 import { limited } from "@/lib/rate-limit";
 import { dueForSync } from "@/lib/schedule";
 import { markSeen, notifyStudent } from "@/lib/notify";
-import { purgeOldMail } from "@/lib/retention";
+import { purgeIfDue } from "@/lib/retention";
 import { timingSafeEqual } from "node:crypto";
 import { allRows } from "@/lib/all-rows";
 
@@ -118,8 +118,8 @@ export async function GET(req: NextRequest) {
     if (synced.has(email) || Date.now() - started > BUDGET_MS + 20_000) continue;
     reminders += await notifyStudent(email);
   }
-  // #38: drop mail previews older than 6 months (not the ones a student moved)
-  const purged = queue.length - processed.size === 0 ? await purgeOldMail() : 0;
+  // #38, #90: drop mail previews older than 6 months (not the ones a student moved), once a day
+  const purged = await purgeIfDue();
   return NextResponse.json({ purged, synced: results.length, remaining: Math.max(0, queue.length - processed.size), reminders, results });
 }
 
