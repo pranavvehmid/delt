@@ -85,7 +85,11 @@ export function useMail(email: string) {
         setSavedAt(c.at);
       }
     } catch {}
-    if ("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js", { scope: "/" }).catch(() => {});
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("/sw.js", { scope: "/" }).catch(() => {});
+      // #80: only the installed app may keep pages for offline use
+      if (isInstalledApp()) navigator.serviceWorker.ready.then((r) => r.active?.postMessage({ type: "installed" })).catch(() => {});
+    }
   }, [email]);
   // Keep the saved copy up to date with what's on screen (read, done, moved).
   useEffect(() => {

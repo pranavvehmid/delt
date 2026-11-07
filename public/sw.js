@@ -1,7 +1,14 @@
 // DELT service worker: phone notifications for urgent mail and close deadlines (#6),
 // and keeping the app itself on the phone so it opens without a connection (#14).
 // Mail data is never cached here: /api is always left to the network.
-const CACHE = "delt-app-v2"; // bump to drop old copies (v2: wordmark icon)
+const CACHE = "delt-app-v3"; // bump to drop old copies (v3: no signed-in pages cached in browser tabs, #80)
+// #80: pages carry the student's name and email, so they are only kept for the installed app
+// (the page says so with a message); a plain browser tab may be a shared lab computer.
+const INSTALLED = "/__delt-installed";
+self.addEventListener("message", (e) => {
+  if (e.data?.type === "installed") e.waitUntil(caches.open(CACHE).then((c) => c.put(INSTALLED, new Response("1"))));
+});
+const installed = () => caches.match(INSTALLED).then((r) => !!r);
 self.addEventListener("install", () => self.skipWaiting());
 self.addEventListener("activate", (e) =>
   e.waitUntil(
@@ -31,7 +38,7 @@ self.addEventListener("fetch", (e) => {
   if (req.mode === "navigate") {
     e.respondWith(
       fetch(req)
-        .then((res) => keep(url.pathname, res))
+        .then(async (res) => ((await installed()) ? keep(url.pathname, res) : res))
         .catch(async () => (await caches.match(url.pathname)) || (await caches.match("/")) || Response.error()),
     );
     return;
