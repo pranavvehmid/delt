@@ -122,7 +122,7 @@ function findTime(text: string): [number, number] | null {
   return [h, m[2] ? +m[2] : 0];
 }
 
-type FoundDate = { iso: string; ts: number; index: number };
+type FoundDate = { iso: string; ts: number; index: number; len: number };
 
 function findDates(text: string, received: Date): FoundDate[] {
   const out: FoundDate[] = [];
@@ -140,7 +140,7 @@ function findDates(text: string, received: Date): FoundDate[] {
       let iso = istISO(y, mo, d, time[0], time[1]);
       if (!yRaw && Date.parse(iso) < received.getTime() - 30 * 86400_000) iso = istISO(y + 1, mo, d, time[0], time[1]);
       const ts = Date.parse(iso);
-      if (!isNaN(ts)) out.push({ iso, ts, index: m.index });
+      if (!isNaN(ts)) out.push({ iso, ts, index: m.index, len: m[0].length });
     }
   }
   // #24: every one of them, so "closes tonight ... before 10 PM today" finds the one after the cue
@@ -149,7 +149,7 @@ function findDates(text: string, received: Date): FoundDate[] {
     if (rel[1] === "tomorrow") base.setUTCDate(base.getUTCDate() + 1);
     const time = findTime(text.slice(rel.index, rel.index + 60)) ?? [23, 59];
     const iso = istISO(base.getUTCFullYear(), base.getUTCMonth() + 1, base.getUTCDate(), time[0], time[1]);
-    out.push({ iso, ts: Date.parse(iso), index: rel.index! });
+    out.push({ iso, ts: Date.parse(iso), index: rel.index!, len: rel[0].length });
   }
   return out;
 }
@@ -174,7 +174,18 @@ function findDeadline(text: string, received: Date, actionable: boolean): string
     }
   }
   if (!best && actionable) best = [...dates].sort((a, b) => a.ts - b.ts)[0];
-  return best?.iso ?? null;
+  return best ? rangeEnd(text, best, dates).iso : null;
+}
+
+/** #86: "open from 1 Nov to 10 Nov", "1 Nov - 10 Nov", "between 5 Nov and 8 Nov": the window ends on
+ *  the second date, so that is the deadline (the start would make an open registration look closed). */
+const RANGE_JOIN = /^[\s,]*(?:\(?[a-z]{3,9}\)?[\s,]*)?(?:\d{1,2}(?:[:.]\d{2})?\s*(?:am|pm|a\.m\.|p\.m\.)\s*)?(?:to|till|until|up ?to|and|through|[-–—])\s*/;
+function rangeEnd(text: string, start: FoundDate, dates: FoundDate[]): FoundDate {
+  const after = text.slice(start.index + start.len, start.index + start.len + 40);
+  const join = RANGE_JOIN.exec(after);
+  if (!join) return start;
+  const end = dates.find((d) => d.index === start.index + start.len + join[0].length);
+  return end && end.ts > start.ts ? end : start;
 }
 
 function firstSentence(body: string) {

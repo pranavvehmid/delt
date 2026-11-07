@@ -148,3 +148,19 @@ test("profile: register number gives batch, branch and year", () => {
   assert.equal(profileFromName("X Y 24BIT0042", new Date(NOW)).year, 3);
   assert.equal(profileFromName("No Number", new Date(NOW)).batch, null);
 });
+
+// ---------- #86: a date range ends on its second date ----------
+test("#86: registration windows use the end date, so an open registration stays open", () => {
+  const cases: [string, string][] = [
+    ["Registrations are open from 1 Nov to 10 Nov 2026. Register on the portal.", "2026-11-10"],
+    ["Course registration: 1st November - 10th November. Register before it closes.", "2026-11-10"],
+    ["Registration window between 2 Nov and 9 Nov. Fill the form.", "2026-11-09"],
+    ["Apply by 01/11/2026 to 12/11/2026 through the portal.", "2026-11-12"],
+    ["Register by 15 Nov 2026.", "2026-11-15"],
+  ];
+  for (const [body, want] of cases) {
+    const r = classifyByRules(mail({ subject: "Course registration", body, want: "very_important" }), [], ME, NOW);
+    assert.ok(r.deadline?.startsWith(want), `${body} -> ${r.deadline}`);
+    assert.equal(r.priority, "very_important", `${body} -> ${r.priority} (${r.reason})`);
+  }
+});
