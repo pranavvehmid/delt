@@ -18,6 +18,7 @@ import AccountMenu from "./account-menu";
 import Banners from "./banners";
 import DeadlinesList from "./deadlines-list";
 import Overview from "./overview";
+import { LoadError } from "./list-states";
 import InboxList, { SearchBox, type Filters } from "./inbox-list";
 import type { RowActions } from "./mail-row";
 import { TabBar, TopTabs } from "./tabs";
@@ -32,7 +33,7 @@ type Props = { email: string; name: string; signOutAction: () => Promise<void>; 
 export default function InboxApp({ email, name, signOutAction, signInAction }: Props) {
   const [toast, setToast] = useToast();
   const data = useMail(email);
-  const { mails, due, offline, load, setReauth, setOffline } = data;
+  const { mails, due, offline, load, setReauth, setOffline, loadError } = data;
   const [filters, setFiltersState] = useState<Filters>({ pile: "all", unreadOnly: false, query: "" });
   const setFilters = useCallback((f: Partial<Filters>) => setFiltersState((s) => ({ ...s, ...f })), []);
   const { pile, unreadOnly, query } = filters;
@@ -157,7 +158,12 @@ export default function InboxApp({ email, name, signOutAction, signInAction }: P
       )}
       {!wide && <TopTabs tab={route.tab} unread={counts.all.unread} dueCount={dueCount} />}
 
-      {route.tab === "inbox" && (
+      {mails === null && loadError && (
+        <main className="page">
+          <LoadError onRetry={() => void load()} />
+        </main>
+      )}
+      {route.tab === "inbox" && !(mails === null && loadError) && (
         <InboxList
           key="inbox"
           filters={filters}
@@ -184,7 +190,7 @@ export default function InboxApp({ email, name, signOutAction, signInAction }: P
           searchInBar={wide}
         />
       )}
-      {route.tab === "deadlines" && <DeadlinesList key="deadlines" loaded={mails !== null} buckets={buckets} now={now} onOpen={(m) => openMail(m)} onPatch={(id, p) => patch(id, p)} />}
+      {route.tab === "deadlines" && !(mails === null && loadError) && <DeadlinesList key="deadlines" loaded={mails !== null} buckets={buckets} now={now} onOpen={(m) => openMail(m)} onPatch={(id, p) => patch(id, p)} />}
 
       <TabBar tab={route.tab} unread={counts.all.unread} dueCount={dueCount} />
 

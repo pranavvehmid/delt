@@ -24,3 +24,15 @@ test("#231: if Mark all read fails, the mail shows unread again", async ({ page 
   await expect(page.getByText("Couldn't mark them read. Try again.")).toBeVisible();
   await expect(page.locator("li.row.unread")).toHaveCount(unread);
 });
+
+test("#210: when the server fails, the inbox says so and can try again", async ({ page }) => {
+  await mockApi(page, smallInbox());
+  let fail = true;
+  await page.route("**/api/emails?*", (r) => (fail ? r.fulfill({ status: 500, body: "{}" }) : r.fallback()));
+  await page.goto("/e2e");
+  await expect(page.getByText("Couldn't load your mail")).toBeVisible();
+  await expect(page.locator(".skeleton")).toHaveCount(0);
+  fail = false;
+  await page.getByRole("button", { name: "Try again" }).click();
+  await expect(page.locator("li.row").first()).toBeVisible();
+});

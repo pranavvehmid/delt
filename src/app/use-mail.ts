@@ -19,6 +19,8 @@ export function useMail(email: string) {
   const [aiConsent, setAiConsent] = useState<boolean | null | undefined>(undefined);
   const [offline, setOffline] = useState(false);
   const [savedAt, setSavedAt] = useState<number | null>(null);
+  // #210: the server answered with an error (not offline): say so instead of loading forever
+  const [loadError, setLoadError] = useState(false);
 
   const mailsRef = useRef<EmailRow[] | null>(null);
   mailsRef.current = mails;
@@ -36,6 +38,7 @@ export function useMail(email: string) {
       return false;
     }
     setOffline(false);
+    setLoadError(!r.ok);
     if (r.ok) {
       const j = await r.json();
       const page: EmailRow[] = j.emails ?? [];
@@ -102,7 +105,7 @@ export function useMail(email: string) {
     return () => clearTimeout(t);
   }, [mails, due, offline, savedAt, email]);
 
-  return { mails, setMails, more, loadingOlder, due, setDue, reauth, setReauth, syncProblem, aiConsent, setAiConsent, offline, setOffline, savedAt, load, loadOlder };
+  return { loadError, mails, setMails, more, loadingOlder, due, setDue, reauth, setReauth, syncProblem, aiConsent, setAiConsent, offline, setOffline, savedAt, load, loadOlder };
 }
 
 /** Search covers all stored mail on the server, not only the loaded pages (#11). */

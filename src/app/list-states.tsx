@@ -28,3 +28,12 @@ export function Empty({ title, hint, children }: { title: string; hint: string; 
     </div>
   );
 }
+
+/** #210: the inbox couldn't be loaded because the server failed (not because the phone is offline). */
+export function LoadError({ onRetry }: { onRetry: () => void }) {
+  return (
+    <Empty title="Couldn't load your mail" hint="DELT's server had a problem. Your mail is safe in Gmail.">
+      <button className="pillbtn" onClick={onRetry}>Try again</button>
+    </Empty>
+  );
+}
