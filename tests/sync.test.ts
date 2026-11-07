@@ -13,6 +13,7 @@ let inbox: ParsedMessage[];
 let failing: Set<string>;
 let aiCalls: number;
 let labeled: string[];
+let labelCalls = 0;
 
 const msg = (i: number, p: Partial<ParsedMessage> = {}): ParsedMessage => ({
   id: `m${i}`, threadId: `m${i}`, fromName: "Office", fromAddress: "office@vit.ac.in", subject: `Library timings ${i}`, snippet: "", body: "", unread: false,
@@ -27,6 +28,7 @@ beforeEach(() => {
   failing = new Set();
   aiCalls = 0;
   labeled = [];
+  labelCalls = 0;
   db = new FakeDb({
     users: [
       { email: ME, refresh_token: "1//plain-token", name: "A B STUDENT 26BCE0001", last_synced_at: null, ai_consent: null, gemini_key_enc: null, ai_day: null, ai_calls: 0 },
@@ -52,6 +54,7 @@ beforeEach(() => {
     },
     ensureLabels: async () => ({ very_important: "L1", priority: "L2", later: "L3", noise: "L4" }),
     setPriorityLabel: async (_t: string, id: string) => void labeled.push(id),
+    setPriorityLabelMany: async (_t: string, ids: string[]) => void (labelCalls++, labeled.push(...ids)),
     classifyWithAI: async () => {
       aiCalls++;
       return { priority: "later", category: "other", summary: "", deadline: null, reason: "AI" };
@@ -71,6 +74,7 @@ test("saves new mail for this student only, sorted by the rules, and labels it",
   assert.equal(mine().find((m) => m.id === "m2")!.priority, "very_important");
   assert.equal(db.rows("emails").filter((m) => m.user_email === OTHER).length, 1, "the other student's mail is untouched");
   assert.deepEqual(labeled.sort(), ["m1", "m2"]);
+  assert.ok(labelCalls <= 2, `one Gmail call per pile (#109), got ${labelCalls}`);
   assert.ok(user().last_synced_at, "the window closes when everything is in");
 });
 

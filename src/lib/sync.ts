@@ -9,6 +9,7 @@ import {
   getMessage,
   listMessageIds,
   setPriorityLabel,
+  setPriorityLabelMany,
   type ParsedMessage,
 } from "./gmail";
 import type { Classification, Correction } from "./types";
@@ -19,7 +20,7 @@ import { BATCH, LIST_MAX, UNREAD_LIST_MAX, UNREAD_WINDOW_DAYS, isGone, nextSynce
 
 
 /** What sync talks to: the database, Gmail and the AI. Tests swap these for fakes (#39). */
-export const syncDeps = { db, getAccessToken, listMessageIds, getMessage, ensureLabels, setPriorityLabel, classifyWithAI };
+export const syncDeps = { db, getAccessToken, listMessageIds, getMessage, ensureLabels, setPriorityLabel, setPriorityLabelMany, classifyWithAI };
 const D = syncDeps;
 
 const FIRST_SYNC_DAYS = 14;
@@ -237,18 +238,18 @@ export async function syncUser(email: string, mode: SyncMode = "full"): Promise<
   if (unlabeled?.length) {
     try {
       const labelIds = await D.ensureLabels(token);
-      for (let i = 0; i < unlabeled.length; i += PARALLEL) {
-        await Promise.all(
-          unlabeled.slice(i, i + PARALLEL).map(async (row) => {
-            try {
-              await D.setPriorityLabel(token, row.id, row.priority as Priority, labelIds);
-              await D.db.from("emails").update({ gmail_labeled: true }).eq("id", row.id).eq("user_email", email);
-              result.labeled++;
-            } catch (e) {
-              result.errors.push(`Label ${row.id}: ${(e as Error).message}`);
-            }
-          }),
-        );
+      // #109: one Gmail call per pile (up to 1,000 mails each), not one per mail
+      for (const pile of Object.keys(RANK) as Priority[]) {
+        const ids = unlabeled.filter((r) => r.priority === pile).map((r) => r.id);
+        if (!ids.length) continue;
+        try {
+          await D.setPriorityLabelMany(token, ids, pile, labelIds);
+          for (let i = 0; i < ids.length; i += 200)
+            await D.db.from("emails").update({ gmail_labeled: true }).in("id", ids.slice(i, i + 200)).eq("user_email", email);
+          result.labeled += ids.length;
+        } catch (e) {
+          result.errors.push(`Label ${pile}: ${(e as Error).message}`);
+        }
       }
     } catch (e) {
       result.errors.push(`Labels: ${(e as Error).message}`);

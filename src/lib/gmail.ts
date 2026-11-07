@@ -426,3 +426,9 @@ export async function revokeGoogleToken(stored: string): Promise<boolean> {
   }, TIMEOUT_MS.token, "Google");
   return res.ok || res.status === 400; // 400 = already revoked
 }
+
+/** #109: puts one DELT label on many messages at once (removing the other three), up to 1,000 per call. */
+export async function setPriorityLabelMany(token: string, ids: string[], priority: Priority, labelIds: Record<Priority, string>) {
+  const others = (Object.keys(labelIds) as Priority[]).filter((p) => p !== priority).map((p) => labelIds[p]);
+  await batchModify(token, ids, [labelIds[priority]], others);
+}
