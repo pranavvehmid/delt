@@ -44,3 +44,4 @@ test("#229: a page that doesn't exist gets DELT's own page with a way back", asy
   await page.getByRole("link", { name: "Go to your inbox" }).click();
   await expect(page).toHaveURL(/\/$/);
 });
+

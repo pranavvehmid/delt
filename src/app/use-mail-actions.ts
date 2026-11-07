@@ -53,7 +53,12 @@ export function useMailActions({ mails, hits, due, setMails, setHits, setDue, of
       say({ text: "Couldn't save that change. It's back as it was." });
     };
     fetch("/api/emails", { method: "PATCH", body: JSON.stringify({ id, ...p }) })
-      .then((r) => !r.ok && failed())
+      .then(async (r) => {
+        if (!r.ok) return failed();
+        // #111: saved in DELT but not in Gmail. Piles are retried by sync; a read change would be
+        // undone by the next sync, so that one is worth saying
+        if (p.read !== undefined && (await r.json().catch(() => ({})))?.gmail === false) say({ text: "Gmail didn't update. Try again in a moment." });
+      })
       .catch(failed);
     if (quiet || !before) return;
     const undo = () => {

@@ -67,7 +67,13 @@ const Patch = z.object({
   /** false = move only this mail, don't make a rule for the sender (#46) */
   teach: z.boolean().optional(),
   /** null = "Wrong date? Remove" (#55); an ISO date puts it back (Undo) */
-  deadline: z.string().datetime({ offset: true }).nullable().optional(),
+  deadline: z
+    .string()
+    .datetime({ offset: true })
+    // #113: within two years either way (Undo can put back a past deadline)
+    .refine((d) => Math.abs(Date.parse(d) - Date.now()) < 2 * 366 * 86400_000, "Deadline out of range")
+    .nullable()
+    .optional(),
 });
 
 // PATCH: move a mail or recategorise it (teaches the sorter), mark it done,
@@ -83,7 +89,8 @@ export async function PATCH(req: NextRequest) {
   const { id, priority, category, is_done, read, teach, deadline } = parsed.data;
 
   const update: Record<string, unknown> = {};
-  if (priority) Object.assign(update, teach === false ? { priority, user_corrected: false, sorted_by: "manual" } : { priority, user_corrected: true });
+  // #111: a new pile is "not yet in Gmail" until Gmail confirms, so sync retries a failure
+  if (priority) Object.assign(update, teach === false ? { priority, user_corrected: false, sorted_by: "manual", gmail_labeled: false } : { priority, user_corrected: true, gmail_labeled: false });
   if (category) Object.assign(update, { category, user_corrected: true });
   if (is_done !== undefined) update.is_done = is_done;
   if (deadline !== undefined) update.deadline = deadline;
@@ -97,16 +104,27 @@ export async function PATCH(req: NextRequest) {
   if (priority || read !== undefined) {
     // Keep Gmail in step with the website: priority label and read state.
     const { data: user } = await db.from("users").select("refresh_token").eq("email", email).single();
+    let gmail = !!user;
     if (user) {
-      try {
-        const token = await getAccessToken(user.refresh_token);
-        if (priority) await setPriorityLabel(token, id, priority as Priority, await ensureLabels(token));
-        if (read === true) await markRead(token, id);
-        if (read === false) await markUnread(token, id);
-      } catch (e) {
-        console.error("Gmail update failed:", (e as Error).message);
+      // #111: one retry, then tell the app instead of failing silently
+      for (let attempt = 0; attempt < 2; attempt++) {
+        try {
+          const token = await getAccessToken(user.refresh_token);
+          if (priority) {
+            await setPriorityLabel(token, id, priority as Priority, await ensureLabels(token));
+            await db.from("emails").update({ gmail_labeled: true }).eq("id", id).eq("user_email", email);
+          }
+          if (read === true) await markRead(token, id);
+          if (read === false) await markUnread(token, id);
+          gmail = true;
+          break;
+        } catch (e) {
+          gmail = false;
+          console.error("Gmail update failed:", (e as Error).message);
+        }
       }
     }
+    return NextResponse.json({ ok: true, gmail });
   }
   return NextResponse.json({ ok: true });
 }

@@ -90,3 +90,14 @@ test("#228: a crash shows DELT's error screen, not a blank page", () => {
   assert.match(src, /^"use client"/);
   assert.match(src, /reset\(\)/);
 });
+
+test("#111: a pile move is 'not yet in Gmail' until Gmail confirms; Gmail failures are reported", () => {
+  const src = readFileSync("src/app/api/emails/route.ts", "utf8");
+  assert.match(src, /user_corrected: true, gmail_labeled: false/);
+  assert.match(src, /update\(\{ gmail_labeled: true \}\)/);
+  assert.match(src, /NextResponse\.json\(\{ ok: true, gmail \}\)/);
+});
+
+test("#113: deadlines more than two years away are refused", () => {
+  assert.match(readFileSync("src/app/api/emails/route.ts", "utf8"), /Math\.abs\(Date\.parse\(d\) - Date\.now\(\)\) < 2 \* 366 \* 86400_000/);
+});
