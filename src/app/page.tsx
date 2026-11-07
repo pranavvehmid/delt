@@ -1,14 +1,19 @@
 import { auth, signIn, signOut } from "@/auth";
 import InboxApp from "./inbox-app";
 
-export default async function Home({ searchParams }: { searchParams: Promise<{ deleted?: string }> }) {
+export default async function Home({ searchParams }: { searchParams: Promise<{ deleted?: string; error?: string }> }) {
   const session = await auth();
-  const { deleted } = await searchParams;
+  const { deleted, error } = await searchParams;
 
   if (!session?.user?.email) {
     return (
       <main className="signin">
         <div className="signin-card">
+          {error && (
+            <p className="note" role="alert">
+              {error === "AccessDenied" ? "DELT is for VIT accounts. Sign in with your @vitstudent.ac.in address." : "Sign-in didn't finish. Please try again."}
+            </p>
+          )}
           {deleted && (
             <p className="note" role="status">
               Your DELT data is deleted and its access to your Gmail is cancelled.

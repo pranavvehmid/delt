@@ -19,6 +19,8 @@ const allowedDomains = (process.env.ALLOWED_DOMAINS ?? "vitstudent.ac.in,vit.ac.
   .filter(Boolean);
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
+  // #138: sign-in problems land back on DELT's own page with a message, not a bare error page
+  pages: { error: "/" },
   providers: [
     Google({
       authorization: {
@@ -44,9 +46,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           // VIT names carry the register number (e.g. "26BCE0001"), used to know year and branch.
           name: token.name ?? null,
         });
-        if (error) console.error("Saving refresh token failed:", error.message);
+        // #138: without a saved token DELT can never sync, so sign-in fails and the student can retry
+        if (error) {
+          console.error("Saving refresh token failed:", error.message);
+          throw new Error("Couldn't save Google access");
+        }
         // Signed in again after removing access (issue #10): background sync can use the new token.
-        else await db.from("users").update({ access_revoked: false }).eq("email", token.email.toLowerCase());
+        await db.from("users").update({ access_revoked: false }).eq("email", token.email.toLowerCase());
       }
       return token;
     },

@@ -54,3 +54,10 @@ test("#235: only one banner shows at a time, the most important first", async ({
   await expect(page.locator(".banner")).toHaveCount(1);
   await expect(page.locator(".banner")).toContainText(/sign in/i);
 });
+
+test("#138: a sign-in that didn't finish says so on DELT's page", async ({ page }) => {
+  await page.goto("/?error=Configuration");
+  await expect(page.locator(".note[role=alert]")).toHaveText("Sign-in didn't finish. Please try again.");
+  await page.goto("/?error=AccessDenied");
+  await expect(page.locator(".note[role=alert]")).toContainText("@vitstudent.ac.in");
+});
