@@ -84,3 +84,9 @@ test("#112: changing a mail that isn't there answers 404, not OK", () => {
   assert.match(src, /\.eq\("user_email", email\)\.select\("id"\)/);
   assert.match(src, /status: 404/);
 });
+
+test("#228: a crash shows DELT's error screen, not a blank page", () => {
+  const src = readFileSync("src/app/error.tsx", "utf8");
+  assert.match(src, /^"use client"/);
+  assert.match(src, /reset\(\)/);
+});
