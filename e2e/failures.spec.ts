@@ -36,3 +36,11 @@ test("#210: when the server fails, the inbox says so and can try again", async (
   await page.getByRole("button", { name: "Try again" }).click();
   await expect(page.locator("li.row").first()).toBeVisible();
 });
+
+test("#229: a page that doesn't exist gets DELT's own page with a way back", async ({ page }) => {
+  const res = await page.goto("/no-such-page");
+  expect(res?.status()).toBe(404);
+  await expect(page.getByRole("heading", { name: "This page doesn't exist." })).toBeVisible();
+  await page.getByRole("link", { name: "Go to your inbox" }).click();
+  await expect(page).toHaveURL(/\/$/);
+});
