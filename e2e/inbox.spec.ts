@@ -162,7 +162,7 @@ test("sorting rules: moving a mail adds a rule for that sender, and it can be re
 
 test("offline: the saved inbox shows, marked offline, and changes are paused (#14)", async ({ page, context }) => {
   await mockApi(page, smallInbox());
-  await page.route("https://api.github.com/**", (r) => r.fulfill({ contentType: "application/json", body: JSON.stringify({ name: "DELT for Android (build 6)" }) }));
+  await page.route("**/api/app-version", (r) => r.fulfill({ contentType: "application/json", body: JSON.stringify({ build: 6 }) }));
   await page.goto("/e2e?app=6"); // the installed app keeps an offline copy; a browser tab doesn't (#38)
   await expect(page.locator(row("cat1"))).toBeVisible();
   await page.waitForTimeout(1200); // the copy is saved shortly after the list loads
@@ -217,7 +217,7 @@ test("AI is off until the student answers, once (#31)", async ({ page }) => {
 
 test("the Android app offers its own update when a newer build is out", async ({ page }) => {
   await mockApi(page, smallInbox());
-  await page.route("https://api.github.com/**", (r) => r.fulfill({ contentType: "application/json", body: JSON.stringify({ name: "DELT for Android (build 6)" }) }));
+  await page.route("**/api/app-version", (r) => r.fulfill({ contentType: "application/json", body: JSON.stringify({ build: 6 }) }));
   await page.goto("/e2e?app=4#/inbox");
   const banner = page.getByRole("region", { name: "A new version of the DELT app is ready." });
   await expect(banner).toBeVisible();
@@ -231,7 +231,7 @@ test("the Android app offers its own update when a newer build is out", async ({
 
 test("no update banner for an up-to-date app or a normal browser", async ({ page }) => {
   await mockApi(page, smallInbox());
-  await page.route("https://api.github.com/**", (r) => r.fulfill({ contentType: "application/json", body: JSON.stringify({ name: "DELT for Android (build 6)" }) }));
+  await page.route("**/api/app-version", (r) => r.fulfill({ contentType: "application/json", body: JSON.stringify({ build: 6 }) }));
   await page.goto("/e2e?app=6#/inbox");
   await expect(page.locator(row("cat1"))).toBeVisible();
   await expect(page.getByText("A new version of the DELT app is ready.")).toHaveCount(0);

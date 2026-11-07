@@ -5,6 +5,7 @@
 // Pure parts are tested in tests/app-update.test.ts.
 
 export const RELEASE_API = "https://api.github.com/repos/pranavvehmid/delt/releases/tags/app-latest";
+export const APP_VERSION_API = "/api/app-version";
 export const APK_URL = "https://github.com/pranavvehmid/delt/releases/download/app-latest/DELT.apk";
 const CHECK_EVERY_MS = 12 * 3600_000;
 const SNOOZE_MS = 3 * 86400_000;
@@ -37,8 +38,9 @@ export async function checkAppUpdate(now = Date.now()): Promise<{ installed: num
     localStorage.setItem(KEY_BUILD, String(installed));
     let cached = JSON.parse(localStorage.getItem(KEY_LATEST) || "null") as { at: number; build: number } | null;
     if (!cached || now - cached.at > CHECK_EVERY_MS) {
-      const r = await fetch(RELEASE_API, { headers: { Accept: "application/vnd.github+json" } });
-      const build = r.ok ? buildFromReleaseName((await r.json()).name) : null;
+      // #98: ask DELT, which asks GitHub once an hour for everyone (campus Wi-Fi shares one IP)
+      const r = await fetch(APP_VERSION_API);
+      const build = r.ok ? ((await r.json()).build as number | null) : null;
       if (build !== null) localStorage.setItem(KEY_LATEST, JSON.stringify((cached = { at: now, build })));
     }
     const snoozed = Number(localStorage.getItem(KEY_SNOOZE) || 0);

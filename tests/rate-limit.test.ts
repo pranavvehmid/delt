@@ -37,7 +37,8 @@ function files(dir: string): string[] {
   return readdirSync(dir).flatMap((f) => (statSync(join(dir, f)).isDirectory() ? files(join(dir, f)) : f === "route.ts" ? [join(dir, f)] : []));
 }
 test("every signed-in API handler is rate limited (sync uses the database claim instead)", () => {
-  for (const f of files("src/app/api").filter((f) => !f.includes("nextauth"))) {
+  // app-version is public and answered from Vercel's cache (#98)
+  for (const f of files("src/app/api").filter((f) => !f.includes("nextauth") && !/app-version/.test(f))) {
     const src = readFileSync(f, "utf8");
     for (const m of src.matchAll(/export async function (GET|POST|PATCH|DELETE)\b[\s\S]*?\n}/g)) {
       if (/CRON_SECRET/.test(m[0])) continue;

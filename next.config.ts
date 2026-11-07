@@ -3,8 +3,7 @@ import type { NextConfig } from "next";
 // Security headers for every page and API answer (#34).
 // - frame-ancestors 'none' / X-Frame-Options: no other site can load DELT in a hidden frame
 //   and trick a student into tapping something (clickjacking).
-// - The CSP allows only DELT's own scripts, styles, fonts and connections, plus GitHub's API for
-//   the Android app's update check. Next.js needs inline scripts for its page data, so
+// - The CSP allows only DELT's own scripts, styles, fonts and connections, . Next.js needs inline scripts for its page data, so
 //   script-src keeps 'unsafe-inline' but no outside script can load. Mail content is shown in a
 //   sandboxed frame with its own stricter policy (mail-view.tsx).
 const csp = [
@@ -15,7 +14,7 @@ const csp = [
   // adds its own stricter one that blocks them until asked, #32)
   "img-src 'self' data: blob: https:",
   "font-src 'self' data:",
-  "connect-src 'self' https://api.github.com",
+  "connect-src 'self'", // #98: the app-update check goes through DELT's own /api/app-version
   "frame-src 'self' about: data:",
   "worker-src 'self'",
   "manifest-src 'self'",

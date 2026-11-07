@@ -11,7 +11,8 @@ function files(dir: string): string[] {
     return statSync(p).isDirectory() ? files(p) : p.endsWith(".ts") ? [p] : [];
   });
 }
-const API = files("src/app/api").filter((f) => !f.includes("[...nextauth]"));
+// app-version is public (the newest Android build number, no student data, #98)
+const API = files("src/app/api").filter((f) => !f.includes("[...nextauth]") && !/app-version/.test(f));
 
 test("every API route checks who is signed in (or the cron secret)", () => {
   assert.ok(API.length >= 4);
@@ -115,4 +116,12 @@ test("#133: routes a student calls never send raw database or Google errors to t
     const studentPart = /api[\\/]sync/.test(f) ? src.slice(0, src.indexOf("export async function GET")) : src;
     assert.doesNotMatch(studentPart, /error: (error\.message|\(e as Error\)\.message)/, f);
   }
+});
+
+test("#98: the public app-version route reads no student data and the app no longer calls GitHub directly", () => {
+  const src = readFileSync("src/app/api/app-version/route.ts", "utf8");
+  assert.doesNotMatch(src, /db\.|supabase|auth\(/);
+  assert.match(src, /revalidate = 3600/);
+  assert.doesNotMatch(readFileSync("src/lib/app-update.ts", "utf8"), /fetch\(RELEASE_API/);
+  assert.doesNotMatch(readFileSync("next.config.ts", "utf8"), /connect-src[^"]*api\.github\.com/);
 });
