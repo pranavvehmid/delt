@@ -1,17 +1,29 @@
 import { auth, signIn, signOut } from "@/auth";
 import InboxApp from "./inbox-app";
+import { db } from "@/lib/supabase";
 
 export default async function Home({ searchParams }: { searchParams: Promise<{ deleted?: string; error?: string }> }) {
   const session = await auth();
   const { deleted, error } = await searchParams;
+  // #130: signed in on this device, but the account was deleted on another one: start again
+  let gone = false;
+  if (session?.user?.email) {
+    const { data, error: dbError } = await db.from("users").select("email").eq("email", session.user.email.toLowerCase()).maybeSingle();
+    gone = !dbError && !data;
+  }
 
-  if (!session?.user?.email) {
+  if (!session?.user?.email || gone) {
     return (
       <main className="signin">
         <div className="signin-card">
           {error && (
             <p className="note" role="alert">
               {error === "AccessDenied" ? "DELT is for VIT accounts. Sign in with your @vitstudent.ac.in address." : "Sign-in didn't finish. Please try again."}
+            </p>
+          )}
+          {gone && !deleted && (
+            <p className="note" role="status">
+              Your DELT data was deleted (maybe on another device). Sign in to start again.
             </p>
           )}
           {deleted && (

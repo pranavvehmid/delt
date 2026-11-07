@@ -168,4 +168,8 @@ test("B deleting B's account leaves A untouched", { skip }, async () => {
   assert.equal(await snapshot(A), before);
   const left = await sb!.from("emails").select("id").eq("user_email", B);
   assert.deepEqual(left.data, []);
+  // #130: another device still signed in as B is told it's signed out (so it reloads to sign-in)
+  const after = await call("emails", "GET");
+  assert.equal(after.status, 401);
+  assert.equal(after.body.gone, true);
 });

@@ -55,7 +55,9 @@ export async function GET(req: NextRequest) {
   let syncProblem: string | null = null;
   if (!before && !pattern && !due) {
     await db.from("users").update({ last_seen_at: new Date().toISOString() }).eq("email", email);
-    const { data: u } = await db.from("users").select("access_revoked, ai_consent, last_sync_error").eq("email", email).maybeSingle();
+    const { data: u, error: userError } = await db.from("users").select("access_revoked, ai_consent, last_sync_error").eq("email", email).maybeSingle();
+    // #130: the account was deleted on another device; the app reloads and lands on sign-in
+    if (!userError && !u) return NextResponse.json({ error: "Signed out", gone: true }, { status: 401 });
     reauth = !!u?.access_revoked; // issue #10
     aiConsent = u ? (u.ai_consent ?? null) : undefined; // #31: null = not asked yet
     syncProblem = u?.last_sync_error ?? null; // #40
