@@ -23,7 +23,9 @@ import { BATCH, LIST_MAX, UNREAD_LIST_MAX, UNREAD_WINDOW_DAYS, isGone, nextSynce
 export const syncDeps = { db, getAccessToken, listMessageIds, getMessage, ensureLabels, setPriorityLabel, setPriorityLabelMany, classifyWithAI };
 const D = syncDeps;
 
-const FIRST_SYNC_DAYS = 14;
+// #89: six weeks, so exam schedules, fee notices and registrations sent a few weeks before they
+// fall due still show up; a big window comes in batches (#28)
+export const FIRST_SYNC_DAYS = 45;
 const PARALLEL = 5;
 // Gemini's free tier allows only a few requests per minute, so AI calls are
 // spaced out and stop once this much of the run has passed.
@@ -71,7 +73,7 @@ export async function syncUser(email: string, mode: SyncMode = "full"): Promise<
   }
   const profile: StudentProfile = profileFromName(user.name);
 
-  // First run: last 14 days. Later runs: everything since the last sync, plus an hour of overlap.
+  // First run: last FIRST_SYNC_DAYS days. Later runs: everything since the last sync, plus an hour of overlap.
   const since = user.last_synced_at
     ? Math.floor(new Date(user.last_synced_at).getTime() / 1000) - 3600
     : Math.floor(Date.now() / 1000) - FIRST_SYNC_DAYS * 86400;

@@ -137,3 +137,13 @@ test("a plain-text token from before #27 is re-encrypted on the first sync", asy
   assert.match(String(user().refresh_token), /^v[12]\./);
   assert.ok(!String(user().refresh_token).includes("plain-token"));
 });
+
+test("#89: a first sync reaches back six weeks, not two", async () => {
+  const { FIRST_SYNC_DAYS } = await import("../src/lib/sync");
+  assert.equal(FIRST_SYNC_DAYS, 45);
+  const old = msg(7);
+  old.receivedAt = new Date(Date.now() - 30 * 86400_000); // a notice from a month ago
+  inbox = [old];
+  await syncUser(ME, "quick");
+  assert.ok(mine().some((m) => m.id === "m7"), "a month-old mail is brought in on the first sync");
+});
