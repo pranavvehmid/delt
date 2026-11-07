@@ -47,7 +47,14 @@ export function useMailActions({ mails, hits, due, setMails, setHits, setDue, of
     if (blockedOffline()) return;
     const before = findMail(id);
     updateAll((m) => (m.id === id ? apply(m, p) : m));
-    fetch("/api/emails", { method: "PATCH", body: JSON.stringify({ id, ...p }) }).then((r) => !r.ok && say({ text: "Couldn't save that change" }));
+    // #231: if the server doesn't take it, put the mail back the way it was and say so
+    const failed = () => {
+      if (before) updateAll((m) => (m.id === id ? { ...m, unread: before.unread, is_done: before.is_done, priority: before.priority, user_corrected: before.user_corrected, deadline: before.deadline } : m));
+      say({ text: "Couldn't save that change. It's back as it was." });
+    };
+    fetch("/api/emails", { method: "PATCH", body: JSON.stringify({ id, ...p }) })
+      .then((r) => !r.ok && failed())
+      .catch(failed);
     if (quiet || !before) return;
     const undo = () => {
       if (p.deadline === null) {
@@ -86,8 +93,12 @@ export function useMailActions({ mails, hits, due, setMails, setHits, setDue, of
       fetch("/api/emails/bulk", { method: "POST", body: JSON.stringify({ ids, read: false }) }).then((r) => !r.ok && say({ text: "Couldn't update Gmail" }));
     };
     say({ text: `${ids.length} marked read`, undo });
-    const r = await fetch("/api/emails/bulk", { method: "POST", body: JSON.stringify({ ids, read: true }) });
-    if (!r.ok) say({ text: "Couldn't update Gmail" });
+    const r = await fetch("/api/emails/bulk", { method: "POST", body: JSON.stringify({ ids, read: true }) }).catch(() => null);
+    if (!r?.ok) {
+      // #231: nothing was saved: show them unread again
+      updateAll((m) => (set.has(m.id) ? { ...m, unread: true } : m));
+      say({ text: "Couldn't mark them read. Try again." });
+    }
   }
 
   async function answerAi(consent: boolean) {
