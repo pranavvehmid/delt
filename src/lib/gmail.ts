@@ -369,7 +369,8 @@ export function attachmentHeaders(name: string, type: string, size: number): Rec
     "X-Content-Type-Options": "nosniff",
     // a file is never a page that can run anything; PDFs need no policy of their own to show
     ...(type === "application/pdf" ? {} : { "Content-Security-Policy": "default-src 'none'; img-src 'self'; style-src 'unsafe-inline'; sandbox" }),
-    "Cache-Control": "private, max-age=3600",
+    // #129: never kept on disk (a shared lab computer); the page reuses an image it already loaded
+    "Cache-Control": "private, no-store",
     "Referrer-Policy": "no-referrer",
   };
 }
