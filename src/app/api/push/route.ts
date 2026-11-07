@@ -35,10 +35,12 @@ export async function POST(req: NextRequest) {
   const parsed = Sub.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: "Bad request" }, { status: 400 });
   const { endpoint, keys } = parsed.data;
+  // #132: the test message goes only to a device that wasn't already on for this student
+  const { data: had } = await db.from("push_subscriptions").select("endpoint").eq("endpoint", endpoint).eq("user_email", email).maybeSingle();
   const { error } = await db.from("push_subscriptions").upsert({ endpoint, user_email: email, p256dh: keys.p256dh, auth: keys.auth });
   if (error) return NextResponse.json({ error: "Couldn't save" }, { status: 500 });
-  await sendToStudent(email, { title: "Notifications are on", body: "You'll hear about urgent mail and deadlines due within a day.", url: "/#/inbox", tag: "welcome" });
-  return NextResponse.json({ ok: true });
+  if (!had) await sendToStudent(email, { title: "Notifications are on", body: "You'll hear about urgent mail and deadlines due within a day.", url: "/#/inbox", tag: "welcome" });
+  return NextResponse.json({ ok: true, new: !had });
 }
 
 // DELETE: turn notifications off for this device.

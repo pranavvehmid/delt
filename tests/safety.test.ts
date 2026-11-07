@@ -101,3 +101,9 @@ test("#111: a pile move is 'not yet in Gmail' until Gmail confirms; Gmail failur
 test("#113: deadlines more than two years away are refused", () => {
   assert.match(readFileSync("src/app/api/emails/route.ts", "utf8"), /Math\.abs\(Date\.parse\(d\) - Date\.now\(\)\) < 2 \* 366 \* 86400_000/);
 });
+
+test("#132: the 'Notifications are on' message goes only to a newly added device", () => {
+  const src = readFileSync("src/app/api/push/route.ts", "utf8");
+  assert.ok(src.indexOf('select("endpoint").eq("endpoint", endpoint)') < src.indexOf(".upsert("), "checks before saving");
+  assert.match(src, /if \(!had\) await sendToStudent/);
+});
