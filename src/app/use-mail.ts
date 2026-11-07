@@ -25,10 +25,14 @@ export function useMail(email: string) {
   const mailsRef = useRef<EmailRow[] | null>(null);
   mailsRef.current = mails;
   const pagedOlder = useRef(false);
-  const load = useCallback(async () => {
-    let r: Response, d: Response;
+  // #92: the deadline list (up to 300 rows) is fetched on first load, when new mail came in, or
+  // every 30 minutes, not on every refresh
+  const dueAt = useRef(0);
+  const load = useCallback(async (newMail = false) => {
+    let r: Response, d: Response | null;
+    const wantDue = newMail || Date.now() - dueAt.current > 30 * 60_000;
     try {
-      [r, d] = await Promise.all([fetch(`/api/emails?limit=${PAGE_SIZE}`), fetch("/api/emails?due=1&limit=300")]);
+      [r, d] = await Promise.all([fetch(`/api/emails?limit=${PAGE_SIZE}`), wantDue ? fetch("/api/emails?due=1&limit=300") : Promise.resolve(null)]);
     } catch {
       setOffline(true); // no connection: keep showing the saved inbox
       return false;
@@ -49,7 +53,10 @@ export function useMail(email: string) {
       setAiConsent(j.aiConsent);
       setSyncProblem(j.syncProblem ?? null);
     }
-    if (d.ok) setDue((await d.json()).emails ?? []);
+    if (d?.ok) {
+      setDue((await d.json()).emails ?? []);
+      dueAt.current = Date.now();
+    }
     if (r.ok) setSavedAt(Date.now());
     return r.ok;
   }, []);

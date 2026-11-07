@@ -8,7 +8,7 @@ import type { ToastMsg } from "./toast";
 const SYNC_EVERY = 5 * 60_000;
 
 type Deps = {
-  load: () => Promise<boolean>;
+  load: (newMail?: boolean) => Promise<boolean>;
   setReauth: (on: boolean) => void;
   setOffline: (on: boolean) => void;
   say: (t: ToastMsg) => void;
@@ -41,13 +41,13 @@ export function useSync({ load, setReauth, setOffline, say }: Deps) {
           if (loud) say({ text: "Already checking for mail" });
           return;
         }
-        if (!(await load())) throw new Error("offline");
+        if (!(await load(d.fetched > 0))) throw new Error("offline");
         setSyncedAt(Date.now());
         // AI re-checks and Gmail labels run after, without holding up the list (#21)
         if (!d.reauth && !d.backlog)
           fetch("/api/sync?phase=later", { method: "POST", keepalive: true })
             .then((r) => r.json())
-            .then((x) => x?.resorted > 0 && load())
+            .then((x) => x?.resorted > 0 && load(true))
             .catch(() => {});
         // A big first sync comes in batches (#28): fetch the rest once the 10 s gap has passed.
         setBacklog(d.backlog ?? 0);

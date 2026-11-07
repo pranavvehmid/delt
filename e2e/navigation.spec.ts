@@ -58,3 +58,13 @@ test("#211: the Inbox badge counts unread Urgent and Priority mail, not Later or
   await expect(badge.locator("sup, .badge").first()).toContainText("3");
   await expect(badge).toHaveAttribute("title", "3 unread in Urgent and Priority");
 });
+
+test("#92: the deadline list isn't downloaded again when a check finds no new mail", async ({ page }) => {
+  const { smallInbox } = await import("./mock");
+  const api = await mockApi(page, smallInbox()); // the fake sync reports 0 new mails
+  await page.goto("/e2e");
+  await expect(page.locator("li.row").first()).toBeVisible();
+  await page.getByRole("button", { name: /Check for mail|Updated/ }).first().click(); // a manual check
+  await expect.poll(() => api.emailRequests.filter((q) => !q.includes("due=1")).length).toBeGreaterThanOrEqual(2);
+  expect(api.emailRequests.filter((q) => q.includes("due=1")).length).toBe(1);
+});
