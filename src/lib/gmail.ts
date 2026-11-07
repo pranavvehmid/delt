@@ -157,21 +157,38 @@ export function findPart(part: Part, mime: string): string | null {
   return null;
 }
 
+// #117: the named entities college mail actually uses; numeric ones (&#8217; &#x20B9;) are decoded generally
+const NAMED: Record<string, string> = {
+  nbsp: " ", amp: "&", lt: "<", gt: ">", quot: '"', apos: "'", rsquo: "’", lsquo: "‘", rdquo: "”", ldquo: "“",
+  ndash: "–", mdash: "—", hellip: "…", bull: "•", middot: "·", copy: "©", reg: "®", trade: "™", euro: "€", pound: "£",
+  rarr: "→", larr: "←", times: "×", deg: "°", ensp: " ", emsp: " ", thinsp: " ", zwnj: "", zwj: "",
+};
+export function decodeEntities(s: string) {
+  return s.replace(/&(#x[0-9a-f]+|#\d+|[a-z]+);/gi, (m, e: string) => {
+    if (e[0] === "#") {
+      const code = e[1] === "x" || e[1] === "X" ? parseInt(e.slice(2), 16) : parseInt(e.slice(1), 10);
+      return code > 0 && code < 0x110000 ? String.fromCodePoint(code) : m;
+    }
+    return NAMED[e.toLowerCase()] ?? m;
+  });
+}
+
 export function htmlToText(html: string) {
-  return html
+  const text = html
     .replace(/<(style|script)[\s\S]*?<\/\1>/gi, " ")
     .replace(/<br\s*\/?>|<\/p>|<\/div>|<\/li>|<\/tr>/gi, "\n")
-    .replace(/<a [^>]*href="([^"]+)"[^>]*>([\s\S]*?)<\/a>/gi, "$2 ($1)")
-    .replace(/<[^>]+>/g, " ")
-    .replace(/&nbsp;/g, " ")
-    .replace(/&amp;/g, "&")
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .replace(/&#39;|&apos;/g, "'")
-    .replace(/&quot;/g, '"')
-    .replace(/[ \t]+/g, " ")
+    .replace(/<a [^>]*href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi, "$2 ($1)")
+    .replace(/<[^>]+>/g, " ");
+  return decodeEntities(text)
+    .replace(/[ \t ]+/g, " ")
     .replace(/\n\s*\n+/g, "\n\n")
     .trim();
+}
+
+/** #116: a plain-text part that only says "view this mail in your browser" (or is nearly empty). */
+export function isPlaceholderText(plain: string) {
+  const t = plain.trim();
+  return t.length < 40 || (t.length < 400 && /view (this|the|it) (e-?mail|message|newsletter|mail)? ?(online|in (a |your )?(web )?browser)|html (version|e-?mail)|does ?n[o']t support html|enable html/i.test(t));
 }
 
 export async function getMessage(token: string, id: string): Promise<ParsedMessage> {
@@ -189,8 +206,10 @@ export async function getMessage(token: string, id: string): Promise<ParsedMessa
 
   const { name: fromName, address: fromAddress } = parseFrom(header("from"));
 
-  const plain = findPart(msg.payload, "text/plain");
-  const html = plain ? null : findPart(msg.payload, "text/html");
+  const plainPart = findPart(msg.payload, "text/plain");
+  const html = !plainPart || isPlaceholderText(plainPart) ? findPart(msg.payload, "text/html") : null;
+  // #116: a placeholder plain part ("view in browser") gives way to the HTML version's text
+  const plain = plainPart && html && isPlaceholderText(plainPart) ? null : plainPart;
 
   return {
     id: msg.id,

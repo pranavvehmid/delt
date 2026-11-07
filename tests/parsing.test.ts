@@ -79,3 +79,17 @@ test("deadline: no date means no deadline", () => {
 test("deadline: the soonest date after a deadline word wins over event dates", () => {
   assert.equal(due("Event on 20 Nov 2026. Last date to register is 10 Nov 2026."), "2026-11-10T23:59:00+05:30");
 });
+
+// ---------- #116, #117: getting readable text out of a mail ----------
+import { decodeEntities, isPlaceholderText } from "../src/lib/gmail";
+test("#117: numeric and common named entities are decoded", () => {
+  assert.equal(decodeEntities("Don&rsquo;t miss &#8377;500 &ndash; due &#x31;5 Nov&hellip; &amp; more"), "Don’t miss ₹500 – due 15 Nov… & more");
+  assert.equal(decodeEntities("&unknown; &#0; stays"), "&unknown; &#0; stays");
+  assert.equal(htmlToText("<p>Fee&nbsp;&#8377;1,200</p><a href='https://pay.vit.ac.in'>Pay</a>"), "Fee ₹1,200\nPay (https://pay.vit.ac.in)");
+});
+test("#116: a 'view in your browser' plain part is recognised as a placeholder", () => {
+  assert.equal(isPlaceholderText("View this email in your browser"), true);
+  assert.equal(isPlaceholderText("Your email client does not support HTML. Open the link."), true);
+  assert.equal(isPlaceholderText(""), true);
+  assert.equal(isPlaceholderText("Dear students, CAT-1 exams start on 18 Nov. The detailed schedule is attached; check your slot and venue before the exam day."), false);
+});
