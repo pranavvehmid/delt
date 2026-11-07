@@ -137,3 +137,14 @@ for (const look of LOOKS) {
     expect(Math.abs(cal!.x - subj!.x)).toBeLessThanOrEqual(10); // starts where the title starts (button has its own inner padding)
   });
 }
+
+test("#196: on a laptop, Back leaves the reading pane instead of walking through every mail opened", async ({ page }, info) => {
+  test.skip(info.project.name !== "desktop");
+  await open(page, "minimal", SIZES[0], smallInbox());
+  for (const id of ["cat1", "fee", "hack", "notice"]) {
+    await page.locator(`li.row[data-mail="${id}"] .row-main`).click();
+    await expect(page.locator(".mailview.pane")).toBeVisible();
+  }
+  await page.goBack();
+  await expect(page.locator(".mailview.pane")).toHaveCount(0);
+});

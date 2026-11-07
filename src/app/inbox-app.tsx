@@ -58,7 +58,9 @@ export default function InboxApp({ email, name, signOutAction, signInAction }: P
     openedFrom.current = m.id;
     sessionStorage.setItem("delt-tab", route.tab);
     // stepping to the next/previous mail replaces the entry, so Back still returns to the list (#49)
-    if (step) location.replace(`#/mail/${encodeURIComponent(m.id)}`);
+    // #196: in the laptop pane, switching from one open mail to another replaces the entry too,
+    // so Back leaves the mail instead of walking through every one you opened
+    if (step || (wide && route.mailId)) location.replace(`#/mail/${encodeURIComponent(m.id)}`);
     else location.hash = `#/mail/${encodeURIComponent(m.id)}`;
     if (m.unread) patch(m.id, { read: true }, true);
   };
