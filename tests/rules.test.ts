@@ -188,3 +188,12 @@ test("#104: the AI alone can't lift confident promotions to Urgent", () => {
   const unsure = { ...rules, confidence: 0.5 };
   assert.equal(checkAI(ai({}), unsure, promo).priority, "very_important");
 });
+
+test("#142: AI summaries are trimmed to the house style", async () => {
+  const { tidySummary } = await import("../src/lib/rules");
+  assert.equal(tidySummary("Don't miss this exciting hackathon! Register by 12 Nov — prizes worth ₹50,000."), "this hackathon. Register by 12 Nov, prizes worth ₹50,000.");
+  const long = Array.from({ length: 30 }, (_, i) => `w${i}`).join(" ");
+  assert.equal(tidySummary(long).split(" ").length, 22);
+  assert.ok(tidySummary(long).endsWith("…"));
+  assert.equal(tidySummary("Exciting!"), "", "nothing left: checkAI falls back to the rules summary");
+});

@@ -345,9 +345,21 @@ export function checkAI(ai: Classification, rules: RuleResult, msg: ParsedMessag
     const inMail = findDates(text, msg.receivedAt).some((d) => istDay(d.iso) === day) || (!!rules.deadline && istDay(rules.deadline) === day);
     if (!inMail) out.deadline = rules.deadline;
   }
+  // #142: the summary follows the house style even if the model doesn't: no hype, no exclamation
+  // marks, at most 22 words; an empty result falls back to the rules' summary
+  out.summary = tidySummary(out.summary) || rules.summary;
   if (rules.priority === "noise" && rules.confidence >= 0.8 && ai.priority === "very_important") {
     out.priority = rules.priority;
     out.reason = rules.reason;
   }
   return out;
+}
+
+const HYPE = /\b(don'?t miss( out)?|exciting|unlock|amazing|incredible|hurry|grab|limited[- ]time|act now)\b[,!]?\s*/gi;
+
+/** #142: trims an AI summary to the style rules. */
+export function tidySummary(s: string): string {
+  const words = s.replace(HYPE, "").replace(/!+/g, ".").replace(/\s*—\s*/g, ", ").replace(/\s+/g, " ").trim().split(" ").filter(Boolean);
+  const text = words.length > 22 ? words.slice(0, 22).join(" ").replace(/[,;:]$/, "") + "…" : words.join(" ");
+  return text.replace(/^[,.\s]+/, "").trim();
 }
