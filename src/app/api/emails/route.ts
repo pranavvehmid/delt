@@ -8,6 +8,9 @@ import { PAGE_SIZE, searchPattern } from "@/lib/inbox";
 import { ensureLabels, getAccessToken, markRead, markUnread, setPriorityLabel } from "@/lib/gmail";
 import { limited } from "@/lib/rate-limit";
 
+// user_email stays: the database tests use it to prove no student ever gets another's mail
+const LIST_COLUMNS = "id, user_email, thread_id, from_name, from_address, subject, snippet, received_at, priority, summary, deadline, reason, user_corrected, is_done, unread";
+
 async function currentUser() {
   const session = await auth();
   return session?.user?.email?.toLowerCase() ?? null;
@@ -33,7 +36,8 @@ export async function GET(req: NextRequest) {
   const due = p.get("due") === "1";
   const limit = Math.min(500, Math.max(1, Number(p.get("limit")) || PAGE_SIZE));
 
-  let query = db.from("emails").select("*").eq("user_email", email);
+  // #120: only what the app shows (not user_email, gmail_labeled, notified, reminded, created_at, …)
+  let query = db.from("emails").select(LIST_COLUMNS).eq("user_email", email);
   if (days > 0) query = query.gte("received_at", new Date(Date.now() - days * 86400_000).toISOString());
   // lte, not lt: mails sharing the edge time aren't skipped; the app drops the repeats
   if (before && !Number.isNaN(Date.parse(before))) query = query.lte("received_at", new Date(before).toISOString());
