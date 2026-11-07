@@ -48,9 +48,10 @@ export default function Privacy() {
 
       <h2>AI sorting (only if you say yes)</h2>
       <p>
-        Most mail is sorted by simple rules on DELT&apos;s server. If you allow it, mail the rules aren&apos;t sure about (sender, subject and the start of the text) is sent to
-        Google&apos;s Gemini to double-check. DELT uses Gemini&apos;s <b>free tier</b>, and Google may use what is sent to it to improve its models. If you add your own
-        Gemini key, your own Google account&apos;s terms apply.
+        Most mail is sorted by simple rules on DELT&apos;s server. If you allow it, mail the rules aren&apos;t sure about is sent to Google&apos;s Gemini to
+        double-check. For each such mail DELT sends: its sender, subject and up to about 6,000 characters of its text; your year and programme (from your
+        register number); and up to 15 sender domains you moved to another pile, with that pile (never those mails&apos; subjects or text). DELT uses Gemini&apos;s{" "}
+        <b>free tier</b>, and Google may use what is sent to it to improve its models. If you add your own Gemini key, your own Google account&apos;s terms apply.
       </p>
       <p>You choose the first time you open DELT, and can change it any time in Settings → AI sorting. &quot;Rules only&quot; sends nothing to Gemini.</p>
 

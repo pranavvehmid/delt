@@ -63,8 +63,8 @@ export default function Banners({ aiConsent, onAnswerAi, offline, savedAt, now, 
       {aiConsent === null && !offline && (
         <section className="banner ask" aria-labelledby="ai-ask">
           <span>
-            <b id="ai-ask">Let AI double-check unclear mail?</b> DELT sorts with simple rules. For mail they aren&apos;t sure about, it can ask Google&apos;s Gemini (free
-            tier), which may use what it&apos;s sent to improve its models.{" "}
+            <b id="ai-ask">Let AI double-check unclear mail?</b> DELT sorts with simple rules. For mail they aren&apos;t sure about, it can send that mail&apos;s sender, subject and opening
+            text to Google&apos;s Gemini (free tier), which may use it to improve its models.{" "}
             <a className="link" href="/privacy" target="_blank">
               Privacy
             </a>

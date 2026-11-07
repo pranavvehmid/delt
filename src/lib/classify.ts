@@ -63,12 +63,7 @@ export async function classifyWithAI(
 ): Promise<Classification> {
   if (!apiKey) throw new Error("No Gemini key");
   const body = msg.body.length > MAX_BODY_CHARS ? msg.body.slice(0, MAX_BODY_CHARS) + "\n[...cut]" : msg.body;
-  const prefs = corrections.length
-    ? `The student moved these mails by hand earlier (sender | subject -> priority):\n${corrections
-        .slice(0, 15)
-        .map((c) => `- ${c.from} | ${c.subject} -> ${c.priority}`)
-        .join("\n")}\n\n`
-    : "";
+  const prefs = correctionHints(corrections);
 
   const res = await fetch(
     `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`,
@@ -114,4 +109,17 @@ ${body}
   if (!parsed.success) throw new Error("Gemini answer had the wrong shape");
   const c = parsed.data;
   return { ...c, deadline: c.deadline && !isNaN(Date.parse(c.deadline)) ? c.deadline : null };
+}
+
+/** #81: what the AI learns from the student's past moves: sender domains and the pile they chose,
+ *  never another mail's address, subject or text (that would share more than the mail being sorted). */
+export function correctionHints(corrections: Correction[]): string {
+  const seen = new Map<string, string>();
+  for (const c of corrections) {
+    const domain = (c.from.split("@")[1] ?? "").toLowerCase().trim();
+    if (domain && !seen.has(domain)) seen.set(domain, c.priority);
+    if (seen.size >= 15) break;
+  }
+  if (!seen.size) return "";
+  return `The student moved mail from these sender domains to these piles earlier (domain -> priority):\n${[...seen].map(([d, p]) => `- ${d} -> ${p}`).join("\n")}\n\n`;
 }

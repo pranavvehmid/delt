@@ -89,8 +89,9 @@ export default function AiSetting({
       </div>
       {ai?.consent === true && (
         <small className="muted">
-          Sender, subject and the start of the text go to Google&apos;s Gemini
-          free tier, which Google may use to improve its models.{" "}
+          For each unclear mail, its sender, subject and opening text go to Google&apos;s Gemini free
+          tier, with your year and programme and the sender domains you&apos;ve moved (not their mail).
+          Google may use it to improve its models.{" "}
           <a className="link" href="/privacy">
             Privacy
           </a>
