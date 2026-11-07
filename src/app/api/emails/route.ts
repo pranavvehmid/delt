@@ -89,8 +89,10 @@ export async function PATCH(req: NextRequest) {
   if (deadline !== undefined) update.deadline = deadline;
   if (read !== undefined) update.unread = !read;
 
-  const { error } = await db.from("emails").update(update).eq("id", id).eq("user_email", email);
+  const { data: changed, error } = await db.from("emails").update(update).eq("id", id).eq("user_email", email).select("id");
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  // #112: a stale id (mail purged, or removed on another device) is not a silent success
+  if (!changed?.length) return NextResponse.json({ error: "Mail not found" }, { status: 404 });
 
   if (priority || read !== undefined) {
     // Keep Gmail in step with the website: priority label and read state.

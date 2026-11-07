@@ -78,3 +78,9 @@ test("#110: a bulk move is marked labelled only after Gmail confirms, so sync re
   assert.match(src, /user_corrected: true, gmail_labeled: false/);
   assert.ok(src.indexOf("batchModify(token, mine, [labels[priority]]") < src.indexOf("update({ gmail_labeled: true })"));
 });
+
+test("#112: changing a mail that isn't there answers 404, not OK", () => {
+  const src = readFileSync("src/app/api/emails/route.ts", "utf8");
+  assert.match(src, /\.eq\("user_email", email\)\.select\("id"\)/);
+  assert.match(src, /status: 404/);
+});
