@@ -25,7 +25,7 @@ import { TabBar, TopTabs } from "./tabs";
 import { Toast, useToast } from "./toast";
 import { useMail, useSearch } from "./use-mail";
 import { useMailActions, type Patch } from "./use-mail-actions";
-import { PULL_AT, goTab, usePullToRefresh, useRoute, useSwipeHint, useWide } from "./use-screen";
+import { PULL_AT, goTab, restoreScroll, usePullToRefresh, useRoute, useSwipeHint, useWide } from "./use-screen";
 import { useNow, useSync } from "./use-sync";
 
 type Props = { email: string; name: string; signOutAction: () => Promise<void>; signInAction?: () => Promise<void> };
@@ -92,6 +92,12 @@ export default function InboxApp({ email, name, signOutAction, signInAction }: P
     return ids.size ? shown.filter((m) => !ids.has(m.id)) : shown;
   }, [shown, pinned]);
   const days = useMemo(() => groupByDay(rest, now), [rest, now]);
+  // #197: coming back to a tab returns to where you were on it
+  const firstTab = useRef(true);
+  useEffect(() => {
+    if (firstTab.current) return void (firstTab.current = false);
+    restoreScroll(route.tab);
+  }, [route.tab]);
   // #75, #77: the list's entrance plays once, when the first mail arrives; after that new rows,
   // filters and tab switches draw straight away (re-running it on every change cost frames)
   const hasMail = shown.length > 0;

@@ -38,10 +38,32 @@ export function useRoute() {
   return route;
 }
 
+const currentTab = (): Route["tab"] => (location.hash.startsWith("#/deadlines") ? "deadlines" : "inbox");
+
 export function goTab(tab: Route["tab"]) {
-  sessionStorage.setItem("delt-tab", tab);
+  // #216: tapping the tab you're on takes you back to the top
+  if (tab === currentTab() && !location.hash.startsWith("#/mail/")) return window.scrollTo({ top: 0, behavior: "smooth" });
+  // #197: each tab keeps its own place; restoreScroll() puts it back once the tab has drawn
+  try {
+    sessionStorage.setItem(`delt-scroll-${currentTab()}`, String(Math.round(window.scrollY)));
+    sessionStorage.setItem("delt-tab", tab);
+  } catch {}
   location.hash = `#/${tab}`;
-  window.scrollTo({ top: 0 });
+}
+
+/** #197: return to where the student was on this tab, waiting a few frames for the rows to draw. */
+export function restoreScroll(tab: Route["tab"]) {
+  let y = 0;
+  try {
+    y = Number(sessionStorage.getItem(`delt-scroll-${tab}`) || 0);
+  } catch {}
+  let tries = 0;
+  const step = () => {
+    const room = document.documentElement.scrollHeight - window.innerHeight;
+    if (room >= y || tries++ > 120) return window.scrollTo({ top: Math.min(y, Math.max(0, room)) });
+    requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
 }
 
 /** #48: wide screens read mail in a pane beside the list. */
