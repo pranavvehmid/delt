@@ -45,3 +45,12 @@ test("#229: a page that doesn't exist gets DELT's own page with a way back", asy
   await expect(page).toHaveURL(/\/$/);
 });
 
+
+test("#235: only one banner shows at a time, the most important first", async ({ page }) => {
+  // asked about AI (null consent) and signed out of Google: only "sign in again" shows
+  await mockApi(page, smallInbox(), { reauth: true, aiConsent: null });
+  await page.goto("/e2e");
+  await expect(page.locator("li.row").first()).toBeVisible();
+  await expect(page.locator(".banner")).toHaveCount(1);
+  await expect(page.locator(".banner")).toContainText(/sign in/i);
+});

@@ -27,9 +27,11 @@ export default function Banners({ aiConsent, onAnswerAi, offline, savedAt, now, 
     setAsTab(openedAsTab(location.search, matchMedia("(display-mode: standalone)").matches));
   }, []);
 
+  // #235: one banner at a time, the most important first, so the list isn't pushed off the screen
+  const which = reauth ? "reauth" : offline ? "offline" : appUpdate ? "update" : asTab ? "asTab" : aiConsent === null ? "ai" : null;
   return (
     <>
-      {asTab && (
+      {which === "asTab" && (
         <section className="banner update" aria-labelledby="as-tab">
           <span>
             <b id="as-tab">Chrome is showing DELT with its address bar.</b> Update Chrome from the Play Store, then in Settings → Apps → DELT → Storage, clear storage and open DELT again.
@@ -39,7 +41,7 @@ export default function Banners({ aiConsent, onAnswerAi, offline, savedAt, now, 
           </span>
         </section>
       )}
-      {appUpdate && (
+      {which === "update" && appUpdate && (
         <section className="banner update" aria-labelledby="app-update">
           <span>
             <b id="app-update">A new version of the DELT app is ready.</b> Tap Update, then Install when Android asks. You stay signed in.
@@ -60,7 +62,7 @@ export default function Banners({ aiConsent, onAnswerAi, offline, savedAt, now, 
           </span>
         </section>
       )}
-      {aiConsent === null && !offline && (
+      {which === "ai" && (
         <section className="banner ask" aria-labelledby="ai-ask">
           <span>
             <b id="ai-ask">Let AI double-check unclear mail?</b> DELT sorts with simple rules. For mail they aren&apos;t sure about, it can send that mail&apos;s sender, subject and opening
@@ -80,14 +82,14 @@ export default function Banners({ aiConsent, onAnswerAi, offline, savedAt, now, 
           </span>
         </section>
       )}
-      {offline && (
+      {which === "offline" && (
         <div className="banner offline" role="status">
           <span>
             <b>You&apos;re offline.</b> {savedAt ? `Showing your inbox from ${ago(savedAt, now)}.` : "Nothing saved on this phone yet."} Changes are paused until you&apos;re back online.
           </span>
         </div>
       )}
-      {reauth && (
+      {which === "reauth" && (
         <div className="banner" role="alert">
           <span>
             <b>DELT can&apos;t reach your Gmail.</b> Its access was removed in your Google account, so new mail won&apos;t show up. Sign in again to fix it.
