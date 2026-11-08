@@ -127,7 +127,7 @@ Create the tables by running [`supabase/schema.sql`](supabase/schema.sql) in the
 - text contrast for every pile in every theme, read straight from the CSS
 - deleting a student's data leaves nothing behind
 
-`npm run e2e` runs 39 browser checks (Playwright) on a phone and a desktop screen with fake mail: swiping, reading a mail, moving piles, every Appearance option, scrolling back through 450 mails, search, keyboard-only use, and accessibility checks (axe). GitHub Actions runs both on every push.
+`npm run e2e` runs the browser checks (Playwright) on phone, iPhone and desktop screens with fake mail: swiping, reading a mail, moving piles, every Appearance option, scrolling back through 450 mails, search, keyboard-only use, and accessibility checks (axe). GitHub Actions runs both on every push.
 
 `scripts/eval.ts` compares the rules against Gemini and your own corrections on your inbox. It only reads.
 

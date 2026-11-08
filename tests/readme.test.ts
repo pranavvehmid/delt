@@ -4,7 +4,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 
-const COUNT = /\b\d+\s*(%20)?(tests?|checks?)\b/i;
+const COUNT = /\b\d+\s*(%20)?((browser|unit)\s+)?(tests?|checks?)\b/i;
 
 test("#180: the README and its stats image carry no hand-typed test counts", () => {
   for (const f of ["README.md", "assets/stats.svg"]) {
