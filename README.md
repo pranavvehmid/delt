@@ -11,14 +11,14 @@
 <p align="center">
   <a href="https://delt-mu.vercel.app"><img alt="Web app" src="https://img.shields.io/badge/web-delt--mu.vercel.app-1c1917?style=flat-square"></a>
   <a href="https://github.com/pranavvehmid/delt/releases/latest"><img alt="Android release" src="https://img.shields.io/github/v/release/pranavvehmid/delt?style=flat-square&label=android&color=1c1917"></a>
-  <a href="#tests"><img alt="231 tests passing" src="https://img.shields.io/badge/tests-231%20passing-1c1917?style=flat-square"></a>
+  <a href="https://github.com/pranavvehmid/delt/actions/workflows/test.yml"><img alt="Tests" src="https://github.com/pranavvehmid/delt/actions/workflows/test.yml/badge.svg?branch=main"></a>
   <img alt="Free" src="https://img.shields.io/badge/cost-free-c8102e?style=flat-square">
 </p>
 
 DELT reads your VIT Gmail and sorts every mail into four piles, so exams, registrations, fees and deadlines are always at the top. It works for any `@vitstudent.ac.in` account and costs nothing to run.
 
 <p align="center">
-  <img src="assets/stats.svg" alt="231 tests passing · 14 mail apps studied · 3000 random mails, no crash · 0 rupees to run" width="100%">
+  <img src="assets/stats.svg" alt="3 screen sizes tested · 14 mail apps studied · 3000 random mails, no crash · 0 rupees to run" width="100%">
 </p>
 
 ## How it sorts
@@ -114,7 +114,7 @@ Create the tables by running [`supabase/schema.sql`](supabase/schema.sql) in the
 
 ## Tests
 
-`npm test` runs 192 checks in a few seconds:
+`npm test` runs the unit checks in a few seconds:
 
 - 80+ real VIT mails and the pile each should land in
 - dates in the formats VIT uses (`15/11/2026`, `15th Nov`, `Nov 15`, `tomorrow 6 PM`), year rollover, impossible dates like 31 Feb
