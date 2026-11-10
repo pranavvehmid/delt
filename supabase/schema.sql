@@ -143,3 +143,21 @@ alter table users add column if not exists ai_consent boolean;
 
 -- ---------- Nov 2026: #40 sync health ----------
 alter table users add column if not exists last_sync_error text;
+
+-- ---------- Nov 2026: #106 a lock for the "later" phase (AI re-checks, Gmail labels) ----------
+-- Separate from claim_sync, so a refresh tap still works while the later phase runs, but two tabs
+-- or devices can't run AI re-checks and label writes for the same student at once.
+-- Claimed if no later phase is running, or the last one started more than p_lock_seconds ago
+-- (the route's limit is 120 s, so a crashed run frees the lock by itself).
+alter table users add column if not exists later_started_at timestamptz;
+create or replace function claim_sync_later(p_email text, p_lock_seconds int default 150)
+returns boolean
+language sql
+as $$
+  update users set later_started_at = now()
+  where email = p_email
+    and (later_started_at is null or later_started_at < now() - make_interval(secs => p_lock_seconds))
+  returning true;
+$$;
+revoke all on function claim_sync_later(text, int) from public, anon, authenticated;
+grant execute on function claim_sync_later(text, int) to service_role;
