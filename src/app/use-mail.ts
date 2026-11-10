@@ -21,6 +21,8 @@ export function useMail(email: string) {
   const [savedAt, setSavedAt] = useState<number | null>(null);
   // #210: the server answered with an error (not offline): say so instead of loading forever
   const [loadError, setLoadError] = useState(false);
+  // #152: the session ran out while the app was open: say so and offer sign-in, keep the screen
+  const [signedOut, setSignedOut] = useState(false);
 
   const mailsRef = useRef<EmailRow[] | null>(null);
   mailsRef.current = mails;
@@ -38,9 +40,10 @@ export function useMail(email: string) {
       return false;
     }
     if (r.status === 401) {
-      location.reload();
+      setSignedOut(true);
       return false;
     }
+    setSignedOut(false);
     setOffline(false);
     setLoadError(!r.ok);
     if (r.ok) {
@@ -70,6 +73,7 @@ export function useMail(email: string) {
     setLoadingOlder(true);
     try {
       const r = await fetch(`/api/emails?before=${encodeURIComponent(cursor)}&limit=${PAGE_SIZE}`);
+      if (r.status === 401) setSignedOut(true);
       if (r.ok) {
         const j = await r.json();
         const page: EmailRow[] = j.emails ?? [];
@@ -112,7 +116,7 @@ export function useMail(email: string) {
     return () => clearTimeout(t);
   }, [mails, due, offline, savedAt, email]);
 
-  return { loadError, mails, setMails, more, loadingOlder, due, setDue, reauth, setReauth, syncProblem, aiConsent, setAiConsent, offline, setOffline, savedAt, load, loadOlder };
+  return { loadError, signedOut, mails, setMails, more, loadingOlder, due, setDue, reauth, setReauth, syncProblem, aiConsent, setAiConsent, offline, setOffline, savedAt, load, loadOlder };
 }
 
 /** Search covers all stored mail on the server, not only the loaded pages (#11). */
@@ -126,17 +130,22 @@ export function useSearch(query: string) {
       setSearching(false);
       return;
     }
-    let alive = true;
+    // #149: a newer query cancels the request still out for the old one, so fast typing on a
+    // slow connection doesn't send searches that pile up behind each other.
+    const ctl = new AbortController();
     setSearching(true);
     const t = setTimeout(async () => {
       try {
-        const r = await fetch(`/api/emails?q=${encodeURIComponent(q)}&limit=200`);
-        if (alive && r.ok) setHits((await r.json()).emails ?? []);
+        const r = await fetch(`/api/emails?q=${encodeURIComponent(q)}&limit=200`, { signal: ctl.signal });
+        if (r.ok) {
+          const emails = (await r.json()).emails ?? [];
+          if (!ctl.signal.aborted) setHits(emails);
+        }
       } catch {}
-      if (alive) setSearching(false);
+      if (!ctl.signal.aborted) setSearching(false);
     }, 300);
     return () => {
-      alive = false;
+      ctl.abort();
       clearTimeout(t);
     };
   }, [query]);

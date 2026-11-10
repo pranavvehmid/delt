@@ -281,7 +281,9 @@ svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width:
 .mv-due { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; margin-top: 12px; padding: 8px 12px 8px 16px; border-radius: 14px; background: var(--surface); font-size: 14px; }
 .mv-due.lv-over b, .mv-due.lv-soon b { color: var(--due-soon); }
 .mv-due.lv-week b { color: var(--due-week); }
-.mv-sum { margin: 12px 0 0; padding: 12px 16px; border-radius: 14px; background: var(--surface); font-size: 14px; display: flex; flex-direction: column; gap: 4px; }
+/* #101: "Summary" runs into the text on its line instead of taking a line of its own */
+.mv-sum { margin: 12px 0 0; padding: 12px 16px; border-radius: 14px; background: var(--surface); font-size: 14px; }
+.mv-sum .lbl { margin-right: 8px; }
 .mv-unsub { display: inline-block; margin-top: 12px; font-size: 12.5px; text-decoration: underline; }
 /* #72: attachments. Pictures as thumbnails (tap to view), other files as cards */
 .mv-att { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
@@ -330,10 +332,15 @@ svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width:
   .appbar { padding-left: 24px; padding-right: 24px; }
   .dayhead { margin: 0 -24px; padding-left: 24px; padding-right: 24px; }
   .chips { margin: 16px -24px 8px; padding: 2px 24px; }
+  .mastrow > .searchbtn { margin-right: 24px; }
 }
 
 /* the masthead and time column: only Minimal and Grid show them (look-shared.css) */
 .mast, .when { display: none; }
+/* #102: on a phone the search button sits at the end of the section titles, on the avatar's right edge */
+.mastrow { display: flex; align-items: center; }
+.mastrow > .mast { flex: 1; min-width: 0; }
+.mastrow > .searchbtn { flex: none; margin-right: 16px; }
 
 /* four theme choices: their own full-width row */
 .ap-row:has(.seg button:nth-child(4)) { flex-direction: column; align-items: stretch; gap: 8px; padding: 12px 0; }
@@ -361,6 +368,10 @@ svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width:
 /* =========================================================
    Accessibility and new pieces (issues #8 to #11)
    ========================================================= */
+/* #236: skip buttons, just above the top edge until a keyboard user tabs onto one */
+.skips { position: fixed; top: 8px; left: 8px; z-index: 100; display: flex; gap: 8px; }
+.skips button { min-height: 44px; padding: 0 16px; transition: none; background: var(--text); color: var(--bg); font-size: 14px; font-weight: 600; white-space: nowrap; outline-offset: 2px; }
+.skips button:not(:focus) { position: absolute; top: 0; left: 0; transform: translateY(calc(-100% - 16px)); }
 .sr-only { position: absolute !important; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
 /* row buttons show when a keyboard reaches them, not only on hover */
 .row:focus-within .row-acts.hover-only { opacity: 1; pointer-events: auto; }

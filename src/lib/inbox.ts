@@ -124,6 +124,12 @@ export function ago(t: number, now: number) {
   return `${Math.round(s / 86400)} d ago`;
 }
 
+/** The whole due label: "Overdue", or "Due " + dueText ("Due tomorrow"). Never "Due overdue". */
+export function dueLabel(iso: string, now: number) {
+  const t = dueText(iso, now);
+  return t === "overdue" ? "Overdue" : `Due ${t}`;
+}
+
 /** Due text for chips: "overdue", "today 6 pm", "tomorrow", "in 3 days", "12 Nov". */
 export function dueText(iso: string, now: number) {
   const t = Date.parse(iso);
@@ -287,6 +293,25 @@ export function gapText(receivedAt: string, now: number, leader = false): string
   if (days >= 1) return `+${days}D${h % 24 ? ` ${h % 24}H` : ""}`;
   if (h >= 1) return `+${h}H${m % 60 ? ` ${m % 60}M` : ""}`;
   return `+${m}M`;
+}
+
+// ---------- #165: rows redraw only when the time they show changes ----------
+/** Everything a row shows that depends on the clock, as one string: the time or day it came in,
+ *  the deadline's words and colour, and (Grid only) the gap. Equal strings mean the row would look
+ *  the same, so the 30-second tick can skip it. */
+export function rowClock(m: Pick<Mail, "received_at" | "deadline" | "is_done">, now: number, grid: boolean, leader: boolean): string {
+  const due = m.deadline && !m.is_done ? `${dueText(m.deadline, now)}/${dueLevel(m.deadline, now)}` : "";
+  return [shortTime(m.received_at, now), due, grid ? gapText(m.received_at, now, leader) : ""].join("|");
+}
+
+type RowProps = { m: Pick<Mail, "received_at" | "deadline" | "is_done">; now: number; pos?: number; look?: string };
+/** React.memo comparator for a mail row: every prop must be the same object or value, except `now`,
+ *  which only counts when it changes what the row shows (see rowClock). */
+export function sameRow<P extends RowProps>(a: P, b: P): boolean {
+  for (const k of new Set([...Object.keys(a), ...Object.keys(b)]) as Set<keyof P>) if (k !== "now" && a[k] !== b[k]) return false;
+  if (a.now === b.now) return true;
+  const grid = b.look === "grid", leader = b.pos === 1;
+  return rowClock(b.m, a.now, grid, leader) === rowClock(b.m, b.now, grid, leader);
 }
 
 // ---------- #23: what needs you, above everything else ----------
