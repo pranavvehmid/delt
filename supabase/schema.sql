@@ -87,6 +87,9 @@ alter table users add column if not exists ai_day text;
 alter table users add column if not exists ai_calls int not null default 0;
 -- #4/#5: when the student last opened the app; active students are synced more often.
 alter table users add column if not exists last_seen_at timestamptz;
+-- The Google display name, saved at sign-in (src/auth.ts); the register number in it gives the batch.
+-- Without this column a fresh database rejects every sign-in.
+alter table users add column if not exists name text;
 
 -- Small shared settings, e.g. when the shared Gemini key may be used again.
 create table if not exists app_state (
@@ -143,3 +146,34 @@ alter table users add column if not exists ai_consent boolean;
 
 -- ---------- Nov 2026: #40 sync health ----------
 alter table users add column if not exists last_sync_error text;
+
+-- ---------- Nov 2026: #121 indexes for what every sync and notify look for ----------
+-- Partial indexes: each holds only the rows a query filters for (the flags are rarely flipped),
+-- so they stay small and the queries stop scanning every stored mail of the student.
+-- sender rules: user_corrected = true, newest first (sync.ts, api/rules)
+create index if not exists emails_user_corrected_idx on emails (user_email, received_at desc) where user_corrected;
+-- Gmail labels still to put on (sync step 5)
+create index if not exists emails_user_unlabeled_idx on emails (user_email, received_at desc) where not gmail_labeled;
+-- the unread mirror (sync)
+create index if not exists emails_user_unread_idx on emails (user_email, received_at) where unread;
+-- (no index for the AI re-check backlog: most mail is rules-sorted, so one would hold most rows)
+-- urgent mail not yet notified (notify.ts); deadline reminders use emails_user_deadline_idx
+create index if not exists emails_user_unnotified_idx on emails (user_email) where priority = 'very_important' and not notified;
+
+-- ---------- Nov 2026: #106 a lock for the "later" phase (AI re-checks, Gmail labels) ----------
+-- Separate from claim_sync, so a refresh tap still works while the later phase runs, but two tabs
+-- or devices can't run AI re-checks and label writes for the same student at once.
+-- Claimed if no later phase is running, or the last one started more than p_lock_seconds ago
+-- (the route's limit is 120 s, so a crashed run frees the lock by itself).
+alter table users add column if not exists later_started_at timestamptz;
+create or replace function claim_sync_later(p_email text, p_lock_seconds int default 150)
+returns boolean
+language sql
+as $$
+  update users set later_started_at = now()
+  where email = p_email
+    and (later_started_at is null or later_started_at < now() - make_interval(secs => p_lock_seconds))
+  returning true;
+$$;
+revoke all on function claim_sync_later(text, int) from public, anon, authenticated;
+grant execute on function claim_sync_later(text, int) to service_role;

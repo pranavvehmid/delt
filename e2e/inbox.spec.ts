@@ -1,6 +1,6 @@
 // Issue #12: the main screens in a real browser, with fake mail (see mock.ts).
 import { expect, test } from "@playwright/test";
-import { bigInbox, mockApi, smallInbox, swipe } from "./mock";
+import { bigInbox, mockApi, searchBox, smallInbox, swipe } from "./mock";
 
 const row = (id: string) => `li.row[data-mail="${id}"]`;
 
@@ -30,6 +30,22 @@ test.describe("swiping (phone)", () => {
     expect(api.patches).toContainEqual({ id: "hack", is_done: true });
     await page.getByRole("button", { name: "Undo" }).click();
     await expect(page.locator(row("hack"))).not.toHaveClass(/done/);
+  });
+
+  test("two swipes, two Undos: the first action's Undo comes back after the second's (#212)", async ({ page }) => {
+    await mockApi(page, smallInbox());
+    await page.goto("/e2e");
+    await swipe(page, row("hack"), -130);
+    await expect(page.locator(row("hack"))).toHaveClass(/done/);
+    await swipe(page, row("club"), -130);
+    await expect(page.locator(row("club"))).toHaveClass(/done/);
+    const undo = page.getByRole("status").getByRole("button", { name: "Undo" });
+    await undo.click();
+    await expect(page.locator(row("club"))).not.toHaveClass(/done/);
+    await expect(page.locator(row("hack"))).toHaveClass(/done/);
+    await undo.click(); // the first swipe's Undo is back
+    await expect(page.locator(row("hack"))).not.toHaveClass(/done/);
+    await expect(page.getByRole("status")).toHaveCount(0);
   });
 
   test("a short drag does nothing, and a swipe never opens the mail", async ({ page }) => {
@@ -112,7 +128,7 @@ test("a busy inbox loads older mail on scroll, and search finds mail that isn't 
   await page.evaluate(() => scrollTo(0, 0));
   await page.reload();
   await expect(page.locator("li.row")).toHaveCount(200);
-  await page.getByRole("textbox", { name: "Search mail" }).fill("scholarship");
+  await (await searchBox(page)).fill("scholarship");
   await expect(page.locator(row("ancient"))).toBeVisible();
   expect(api.emailRequests.some((s) => s.includes("q=scholarship"))).toBe(true);
   await page.getByRole("button", { name: "Clear search" }).click();
@@ -125,6 +141,43 @@ test("removed Google access shows a Sign in again banner", async ({ page }) => {
   const banner = page.getByRole("alert").filter({ hasText: "can't reach your Gmail" });
   await expect(banner).toBeVisible();
   await expect(banner.getByRole("button", { name: "Sign in again" })).toBeVisible();
+});
+
+test("a session that runs out mid-use says so and keeps the screen as it was, no reload (#152)", async ({ page }) => {
+  await mockApi(page, smallInbox());
+  await page.goto("/e2e");
+  await expect(page.locator(row("fee"))).toBeVisible();
+  await page.evaluate(() => ((window as unknown as { stillHere: boolean }).stillHere = true));
+  await (await searchBox(page)).fill("hostel");
+  await expect(page.locator(row("cat1"))).toHaveCount(0);
+  // the session expires: every API call now answers 401
+  await page.route("**/api/**", (r) => r.fulfill({ status: 401, contentType: "application/json", body: '{"error":"Not signed in"}' }));
+  await page.locator("button.sync").filter({ visible: true }).first().click();
+  const banner = page.getByRole("alert").filter({ hasText: "You've been signed out" });
+  await expect(banner).toBeVisible();
+  await expect(banner.getByRole("button", { name: "Sign in again" })).toBeVisible();
+  expect(await page.evaluate(() => (window as unknown as { stillHere?: boolean }).stillHere)).toBe(true);
+  await expect(await searchBox(page)).toHaveValue("hostel");
+  await expect(page.getByText("Couldn't reach Gmail")).toHaveCount(0);
+});
+
+test("a failed check says whose side failed: DELT or Gmail, never 'No new mail' (#150)", async ({ page }) => {
+  const api = await mockApi(page, smallInbox());
+  await page.goto("/e2e");
+  await expect(page.locator(row("fee"))).toBeVisible();
+  const refresh = page.locator("button.sync").filter({ visible: true }).first();
+
+  api.sync = { status: 500, body: { error: "Something went wrong on DELT's side. Try again." } };
+  await refresh.click();
+  await expect(page.getByText("Something went wrong on DELT's side. Try again.")).toBeVisible();
+  await expect(page.getByText("No new mail")).toHaveCount(0);
+  await expect(page.locator(row("fee"))).toBeVisible(); // the list DELT already has stays
+
+  api.sync = { status: 502, body: { error: "Gmail didn't answer. Try again in a moment." } };
+  await expect(refresh).toBeEnabled();
+  await refresh.click();
+  await expect(page.getByText("Gmail didn't answer. Try again in a moment.")).toBeVisible();
+  await expect(page.getByText("Couldn't reach Gmail")).toHaveCount(0);
 });
 
 test("Delete my data asks first, then deletes and signs out", async ({ page }) => {
@@ -192,7 +245,7 @@ test("iPhone: tapping search doesn't zoom the page, and nothing scrolls sideways
   test.skip(!isMobile, "phone screens only");
   await mockApi(page, smallInbox());
   await page.goto("/e2e");
-  const box = page.getByRole("textbox", { name: "Search mail" });
+  const box = await searchBox(page);
   expect(await box.evaluate((el) => parseFloat(getComputedStyle(el).fontSize))).toBeGreaterThanOrEqual(16);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true);
   await page.locator(row("cat1")).locator(".row-main").click();
@@ -293,7 +346,7 @@ test("All starts with what needs you: due soon first, then unread urgent; not sh
   await page.getByRole("navigation", { name: "Filter by pile" }).getByRole("button", { name: /^Urgent/ }).click();
   await expect(needs).toHaveCount(0);
   await page.getByRole("navigation", { name: "Filter by pile" }).getByRole("button", { name: /^All/ }).click();
-  await page.getByRole("textbox", { name: "Search mail" }).fill("hostel");
+  await (await searchBox(page)).fill("hostel");
   await expect(needs).toHaveCount(0);
 });
 
@@ -448,11 +501,31 @@ test("an empty search says what was searched and offers to widen it; matches are
   await mockApi(page, smallInbox());
   await page.goto("/e2e");
   await page.getByRole("navigation", { name: "Filter by pile" }).getByRole("button", { name: /^Noise/ }).click();
-  await page.getByRole("textbox", { name: "Search mail" }).fill("hostel");
+  await (await searchBox(page)).fill("hostel");
   await expect(page.getByText("Nothing matches “hostel” in Noise")).toBeVisible();
   await page.getByRole("button", { name: "Search all piles" }).click();
   await expect(page.locator(row("fee"))).toBeVisible();
   await expect(page.locator(row("fee")).locator("mark")).toHaveText("Hostel");
+});
+
+test("typing on, while a slow search is still out, cancels it; the newest search wins (#149)", async ({ page }) => {
+  await mockApi(page, smallInbox());
+  // searches take 3 s here, like a slow phone connection; everything else goes to the usual fake API
+  await page.route(/\/api\/emails\?.*q=/, async (route) => {
+    await new Promise((r) => setTimeout(r, 3000));
+    await route.fallback().catch(() => {}); // the app may have cancelled it meanwhile
+  });
+  const cancelled: string[] = [];
+  page.on("requestfailed", (r) => r.url().includes("q=") && cancelled.push(new URL(r.url()).searchParams.get("q") ?? ""));
+  const sent = page.waitForRequest(/q=hos(&|$)/);
+  await page.goto("/e2e");
+  const box = await searchBox(page);
+  await box.fill("hos");
+  await sent;
+  await box.fill("hostel");
+  await expect(page.locator(row("fee"))).toBeVisible({ timeout: 10_000 });
+  await expect(page.locator(row("cat1"))).toHaveCount(0);
+  expect(cancelled).toEqual(["hos"]);
 });
 
 test("the sign-in page shows a sorted example, Google's button and the Android app (#58)", async ({ page }) => {
@@ -518,4 +591,36 @@ test("a sheet over the reading pane: Esc closes only the sheet, and J/K wait (#4
   await expect(dialog).toHaveCount(0);
   await expect(page.locator(".mailview.pane")).toBeVisible();
   await expect(page.locator("#mv-title")).toHaveText(title!);
+});
+
+test("on a phone, search waits behind a top-bar button so the list starts higher (#102)", async ({ page, isMobile }) => {
+  test.skip(!isMobile, "phone screens only; laptops keep search in the top bar");
+  await mockApi(page, smallInbox());
+  await page.goto("/e2e");
+  const box = page.getByRole("textbox", { name: "Search mail" });
+  const button = page.getByRole("button", { name: "Search mail" });
+  await expect(page.locator(row("cat1"))).toBeVisible();
+  await expect(box).toHaveCount(0);
+  await expect(button).toHaveAttribute("aria-expanded", "false");
+
+  // opening puts the cursor straight in the box
+  await button.click();
+  await expect(box).toBeFocused();
+  await expect(button).toHaveAttribute("aria-expanded", "true");
+
+  // Esc folds it away again; so does tapping elsewhere while it's empty
+  await page.keyboard.press("Escape");
+  await expect(box).toHaveCount(0);
+  await button.click();
+  await page.locator("main").click({ position: { x: 4, y: 4 } });
+  await expect(box).toHaveCount(0);
+
+  // a search in progress keeps it open, and clearing closes it
+  await button.click();
+  await box.fill("hostel");
+  await page.locator("main").click({ position: { x: 4, y: 4 } });
+  await expect(box).toBeVisible();
+  await page.getByRole("button", { name: "Clear search" }).click();
+  await expect(box).toHaveCount(0);
+  await expect(page.locator(row("cat1"))).toBeVisible();
 });

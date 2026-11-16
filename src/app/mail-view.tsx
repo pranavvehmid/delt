@@ -8,7 +8,7 @@ import type { FullMessage } from "@/lib/gmail";
 import MailFrame from "./mail-frame";
 import MailAttachments from "./mail-attachments";
 import { listedFiles } from "@/lib/attachments";
-import { F, PILES, cleanSender, cleanSubject, dueLevel, dueText, pileLabel, senderDomain, wrongPileLink } from "@/lib/inbox";
+import { F, PILES, cleanSender, cleanSubject, dueLevel, dueLabel, pileLabel, senderDomain, wrongPileLink } from "@/lib/inbox";
 import { calendarLink } from "@/lib/insights";
 import { useDialog } from "./use-dialog";
 
@@ -157,16 +157,11 @@ export default function MailView({
               ))}
             </div>
           )}
-          {row && (
-            <a className="mv-report muted" href={wrongPileLink(senderDomain(row.from_address), pileLabel(row.priority), row.reason)} target="_blank" rel="noreferrer" title="Opens a public GitHub issue with the sender's domain and pile only, never the subject.">
-              Wrong pile? Report it ↗
-            </a>
-          )}
 
           {row?.deadline && (
             <div className={`mv-due lv-${dueLevel(row.deadline, now)}`}>
               <span>
-                <b>Due {dueText(row.deadline, now)}</b>
+                <b>{dueLabel(row.deadline, now)}</b>
                 <span className="muted"> · {F.dueFull.format(new Date(row.deadline))}</span>
               </span>
               <a className="pillbtn" href={calendarLink(subject, row.deadline, row.summary)} target="_blank" rel="noreferrer">+ Calendar</a>
@@ -209,6 +204,13 @@ export default function MailView({
               <MailFrame key={id} id={id} msg={msg} />
             )}
           </div>
+
+          {/* #101: under the mail, so the mail itself starts higher; the pile picker above is still the main way to fix a pile */}
+          {row && (
+            <a className="mv-report muted" href={wrongPileLink(senderDomain(row.from_address), pileLabel(row.priority), row.reason)} target="_blank" rel="noreferrer" title="Opens a public GitHub issue with the sender's domain and pile only, never the subject.">
+              Wrong pile? Report it ↗
+            </a>
+          )}
         </article>
       </div>
     </div>

@@ -1,6 +1,6 @@
 // #67–#70: the layout is measured, not eyeballed. Edges, baselines and sizes that should match do.
 import { expect, test, type Page } from "@playwright/test";
-import { mockApi, smallInbox } from "./mock";
+import { mockApi, searchBox, smallInbox } from "./mock";
 
 const LOOKS = ["minimal", "glyph", "grid"] as const;
 
@@ -28,6 +28,7 @@ const near = (a: number, b: number, what: string, tol = 1) => expect(Math.abs(a 
 for (const look of LOOKS) {
   test(`${look}: header, search and rows share the same left and right edges (#67)`, async ({ page }) => {
     await open(page, look);
+    await searchBox(page); // #102: on a phone, open it from the top bar first
     const [logo, search, avatar, row] = await Promise.all([box(page, ".logo"), box(page, ".searchbar"), box(page, ".avatar.me"), box(page, "li.row")]);
     const width = await page.evaluate(() => innerWidth);
     if (width >= 1000) {
@@ -230,6 +231,7 @@ test("Minimal: day headings and sender names don't share a style (#69)", async (
 // #70: small details
 test("the icons in the header and search bar are one size (#70)", async ({ page }) => {
   await open(page, "minimal");
+  await searchBox(page);
   const sizes = await page.locator(".appbar svg:visible, .searchbar svg:visible").evaluateAll((s) => [...new Set(s.map((e) => Math.round(e.getBoundingClientRect().width)))]);
   expect(sizes).toEqual([20]);
 });
@@ -298,5 +300,22 @@ for (const look of LOOKS) {
     await expect(sk).toBeVisible();
     const [row, bar] = [await sk.boundingBox(), await sk.locator(".row-text .sk").nth(1).boundingBox()];
     expect(bar!.width).toBeGreaterThan(row!.width * 0.5);
+  });
+}
+
+// #101: on a phone the mail's own text starts in the top half; "Wrong pile?" waits under it.
+for (const look of LOOKS) {
+  test(`${look}: on a phone the open mail's text starts in the top 56% of the screen (#101)`, async ({ page, isMobile }) => {
+    test.skip(!isMobile, "phone screens only");
+    await open(page, look);
+    await page.locator('li.row[data-mail="fee"] .row-main').click(); // a mail with a deadline and a summary: the tallest header
+    await expect(page.locator(".mv-frame")).toBeVisible();
+    const [body, report, sum] = [await box(page, ".mv-body"), await box(page, ".mv-report"), await box(page, ".mv-sum")];
+    const h = await page.evaluate(() => innerHeight);
+    expect(body.top / h, `mail text at ${Math.round((body.top / h) * 100)}%`).toBeLessThan(0.56); // was 55-64% before #101
+    expect(report.top).toBeGreaterThanOrEqual(body.bottom); // under the mail, not above it
+    // "Summary" shares a line with the text: the box is one line tall for a one-line summary
+    const lbl = await box(page, ".mv-sum .lbl");
+    expect(Math.abs(lbl.top - sum.top - (sum.height - lbl.height) / 2)).toBeLessThanOrEqual(6);
   });
 }
