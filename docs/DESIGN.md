@@ -114,3 +114,25 @@ and that every name here still exists).
 - Other helpers: `inbox.ts` (filter, group by day, deadline buckets, relative time), `insights.ts` (duplicates and other pure helpers), `offline.ts` (the last inbox on this device), `logo.ts` (the wordmark as shapes, for icons).
 - `src/app/api/`: the routes (`emails`, `sync`, `rules`, `push`, `settings`, `account`, `health`, `app-version`, `auth`).
 
+
+## Account-specific sorting pilot
+
+Route by the signed-in mailbox's configured institution, not by a sender's claimed domain. VIT addresses use the VIT route, which can consider campus office, programme and eligibility. External Google accounts use the personal route, where a direct request, an active correspondence or an application outcome may be important even when the sender is outside VIT. Existing pilot accounts retain their current labels until a new sorter has been evaluated on consented examples.
+
+Use normalized signals in the 0–1 range. These are initial weights to test, not learned probabilities.
+
+| Signal | VIT weight | Personal weight | Evidence |
+| --- | ---: | ---: | --- |
+| Deadline urgency | 30 | 20 | Time remaining on an active task with an extracted date |
+| Action required | 20 | 25 | A direct, unresolved request to the mailbox owner |
+| Outcome | 10 | 15 | A result or status change tied to a tracked application, exam or payment |
+| Opportunity | 10 | 10 | Eligibility, open application window and stated interests |
+| Reply history | 5 | 15 | Prior replies or a pending follow-up in the same conversation |
+| Prior review | 10 | 15 | The account owner's corrections on similar mail |
+| Campus relevance | 15 | 0 | Known campus source and eligibility for the recipient |
+
+Sum the weighted signals. For a deadline due in `h` hours, use `clamp(1 - h / 168, 0, 1)` while the action is open. An overdue task needs separate evidence that it is still actionable. Treat missing signals as unknown and report the sum of available weights as coverage. Do not label low-coverage mail as Noise solely because its score is low. An explicit rule from the account owner can override importance.
+
+Score scam risk separately from importance. Suspicious requests can be both urgent and risky. Use verified sender authentication where available, reply-address and link mismatches, and requests for credentials, one-time codes or unusual payments. Show the evidence with a review prompt. A missing authentication result is unknown, and a familiar sender never clears a risk flag by itself. Do not auto-delete messages or auto-follow links.
+
+For each account route, measure urgent recall and precision, phantom-deadline rate, outcome detection F1, missed follow-ups, and scam warning precision and recall. Report sample counts and confidence intervals. Split held-out examples by mailbox and time so the same repeated message cannot appear in training and evaluation. Compare both routes against the current sorter on their own cohorts. Weights, decision thresholds and confidence require pilot data before enabling automated rerouting.
