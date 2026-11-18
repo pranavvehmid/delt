@@ -98,7 +98,7 @@
 :root:is([data-look="minimal"], [data-look="grid"]) .sum { font-size: 14px; font-weight: 400; color: rgb(var(--ink) / var(--a2)); margin-top: 2px; }
 :root:is([data-look="minimal"], [data-look="grid"]) .row.unread :is(.subj, .from) { font-weight: 500; }
 :root:is([data-look="minimal"], [data-look="grid"]) .meta { margin-top: 8px; }
-:root:is([data-look="minimal"], [data-look="grid"]) .row-text > .meta:not(:has(.due, .donemark)) { display: none; }
+:root:is([data-look="minimal"], [data-look="grid"]) .row-text > .meta:not(:has(.due, .donemark, .row-pile)) { display: none; }
 :root:is([data-look="minimal"], [data-look="grid"]) :is(.due, .donemark) { background: none !important; padding: 0; height: auto; font-size: 12.5px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.08em; color: rgb(var(--ink) / max(0.7, var(--floor))); }
 :root:is([data-look="minimal"], [data-look="grid"]) .due:is(.lv-over, .lv-soon) { color: var(--due-soon); }
 :root:is([data-look="minimal"], [data-look="grid"]) .row.done { --lv: 0; }

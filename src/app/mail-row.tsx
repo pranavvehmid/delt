@@ -67,7 +67,7 @@ export const MailRow = memo(function MailRow({ m, now, pos = 0, on, current = fa
   ].filter(Boolean).join(" ");
 
   return (
-    <li className={`row ink-${m.priority} ${m.unread ? "unread" : ""} ${m.is_done ? "done" : ""} ${dx ? "dragging" : ""} ${current ? "current" : ""}`} data-mail={m.id} data-pos={pos} style={{ "--i": Math.min(pos, 14) } as React.CSSProperties}>
+    <li className={`row ink-${m.priority} ${m.unread ? "unread" : ""} ${m.is_done ? "done" : ""} ${dx ? "dragging" : ""} ${current ? "current" : ""}`} data-mail={m.id} data-pos={pos} data-grid-intro={grid && pos > 0 && pos <= 8 ? "" : undefined} style={{ "--i": pos } as React.CSSProperties}>
       {dx !== 0 && (
       <div className={`swipe-bg ${dx > 0 ? "r" : "l"} ${Math.abs(dx) > LIMIT ? "armed" : ""}`} aria-hidden="true">
         <span>
@@ -115,8 +115,8 @@ export const MailRow = memo(function MailRow({ m, now, pos = 0, on, current = fa
             <span className="sum ell" id={`sum-${m.id}`}>
               {m.summary || m.snippet}
             </span>
-            {(glyph || m.is_done || (m.deadline && !m.is_done)) && (
             <span className="meta">
+              {!glyph && <span className="row-pile" aria-hidden="true">{pileLabel(m.priority)}</span>}
               {glyph && (
                 <span className={`tag p-${m.priority}`}>
                   <i className="tagdot" />
@@ -126,7 +126,6 @@ export const MailRow = memo(function MailRow({ m, now, pos = 0, on, current = fa
               {m.deadline && !m.is_done && <span className={`due lv-${dueLevel(m.deadline, now)}`}>{dueLabel(m.deadline, now)}</span>}
               {m.is_done && <span className="donemark">✓ Done</span>}
             </span>
-            )}
           </span>
           {grid && (
             <span className="gap" aria-hidden="true">

@@ -42,6 +42,23 @@ test("the inbox is a timing tower: P1 leads, rows sit flush, each has a pile-col
   // the team-colour stripe is the pile's flag colour: red for Urgent
   const stripe = await rows.first().locator(".row-text").evaluate((el) => getComputedStyle(el).boxShadow);
   expect(stripe).toContain("rgb(255, 59, 48)");
+  await expect(rows.first().locator(".row-pile")).toHaveText("Urgent");
+  await expect(rows.first().locator(".row-pile")).toBeVisible();
+});
+
+test("Grid's tabs and timing rows fit a 320px viewport", async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 700 });
+  const edges = await page.locator(".mast button, .mastrow .searchbtn, .row-main .gap").evaluateAll((elements) =>
+    elements.filter((el) => el.getClientRects().length).map((el) => ({
+      left: el.getBoundingClientRect().left,
+      right: el.getBoundingClientRect().right,
+    })),
+  );
+  expect(edges.length).toBeGreaterThan(2);
+  for (const edge of edges) {
+    expect(edge.left).toBeGreaterThanOrEqual(0);
+    expect(edge.right).toBeLessThanOrEqual(320);
+  }
 });
 
 test("panels use F1's rounded top-right corner and nothing else is rounded (#73)", async ({ page }) => {
@@ -55,7 +72,7 @@ test("panels use F1's rounded top-right corner and nothing else is rounded (#73)
 test.describe("motion (#75)", () => {
   test.use({ contextOptions: { reducedMotion: "no-preference" } });
   test("rows enter like F1's grid graphics: sweep, wipe, rise, 35ms apart, once", async ({ page }) => {
-    // beforeEach already loaded the page; load again with motion on and catch the entrance
+    await page.evaluate(() => localStorage.removeItem("delt-grid-intro-day"));
     await page.reload();
     await expect(page.locator("li.row .pos").first()).toBeVisible();
     const anims = await page.evaluate(() =>
@@ -71,11 +88,14 @@ test.describe("motion (#75)", () => {
     const sweep = (p: number) => anims.find((a) => a.name === "f1-sweep" && a.pos === p)!.delay;
     expect(sweep(2) - sweep(1)).toBe(35);
     // once settled, changing the filter draws rows straight away
-    await expect(page.locator("html")).toHaveClass(/settled/, { timeout: 5000 });
+    await expect(page.locator("html")).not.toHaveClass(/grid-intro/);
     await page.getByRole("navigation", { name: "Filter by pile" }).getByRole("button", { name: /^Later/ }).click();
     await expect(page.locator("li.row").first()).toBeVisible();
     const after = await page.evaluate(() => document.getAnimations().map((a) => (a as CSSAnimation).animationName).filter((n) => n?.startsWith("f1-")));
     expect(after.filter((n) => n !== "f1-bar")).toEqual([]);
+    await page.reload();
+    await expect(page.locator("li.row .pos").first()).toBeVisible();
+    await expect(page.locator("html")).not.toHaveClass(/grid-intro/);
   });
 });
 

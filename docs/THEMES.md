@@ -30,10 +30,12 @@ Tokens: top of `look-glyph.css`.
 Tokens: top of `look-grid.css`.
 - Palette now: carbon `#15151e`, panel `#1f1f27`, panel 2 `#2b2b35`, line `#38383f`, grey `#a3a3a8`,
   red `#e10600`; flags red `#ff3b30`, yellow `#ffd200`, green `#00d26a`, blue `#3d8bff` for the four piles.
-- Type: Saira variable; titles, positions and codes at `font-stretch: 125%`, weight 800.
+- Type: Saira at 125% width for display headlines and timing figures, with regular-width
+  Saira for mail. Caveat adds a handwritten accent to the overview title.
 - Shape: square panels with a 10px rounded top-right corner (`--corner`).
-- Motion: `--f1` expo-out; row entrance (band, wipe, rise), section bar draw, mail panel slide.
+- Motion: `--f1` expo-out; the first eight inbox rows get a band, wipe and rise once per
+  local day. Reduced-motion users get the rows immediately.
 - Driver colours: papaya, teal, navy, racing, sky, pink, gold.
-- **Status:** built after F1 TV graphics from memory. The user wants it rebuilt from F1's Instagram
-  and broadcast references (script first name + bold surname, grid intro, colour coding). That work
-  waits for `docs/f1-reference/` and will be specified in `docs/F1_STYLE_SPEC.md`.
+- The supplied broadcast intro informed the contrast between handwritten details,
+  heavy capitals and open title-card spacing. Inbox rows keep their timing layout and
+  spell out the priority so the stripe colour is only one cue.

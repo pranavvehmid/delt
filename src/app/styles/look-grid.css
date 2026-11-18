@@ -3,8 +3,8 @@
 /* =========================================================
    Grid: Formula 1's TV graphics (#73, #74).
    What the broadcast does, and so what this look does:
-   - Upright type, never italic. Titles, positions and codes in extra-wide heavy capitals
-     (Saira at 125% width, the closest free face to F1's own); reading text at normal width.
+   - Wide heavy capitals for the display type, a handwritten accent on the overview,
+     and normal-width type for messages.
    - Flat carbon panels (#15151E), white text, F1 grey (#949498), F1 red used sparingly:
      the header block, the leader, what's selected. No textures, kerbs or chequered flags.
    - One shape: a panel with a rounded top-right corner, as on F1's graphics and site.
@@ -68,13 +68,17 @@
 :root[data-look="grid"] .avatar.me { background: var(--accent); color: var(--on-accent); font: 800 14px/1 var(--font); font-stretch: 125%; border-radius: 0 8px 0 0 !important; }
 
 /* sections: wide heavy capitals; a red bar under the one you're on */
-:root[data-look="grid"] .mast { gap: 24px; padding-top: 16px; }
-:root[data-look="grid"] .mast button { position: relative; padding-bottom: 8px; font: 800 28px/1 var(--font); font-stretch: 125%; text-transform: uppercase; letter-spacing: 0; color: rgb(var(--ink) / var(--floor-lg)); }
+:root[data-look="grid"] .mast { gap: 16px; padding-top: 12px; }
+:root[data-look="grid"] .mast button { position: relative; padding-bottom: 8px; font: 850 22px/1.15 var(--font); font-stretch: 125%; text-transform: uppercase; letter-spacing: -0.025em; color: rgb(var(--ink) / var(--floor-lg)); }
 :root[data-look="grid"] .mast button.on { color: rgb(var(--ink)); box-shadow: none; }
 :root[data-look="grid"] .mast button.on::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 4px; background: var(--accent); }
-:root[data-look="grid"] .mast sup { top: 0.1em; margin-left: 8px; padding: 4px 8px; font: 700 12.5px/1 var(--font); background: var(--surface2); color: rgb(var(--ink)); display: inline-block; }
+:root[data-look="grid"] .mast sup { top: 0.1em; margin-left: 4px; padding: 4px; font: 700 12.5px/1 var(--font); background: var(--surface2); color: rgb(var(--ink)); display: inline-block; }
 :root[data-look="grid"] .mast button.on sup { background: var(--accent); color: var(--on-accent); }
-@media (min-width: 720px) { :root[data-look="grid"] .mast button { font-size: 34px; } }
+@media (min-width: 720px) {
+  :root[data-look="grid"] .mast { gap: 24px; padding-top: 16px; }
+  :root[data-look="grid"] .mast button { font-size: 34px; }
+  :root[data-look="grid"] .mast sup { margin-left: 8px; padding-inline: 8px; }
+}
 
 /* search: a carbon panel */
 :root[data-look="grid"] .searchbar { background: var(--surface); border-bottom: 2px solid var(--line); padding: 0 12px; }
@@ -114,6 +118,7 @@
 :root[data-look="grid"] .sum { font-family: var(--font); font-weight: 400; }
 :root[data-look="grid"] .row.unread .subj { font-weight: 600; }
 :root[data-look="grid"] .meta { margin-top: 4px; }
+:root[data-look="grid"] .row-pile { color: rgb(var(--ink) / var(--a2)); letter-spacing: 0.055em; text-transform: uppercase; }
 :root[data-look="grid"] .gap { display: block; align-self: start; padding-top: 2px; text-align: right; white-space: nowrap; font: 600 12.5px/1.25 var(--font); letter-spacing: 0.04em; font-variant-numeric: tabular-nums; color: rgb(var(--ink) / var(--a2)); }
 :root[data-look="grid"] .row[data-pos="1"] .gap { color: rgb(var(--ink)); }
 /* A06: the leader's position sits in an accent block (F1's tower marks P1 this way); red text on carbon was 3.7:1 */
@@ -146,7 +151,8 @@
 /* the open mail: a red rule under the bar, the subject as a title card */
 :root[data-look="grid"] .mv-bar { border-bottom: 2px solid var(--line); }
 :root[data-look="grid"] .mailview .mv-bar { box-shadow: inset 0 -2px 0 var(--c, var(--accent)); }
-:root[data-look="grid"] .mv-subj { font: 700 28px/1.15 var(--font); letter-spacing: 0; }
+:root[data-look="grid"] .mv-subj { font: 750 28px/1.12 var(--font); letter-spacing: -0.025em; overflow-wrap: anywhere; }
+@media (min-width: 720px) { :root[data-look="grid"] .mv-subj { font-size: 34px; } }
 :root[data-look="grid"] :is(.mv-due, .mv-sum) { background: var(--surface); box-shadow: none; }
 :root[data-look="grid"] .mv-due:is(.lv-over, .lv-soon) { box-shadow: inset 3px 0 0 var(--due-soon); }
 :root[data-look="grid"] .lbl { font: 700 12.5px/1 var(--font); letter-spacing: 0.08em; text-transform: uppercase; }
@@ -190,24 +196,30 @@
 /* the five pile filters fit a 360px phone */
 :root[data-look="grid"] .chips { gap: 16px; }
 :root[data-look="grid"] .fchip { font-size: 12.5px; letter-spacing: 0.04em; }
+@media (max-width: 389px) {
+  :root[data-look="grid"] .mast { gap: 8px; }
+  :root[data-look="grid"] .mast button { font-size: 18px; font-stretch: 110%; }
+  :root[data-look="grid"] .row-main { column-gap: 8px; padding-block: 8px; }
+  :root[data-look="grid"] .chips { gap: 8px; }
+  :root[data-look="grid"] .chips .fchip .tagdot { margin-right: 4px; }
+}
 
 /* =========================================================
    Motion (#75): how F1's grid graphics move. A band of the pile colour leads the edge as the panel
    wipes open, then the text rises out of a mask. Rows follow 35ms apart, so the tower fills top to bottom
    like the grid being read out. Sharp expo-out, no fades or bounce. Only clip-path and transform
-   are animated, so the GPU does the work. Plays once on first load (html.settled stops it);
+   are animated. Plays for the first eight rows once per day;
    "reduce motion" turns it all off (base.css).
    ========================================================= */
 :root[data-look="grid"] { --f1: cubic-bezier(0.16, 1, 0.3, 1); }
-:root[data-look="grid"]:not(.settled) .rows > li .row-slide { animation: f1-wipe 0.32s var(--f1) both; animation-delay: calc(var(--i, 0) * 35ms + 90ms); }
-:root[data-look="grid"]:not(.settled) .rows > li .row-slide::before {
+:root[data-look="grid"].grid-intro .rows > li[data-grid-intro] .row-slide { animation: f1-wipe 0.32s var(--f1) both; animation-delay: calc(var(--i, 0) * 35ms + 90ms); }
+:root[data-look="grid"].grid-intro .rows > li[data-grid-intro] .row-slide::before {
   /* the leading edge: a band of the pile colour that rides the wipe, then goes */
   content: ""; position: absolute; inset: 0; z-index: 2; pointer-events: none;
   background: linear-gradient(90deg, transparent calc(100% - 16px), var(--c) calc(100% - 16px));
   animation: f1-sweep 0.32s var(--f1) both; animation-delay: calc(var(--i, 0) * 35ms + 90ms);
 }
-:root[data-look="grid"]:not(.settled) .rows > li :is(.pos, .line1, .subj, .sum, .meta, .gap) { animation: f1-rise 0.36s var(--f1) both; animation-delay: calc(var(--i, 0) * 35ms + 160ms); }
-:root[data-look="grid"]:not(.settled) .dayhead { animation: f1-wipe 0.3s var(--f1) both; }
+:root[data-look="grid"].grid-intro .rows > li[data-grid-intro] :is(.pos, .line1, .subj, .sum, .meta, .gap) { animation: f1-rise 0.36s var(--f1) both; animation-delay: calc(var(--i, 0) * 35ms + 160ms); }
 @keyframes f1-wipe { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
 @keyframes f1-sweep { from { transform: translateX(-100%); } 80% { opacity: 1; } to { transform: translateX(0); opacity: 0; } }
 @keyframes f1-rise { from { transform: translateY(60%); clip-path: inset(0 0 60% 0); } to { transform: none; clip-path: inset(0 0 0 0); } }
@@ -232,7 +244,8 @@
 /* A05: Grid's overview: carbon panels with the F1 corner, wide capitals for the title and numbers */
 :root[data-look="grid"] :is(.ov-stats div, .ov-item) { background: var(--surface); box-shadow: none; border-radius: 0 var(--corner) 0 0; }
 :root[data-look="grid"] .ov-item:hover { background: var(--surface2); }
-:root[data-look="grid"] .ov-title { font: 800 34px/1 var(--font); font-stretch: 125%; text-transform: uppercase; }
+:root[data-look="grid"] .ov-title { font: 850 44px/0.98 var(--font); font-stretch: 125%; letter-spacing: -0.035em; text-transform: uppercase; }
+:root[data-look="grid"] .ov-signature { display: block; margin-bottom: 8px; color: var(--due-soon); font: 700 28px/1 var(--font-signature), cursive; letter-spacing: 0; text-transform: none; }
 :root[data-look="grid"] .ov-stats dd { font: 800 34px/1 var(--font); font-stretch: 125%; }
 :root[data-look="grid"] .ov-stats .hot { box-shadow: inset 3px 0 0 var(--accent); }
 
