@@ -1,5 +1,6 @@
 import "server-only";
 import type { Priority } from "./supabase";
+import type { CampusVenue } from "./campus-venues";
 import { parseUnsubscribe } from "./insights";
 import { openToken } from "./secret";
 import { createHash } from "node:crypto";
@@ -328,6 +329,7 @@ export type FullMessage = {
   text: string | null;
   attachments: Attachment[];
   unsubscribe: string | null;
+  venues?: CampusVenue[];
 };
 
 const headerOf = (p: Part, name: string) => p.headers?.find((h) => h.name.toLowerCase() === name)?.value ?? "";
