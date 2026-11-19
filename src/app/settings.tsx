@@ -9,6 +9,7 @@ import PushSetting from "./settings-push";
 import AiSetting from "./settings-ai";
 import { clearOffline } from "@/lib/offline";
 import { pileLabel, type SenderRule } from "@/lib/inbox";
+import { KEY, parsePrefs } from "@/lib/prefs";
 
 const REPO = "https://github.com/pranavvehmid/delt";
 
@@ -16,6 +17,7 @@ export default function Settings({ open, onClose, onToast, section }: { open: bo
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [dropLabels, setDropLabels] = useState(true);
   const [deleting, setDeleting] = useState(false);
+  const [downloading, setDownloading] = useState(false);
   const box = useRef<HTMLElement>(null);
   const dataBlock = useRef<HTMLDivElement>(null);
   const rulesBlock = useRef<HTMLDivElement>(null);
@@ -42,6 +44,30 @@ export default function Settings({ open, onClose, onToast, section }: { open: bo
     setConfirmDelete(false);
     if (section) requestAnimationFrame(() => (section === "data" ? dataBlock : rulesBlock).current?.scrollIntoView({ block: "center" }));
   }, [open, loadRules, section]);
+
+  async function downloadData() {
+    setDownloading(true);
+    try {
+      const response = await fetch("/api/account", { cache: "no-store" });
+      if (!response.ok) throw new Error("Export failed");
+      const data = await response.json();
+      try {
+        data.thisDevice = parsePrefs(localStorage.getItem(KEY), {
+          look: localStorage.getItem("delt-look"), theme: localStorage.getItem("delt-theme"),
+        });
+      } catch {}
+      const url = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: "application/json" }));
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "delt-data.json";
+      link.click();
+      setTimeout(() => URL.revokeObjectURL(url), 10_000);
+    } catch {
+      onToast("Couldn't download your data. Try again in a minute.");
+    } finally {
+      setDownloading(false);
+    }
+  }
 
   async function deleteEverything() {
     setDeleting(true);
@@ -124,6 +150,9 @@ export default function Settings({ open, onClose, onToast, section }: { open: bo
             DELT keeps your Google sign-in token and a short preview of each mail (sender, subject, a line of text). Deleting removes all of it, signs you out and
             cancels DELT&apos;s access to your Gmail. Your mail itself stays in Gmail.
           </small>
+          <button className="pillbtn" onClick={downloadData} disabled={downloading}>
+            {downloading ? "Preparing download…" : "Download my data"}
+          </button>
           {!confirmDelete ? (
             <button className="pillbtn" onClick={() => setConfirmDelete(true)}>
               Delete my data
