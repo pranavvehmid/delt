@@ -3,8 +3,10 @@ import { defineConfig, devices } from "@playwright/test";
 // Browser tests (issue #12). Run: npm run e2e   (first time: npx playwright install chromium)
 // The app runs with DELT_E2E=1 so /e2e shows the inbox with fake mail; no Google sign-in needed.
 const PORT = 3100;
+const SMALL_PHONE = /(^|[\\/])small-phone\.spec\.ts$/;
 export default defineConfig({
   testDir: "e2e",
+  testIgnore: SMALL_PHONE,
   timeout: 30_000,
   expect: { timeout: 7_000 },
   fullyParallel: true,
@@ -19,7 +21,8 @@ export default defineConfig({
     // Safari's engine on an iPhone-sized screen (issue #17). Not a real iPhone, but catches most Safari issues.
     // a11y and layout measure CSS geometry, which phone and desktop already cover; WebKit's canvas
     // text metrics (used to find where letters start) differ, so they would test WebKit, not DELT
-    { name: "iphone", use: { ...devices["iPhone 15"] }, testIgnore: /a11y|layout/ },
+    { name: "iphone", use: { ...devices["iPhone 15"] }, testIgnore: [SMALL_PHONE, /a11y|layout/] },
+    { name: "small-phone", testMatch: SMALL_PHONE, testIgnore: [], use: { ...devices["Pixel 7"], viewport: { width: 360, height: 640 } } },
   ],
   webServer: {
     // CI builds first (see .github/workflows/test.yml); locally the dev server is fine.

@@ -68,6 +68,11 @@
 :root[data-look="glyph"] .dayhead .muted { font-family: var(--font); font-weight: 500; font-size: 12.5px; letter-spacing: 0; color: var(--muted); }
 /* Glyph: a fade says there are more chips to the right */
 :root[data-look="glyph"] .chips[data-more="true"] { mask-image: linear-gradient(to right, #000 calc(100% - 40px), transparent); }
+@media (max-width: 389px) {
+  :root[data-look="glyph"] .chips { flex-wrap: wrap; overflow: visible; }
+  :root[data-look="glyph"] .chips[data-more="true"] { mask-image: none; }
+  :root[data-look="glyph"] .chips .fchip { height: 44px; padding-inline: 8px; }
+}
 :root[data-look="glyph"] :is(.fchip .n, .line1 .time, .row .tag, .due, .finish, .foot) { font-size: 12.5px !important; }
 
 /* #64: the selected All chip is filled with the accent, which is dark ink in Glyph light,
