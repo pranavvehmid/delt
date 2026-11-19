@@ -18,6 +18,7 @@ export const LIMITS = {
   ai: 10,
   settings: 30,
   account: 5,
+  accountExport: 2,
 } as const;
 
 export function allow(key: string, limit: number, windowMs = 60_000, now = Date.now()): { ok: boolean; retryAfter: number } {
