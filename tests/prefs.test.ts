@@ -16,7 +16,7 @@ test("junk in storage never breaks the app", () => {
 
 test("valid saved values are kept, invalid ones fall back one by one", () => {
   const p = parsePrefs(JSON.stringify({ look: "glyph", mode: "auto", accent: "chartreuse", size: "large", density: "compact" }));
-  assert.deepEqual(p, { look: "glyph", mode: "auto", accent: "auto", size: "large", density: "compact" });
+  assert.deepEqual(p, { ...DEFAULTS, look: "glyph", mode: "auto", size: "large", density: "compact" });
 });
 
 test("old theme keys upgrade: calm -> minimal, glyph stays, light/dark kept", () => {
@@ -61,12 +61,22 @@ test("the before-paint script agrees with parsePrefs for every combination", () 
         for (const size of OPTIONS.size)
           for (const density of OPTIONS.density)
             for (const dark of [true, false]) {
-              const p: Prefs = { look, mode, accent, size, density };
+              const p: Prefs = { ...DEFAULTS, look, mode, accent, size, density };
               const raw = JSON.stringify(p);
               assert.deepEqual(runPrepaint({ "delt-prefs": raw }, dark), toDataset(parsePrefs(raw), dark));
               n++;
             }
   assert.equal(n, OPTIONS.look.length * 4 * OPTIONS.accent.length * 2 * 2 * 2);
+});
+
+test("mail reading settings survive before paint and invalid values use defaults", () => {
+  const raw = JSON.stringify({ mailFont: "opendyslexic", mailSize: "largest", mailSpacing: "wide" });
+  const p = parsePrefs(raw);
+  assert.deepEqual(p, { ...DEFAULTS, mailFont: "opendyslexic", mailSize: "largest", mailSpacing: "wide" });
+  assert.deepEqual(runPrepaint({ "delt-prefs": raw }, false), toDataset(p, false));
+  const junk = JSON.stringify({ mailFont: "system", mailSize: 32, mailSpacing: 2 });
+  assert.deepEqual(parsePrefs(junk), DEFAULTS);
+  assert.deepEqual(runPrepaint({ "delt-prefs": junk }, false), toDataset(DEFAULTS, false));
 });
 
 test("the before-paint script handles empty, broken and legacy storage", () => {

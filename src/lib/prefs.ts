@@ -7,6 +7,9 @@ export type Prefs = {
   accent: "auto" | "purple" | "blue" | "green" | "red" | "gold" | "papaya" | "teal" | "navy" | "racing" | "sky" | "pink";
   size: "normal" | "large";
   density: "comfortable" | "compact";
+  mailFont: "default" | "opendyslexic";
+  mailSize: "default" | "larger" | "largest";
+  mailSpacing: "default" | "relaxed" | "wide";
 };
 
 export const OPTIONS = {
@@ -15,6 +18,9 @@ export const OPTIONS = {
   accent: ["auto", "purple", "blue", "green", "red", "gold", "papaya", "teal", "navy", "racing", "sky", "pink"],
   size: ["normal", "large"],
   density: ["comfortable", "compact"],
+  mailFont: ["default", "opendyslexic"],
+  mailSize: ["default", "larger", "largest"],
+  mailSpacing: ["default", "relaxed", "wide"],
 } as const satisfies { [K in keyof Prefs]: readonly Prefs[K][] };
 
 /** Accent colours each look offers. Grid (F1-inspired) has its own "driver colours". */
@@ -24,7 +30,10 @@ export const LOOK_ACCENTS: Record<Prefs["look"], readonly Prefs["accent"][]> = {
   grid: ["auto", "papaya", "teal", "navy", "racing", "sky", "pink", "gold"],
 };
 
-export const DEFAULTS: Prefs = { look: "minimal", mode: "light", accent: "auto", size: "normal", density: "comfortable" };
+export const DEFAULTS: Prefs = {
+  look: "minimal", mode: "light", accent: "auto", size: "normal", density: "comfortable",
+  mailFont: "default", mailSize: "default", mailSpacing: "default",
+};
 export const KEY = "delt-prefs";
 
 /** Reads saved prefs, ignoring junk. Also upgrades the old "delt-look"/"delt-theme" keys. */
@@ -56,7 +65,10 @@ export const resolveMode = (mode: Prefs["mode"], systemDark: boolean): "light" |
 export function toDataset(p: Prefs, systemDark: boolean) {
   const theme = p.look === "grid" ? "dark" : resolveMode(p.mode, systemDark);
   const accent = LOOK_ACCENTS[p.look].includes(p.accent) ? p.accent : "auto";
-  return { look: p.look, theme, tone: p.mode === "black" ? "black" : "normal", accent, size: p.size, density: p.density };
+  return {
+    look: p.look, theme, tone: p.mode === "black" ? "black" : "normal", accent, size: p.size, density: p.density,
+    mailFont: p.mailFont, mailSize: p.mailSize, mailSpacing: p.mailSpacing,
+  };
 }
 
 /**
@@ -76,6 +88,9 @@ r.dataset.look=look;r.dataset.theme=m;r.dataset.tone=tone;
 r.dataset.accent=ok(p.accent,look==="grid"?["auto","papaya","teal","navy","racing","sky","pink","gold"]:["auto","purple","blue","green","red","gold"],"auto");
 r.dataset.size=ok(p.size,["normal","large"],"normal");
 r.dataset.density=ok(p.density,["comfortable","compact"],"comfortable");
+r.dataset.mailFont=ok(p.mailFont,["default","opendyslexic"],"default");
+r.dataset.mailSize=ok(p.mailSize,["default","larger","largest"],"default");
+r.dataset.mailSpacing=ok(p.mailSpacing,["default","relaxed","wide"],"default");
 try{var bg={minimal:{light:"#fafaf9",dark:"#161412"},glyph:{light:"#fff8e8",dark:"#17112b"},grid:{light:"#0b0b0e",dark:"#0b0b0e"}}[look][m];if(tone==="black")bg="#000000";
 function bar(){var ms=document.querySelectorAll('meta[name="theme-color"]');for(var i=0;i<ms.length;i++){ms[i].setAttribute("content",bg);ms[i].removeAttribute("media")}}
 bar();if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",bar)}catch(e){}

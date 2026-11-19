@@ -37,6 +37,14 @@ const LOOKS = [
   { key: "grid", name: "Grid", note: "F1-inspired" },
 ] as const;
 
+const READING_OPTIONS = [
+  { key: "mailFont", label: "Font", items: [["default", "Default"], ["opendyslexic", "OpenDyslexic"]] },
+  { key: "mailSize", label: "Mail text size", items: [["default", "Follow Text setting"], ["larger", "Larger"], ["largest", "Largest"]] },
+  { key: "mailSpacing", label: "Line spacing", items: [["default", "Default"], ["relaxed", "Relaxed"], ["wide", "Wide"]] },
+] as const satisfies readonly {
+  [K in "mailFont" | "mailSize" | "mailSpacing"]: { key: K; label: string; items: readonly (readonly [Prefs[K], string])[] };
+}["mailFont" | "mailSize" | "mailSpacing"][];
+
 function readPrefs(): Prefs {
   try {
     return parsePrefs(localStorage.getItem(KEY), {
@@ -227,6 +235,21 @@ export default function Appearance() {
                   ["compact", "Compact"],
                 ]}
               />
+
+              <fieldset className="mail-reading-options">
+                <legend>Reading mail</legend>
+                {READING_OPTIONS.map(({ key, label, items }) => (
+                  <div className="ap-row" key={key}>
+                    <label className="ap-lbl" htmlFor={key}>{label}</label>
+                    <select id={key} value={p[key]} onChange={(event) => {
+                      const selected = items.find(([value]) => value === event.currentTarget.value);
+                      if (selected) set(key, selected[0]);
+                    }}>
+                      {items.map(([value, name]) => <option key={value} value={value}>{name}</option>)}
+                    </select>
+                  </div>
+                ))}
+              </fieldset>
 
             </section>
           </>,
