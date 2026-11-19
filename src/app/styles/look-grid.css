@@ -9,7 +9,7 @@
      the header block, the leader, what's selected. No textures, kerbs or chequered flags.
    - One shape: a panel with a rounded top-right corner, as on F1's graphics and site.
    - The list is a timing tower: hairline rows, position, a thin pile-colour bar like a team
-     colour, a three-letter code, and the gap (P1 is the LEADER).
+     colour, a three-letter code, and when the mail arrived.
    - Flags as piles: red Urgent, yellow Priority, green Later, blue Noise.
    - "Driver colours": the accent picks a team colour. Always dark; Extra dark is pure black.
    ========================================================= */
@@ -121,7 +121,7 @@
 :root[data-look="grid"] .row-pile { margin-inline-start: 8px; color: rgb(var(--ink) / var(--a2)); letter-spacing: 0.055em; text-transform: uppercase; }
 :root[data-look="grid"] .gap { display: block; align-self: start; padding-top: 2px; text-align: right; white-space: nowrap; font: 600 12.5px/1.25 var(--font); letter-spacing: 0.04em; font-variant-numeric: tabular-nums; color: rgb(var(--ink) / var(--a2)); }
 :root[data-look="grid"] .row[data-pos="1"] .gap { color: rgb(var(--ink)); }
-/* A06: the leader's position sits in an accent block (F1's tower marks P1 this way); red text on carbon was 3.7:1 */
+/* A06: the first row's position sits in an accent block (F1's tower marks P1 this way); red text on carbon was 3.7:1 */
 :root[data-look="grid"] .row[data-pos="1"] .pos { padding: 2px 0; background: var(--accent); color: var(--on-accent); }
 :root[data-look="grid"] .row-acts.hover-only { background: linear-gradient(90deg, transparent, var(--surface2) 24%); padding-right: 12px; }
 :root[data-look="grid"] .swipe-bg { font: 800 12.5px/1 var(--font); letter-spacing: 0.08em; text-transform: uppercase; }

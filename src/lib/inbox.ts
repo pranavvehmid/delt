@@ -276,17 +276,15 @@ export function senderCode(name: string | null): string {
   return (main.replace(/[^A-Za-z]/g, "").slice(0, 3) || "???").toUpperCase();
 }
 
-/** The timing-tower gap: the newest mail leads, others show how far behind it they arrived. */
-/** #74: the timing tower's gap column. P1 is always the LEADER; every other mail shows how long it
- *  has been waiting, like a gap in a race (+45M, +2H 20M, +1D). */
-export function gapText(receivedAt: string, now: number, leader = false): string {
-  if (leader) return "LEADER";
-  const d = Math.max(0, now - Date.parse(receivedAt));
-  if (d < 60_000) return "+0M";
-  const m = Math.floor(d / 60_000), h = Math.floor(m / 60), days = Math.floor(h / 24);
-  if (days >= 1) return `+${days}D${h % 24 ? ` ${h % 24}H` : ""}`;
-  if (h >= 1) return `+${h}H${m % 60 ? ` ${m % 60}M` : ""}`;
-  return `+${m}M`;
+/** Grid shows how long ago each message arrived, including the first one. */
+export function mailAge(receivedAt: string, now: number): string {
+  const elapsed = now - Date.parse(receivedAt);
+  if (!Number.isFinite(elapsed)) return "";
+  if (elapsed < 60_000) return "Just now";
+  const m = Math.floor(elapsed / 60_000), h = Math.floor(m / 60), days = Math.floor(h / 24);
+  if (days >= 1) return `${days}d${h % 24 ? ` ${h % 24}h` : ""} ago`;
+  if (h >= 1) return `${h}h${m % 60 ? ` ${m % 60}m` : ""} ago`;
+  return `${m}m ago`;
 }
 
 // ---------- #23: what needs you, above everything else ----------

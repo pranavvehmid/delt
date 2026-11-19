@@ -3,7 +3,7 @@
 // One mail row: tap to open, swipe to act.
 import { memo, useRef, useState, type PointerEvent as RPointerEvent } from "react";
 import type { EmailRow } from "@/lib/supabase";
-import { cleanSender, cleanSubject, dueLevel, dueText, gapText, initials, pileLabel, senderCode, shortTime, timeOfDay } from "@/lib/inbox";
+import { cleanSender, cleanSubject, dueLevel, dueText, mailAge, initials, pileLabel, senderCode, shortTime, timeOfDay } from "@/lib/inbox";
 import type { Look } from "./use-look";
 
 export type RowActions = { open: (m: EmailRow) => void; read: (m: EmailRow) => void; done: (m: EmailRow) => void };
@@ -130,7 +130,7 @@ export const MailRow = memo(function MailRow({ m, now, pos = 0, on, current = fa
           </span>
           {grid && (
             <span className="gap" aria-hidden="true">
-              {gapText(m.received_at, now, pos === 1)}
+              {mailAge(m.received_at, now)}
             </span>
           )}
         </button>
