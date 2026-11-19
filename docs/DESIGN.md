@@ -102,6 +102,7 @@ and that every name here still exists).
 - `src/app/app.css`: imports the style files in cascade order: `styles/base.css` (layout for every look), `look-shared.css` (what Minimal and Grid share), `look-minimal.css`, `look-glyph.css`, `themes.css` (Extra dark, accents, size, spacing), then `look-grid.css`. A rule names the looks it is for (`:root[data-look="glyph"]`, `:root:is([data-look="minimal"], [data-look="grid"])`), never the ones it isn't.
 - `src/app/appearance.tsx` + `src/lib/prefs.ts`: the Appearance panel and saved preferences.
 - `src/app/settings.tsx`: the Settings panel; `settings-push.tsx` (notifications) and `settings-ai.tsx` (AI sorting, your own Gemini key).
+- `src/app/share-summary.tsx`: review, edit and share a mail summary as text.
 
 **Server and shared helpers (`src/lib/`)**
 - Sorting: `rules.ts`, `classify.ts` (the AI check), `topics.ts` (learning from moves by topic), `profile.ts` (batch, branch and year from the Google name).
