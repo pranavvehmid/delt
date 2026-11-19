@@ -15,6 +15,7 @@ import Settings from "./settings";
 import Welcome from "./welcome";
 import { transition } from "./motion";
 import AccountMenu from "./account-menu";
+import CommandPalette from "./command-palette";
 import Banners from "./banners";
 import DeadlinesList from "./deadlines-list";
 import Overview from "./overview";
@@ -47,6 +48,8 @@ export default function InboxApp({ email, name, signOutAction, signInAction }: P
   const canHover = useCanHover();
   const [settingsSection, setSettingsSection] = useState<"data" | "rules" | undefined>();
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [commandsOpen, setCommandsOpen] = useState(false);
+  const openCommands = useCallback(() => setCommandsOpen(true), []);
   const { findMail, patch, markAllRead, answerAi } = useMailActions({ ...data, hits, setHits, say: setToast });
 
   const loudSync = useCallback(() => sync(true), [sync]);
@@ -156,6 +159,11 @@ export default function InboxApp({ email, name, signOutAction, signInAction }: P
     const waiting = needsAll.filter((m) => m.unread).length;
     document.title = open ? `${cleanSubject(open.subject)} · DELT` : waiting ? `(${waiting}) DELT` : "DELT";
   }, [open, needsAll]);
+  function searchFromCommands(q?: string) {
+    if (q !== undefined) setFilters({ query: q, pile: "all", unreadOnly: false });
+    if (route.tab !== "inbox" || route.mailId) goTab("inbox");
+    requestAnimationFrame(() => requestAnimationFrame(() => document.querySelector<HTMLInputElement>('input[aria-label="Search mail"]')?.focus()));
+  }
   const gmailHome = `https://mail.google.com/mail/?authuser=${encodeURIComponent(email)}`;
   const { syncProblem } = data;
 
@@ -190,7 +198,7 @@ export default function InboxApp({ email, name, signOutAction, signInAction }: P
         </button>
         <div className="appbar-r">
           <Appearance />
-          <AccountMenu name={name} email={email} signOutAction={signOutAction} onSettings={openSettings} />
+          <AccountMenu name={name} email={email} signOutAction={signOutAction} onSettings={openSettings} onCommands={openCommands} />
         </div>
       </header>
 
@@ -272,6 +280,13 @@ export default function InboxApp({ email, name, signOutAction, signInAction }: P
 
       <Welcome ready={mails !== null && mails.length > 0} />
       <Settings open={settingsOpen} section={settingsSection} onClose={() => transition(() => setSettingsOpen(false))} onToast={(text) => setToast({ text })} />
+      <CommandPalette
+        open={commandsOpen} onOpen={openCommands} onClose={() => setCommandsOpen(false)}
+        mails={all} current={open} unreadOnly={unreadOnly} go={goTab} search={searchFromCommands}
+        move={(priority) => { if (open) patch(open.id, { priority }); }}
+        settings={openSettings}
+        toggleUnread={() => { setFilters({ unreadOnly: !unreadOnly }); goTab("inbox"); }}
+      />
       <Toast toast={toast} onClose={() => setToast(null)} />
     </div>
   );
