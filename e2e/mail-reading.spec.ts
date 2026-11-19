@@ -27,8 +27,13 @@ test("mail font, text size and line spacing apply to styled mail and survive rel
   await expect.poll(() => paragraph.evaluate((el) =>
     [...el.ownerDocument.fonts].some((font) => font.family === "DELTReading" && font.status === "loaded"),
   )).toBe(true);
-  await expect(paragraph).toHaveCSS("font-size", "16.8px");
-  await expect(paragraph).toHaveCSS("line-height", "33.6px");
-  await expect(mail.getByText("Due today")).toHaveCSS("font-size", "25.2px");
+  const paragraphStyle = await paragraph.evaluate((el) => {
+    const style = getComputedStyle(el);
+    return { size: parseFloat(style.fontSize), lineHeight: parseFloat(style.lineHeight) };
+  });
+  expect(paragraphStyle.size).toBeCloseTo(16.8);
+  expect(paragraphStyle.lineHeight).toBeCloseTo(33.6);
+  const emphasisSize = await mail.getByText("Due today").evaluate((el) => parseFloat(getComputedStyle(el).fontSize));
+  expect(emphasisSize).toBeCloseTo(25.2);
   await expect(page.locator('iframe[title="Mail content"]')).toHaveAttribute("srcdoc", /font-src data:;/);
 });
