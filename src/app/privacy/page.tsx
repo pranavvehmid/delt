@@ -66,6 +66,9 @@ export default function Privacy() {
       <h2>Your choices</h2>
       <ul>
         <li>
+          <b>Download a copy:</b> Settings → Your data → Download my data saves your stored previews, routing rules, and settings as a JSON file.
+        </li>
+        <li>
           <b>Delete everything:</b> Account menu → Delete my data. It removes all of the above, cancels DELT&apos;s access to your Gmail, and can remove the DELT labels.
         </li>
         <li>

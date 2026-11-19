@@ -111,6 +111,6 @@ and that every name here still exists).
 - `src/lib/notify-plan.ts` + `src/lib/notify.ts` + `public/sw.js`: phone notifications for urgent mail and deadlines due within a day.
 - Data: `supabase.ts` (server-only client), `types.ts`, `all-rows.ts` (paging past 1,000 rows), `retention.ts` (old previews purged), `account.ts` (Delete my data).
 - API helpers: `rate-limit.ts`, `api-error.ts` (no raw errors to the browser).
-- Other helpers: `inbox.ts` (filter, group by day, deadline buckets, relative time), `insights.ts` (duplicates and other pure helpers), `offline.ts` (the last inbox on this device), `logo.ts` (the wordmark as shapes, for icons).
+- Other helpers: `inbox.ts` (filter, group by day, deadline buckets, relative time), `insights.ts` (duplicates and other pure helpers), `campus-venues.ts` (recognized Vellore locations and map links), `offline.ts` (the last inbox on this device), `logo.ts` (the wordmark as shapes, for icons).
 - `src/app/api/`: the routes (`emails`, `sync`, `rules`, `push`, `settings`, `account`, `health`, `app-version`, `auth`).
 

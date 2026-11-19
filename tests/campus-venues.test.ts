@@ -13,6 +13,6 @@ test("recognizes distinct Vellore venues in the order they appear", () => {
 
 test("ignores ambiguous codes, URL text, personal accounts and another campus", () => {
   assert.deepEqual(campusVenues("staff@vit.ac.in", "See TT and SJT. https://example.com/SJT-501"), []);
-  assert.deepEqual(campusVenues("user@gmail.com", "Venue: SJT 501"), []);
+  assert.deepEqual(campusVenues("user@example.org", "Venue: SJT 501"), []);
   assert.deepEqual(campusVenues("staff@vit.ac.in", "VIT Chennai: SJT 501"), []);
 });

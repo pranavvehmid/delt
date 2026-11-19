@@ -142,6 +142,25 @@ test("B can't read A's mail through any route", { skip }, async () => {
   assert.equal(await snapshot(A), before);
 });
 
+test("account exports contain only the signed-in student's previews, rules and safe settings", { skip }, async () => {
+  who = A;
+  const own = await call("account", "GET");
+  assert.equal(own.status, 200, JSON.stringify(own.body));
+  assert.deepEqual(own.body.previews.map((row: { id: string }) => row.id).sort(), ["a1", "a2", "shared"]);
+  assert.equal(own.body.rules[0].from, "dsw@a.vit.ac.in");
+  assert.equal(own.body.settings.aiConsent, true);
+  assert.equal(own.body.settings.notificationDevices, 1);
+  const json = JSON.stringify(own.body);
+  assert.doesNotMatch(json, /refresh_token|gemini_key_enc|v1:a-token|v1:a-key|a-device/);
+
+  who = B;
+  const other = await call("account", "GET", { query: `?email=${encodeURIComponent(A)}` });
+  assert.equal(other.status, 200, JSON.stringify(other.body));
+  assert.equal(other.body.account, B);
+  assert.deepEqual(other.body.previews.map((row: { id: string }) => row.id).sort(), ["b1", "shared"]);
+  assert.deepEqual(other.body.rules, []);
+});
+
 test("B can't change A's mail, rules, devices or key through any route", { skip }, async () => {
   who = B;
   const before = await snapshot(A);
