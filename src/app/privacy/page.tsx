@@ -5,7 +5,7 @@ export const metadata: Metadata = { title: "Privacy · DELT", description: "What
 
 // Issue #31. Plain words, kept short. If you change what DELT stores or sends anywhere,
 // change this page in the same pull request.
-const UPDATED = "6 November 2026";
+const UPDATED = "19 November 2026";
 
 export default function Privacy() {
   return (
@@ -67,6 +67,9 @@ export default function Privacy() {
       <ul>
         <li>
           <b>Download a copy:</b> Settings → Your data → Download my data saves your stored previews, routing rules, and settings as a JSON file.
+        </li>
+        <li>
+          <b>Share a deadline:</b> the link contains the title, due date, and source you review. Anyone with the link can read those details. The link does not contain the original mail or require a DELT account.
         </li>
         <li>
           <b>Delete everything:</b> Account menu → Delete my data. It removes all of the above, cancels DELT&apos;s access to your Gmail, and can remove the DELT labels.

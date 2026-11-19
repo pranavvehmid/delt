@@ -99,3 +99,4 @@ Deadlines ─ from mail only: Overdue · Today · Tomorrow · This week · Later
 - `src/lib/rules.ts`, `classify.ts`, `sync.ts`, `gmail.ts`: sorting and Gmail.
 - `src/lib/campus-venues.ts`: recognized Vellore locations and map links.
 - `src/app/share-summary.tsx`: review, edit and share a mail summary as text.
+- `src/app/deadline-share.tsx` and `src/app/shared-deadline/`: share and read a deadline card. `src/lib/shared-deadline.ts` limits the link to the shared fields.

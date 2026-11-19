@@ -291,6 +291,10 @@ svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width:
 .share-summary textarea { display: block; width: 100%; resize: vertical; margin: 8px 0 12px; padding: 12px; border: 1px solid var(--line); background: var(--surface); color: var(--text); font: inherit; }
 .share-summary-actions { display: flex; flex-wrap: wrap; gap: 8px; }
 .share-summary-actions .pillbtn { min-height: 44px; }
+.deadline-share label { display: block; margin: 12px 0; }
+.deadline-share input { display: block; width: 100%; margin-top: 4px; padding: 8px 12px; border: 1px solid var(--line); background: var(--surface); color: var(--text); font: inherit; }
+.shared-deadline-card { margin-top: 32px; padding: 24px; border: 1px solid var(--line); background: var(--surface); overflow-wrap: anywhere; }
+.shared-deadline-card h1 { margin-top: 8px; }
 .mv-unsub { display: inline-block; margin-top: 12px; font-size: 12.5px; text-decoration: underline; }
 /* #72: attachments. Pictures as thumbnails (tap to view), other files as cards */
 .mv-att { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
@@ -719,6 +723,6 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 @container (max-width: 480px) {
   .due-row { flex-wrap: wrap; }
   .due-row .row-main { flex: 1 1 100%; }
-  .due-row .row-acts { flex: 1 1 100%; justify-content: flex-start; gap: 8px; padding: 0 0 4px var(--due-indent, 78px); }
+  .due-row .row-acts { flex: 1 1 100%; flex-wrap: wrap; justify-content: flex-start; gap: 8px; padding: 0 0 4px var(--due-indent, 78px); }
   .due-row .row-acts .iconbtn.labelled { flex-direction: row; gap: 4px; width: auto; height: 44px; padding: 0 8px; } /* 44px: a full tap target (#62) */
 }
