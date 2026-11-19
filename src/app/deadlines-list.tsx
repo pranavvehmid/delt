@@ -6,6 +6,7 @@ import type { EmailRow } from "@/lib/supabase";
 import { BUCKETS, F, cleanSender, cleanSubject, dueInBucket, dueLevel, pileLabel, type deadlineBuckets } from "@/lib/inbox";
 import { calendarLink } from "@/lib/insights";
 import { Empty, Skeleton } from "./list-states";
+import DeadlineShare from "./deadline-share";
 import type { Patch } from "./use-mail-actions";
 
 type Props = {
@@ -68,6 +69,7 @@ export default function DeadlinesList({ loaded, buckets, now, onOpen, onPatch }:
                         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 5 5 9-10" /></svg>
                         <small aria-hidden="true">{m.is_done ? "Undo" : "Done"}</small>
                       </button>
+                      <DeadlineShare deadline={{ title: cleanSubject(m.subject), due: m.deadline!, source: cleanSender(m.from_name) }} />
                     </div>
                   </li>
                 ))}
