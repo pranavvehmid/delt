@@ -5,7 +5,8 @@ import { mockApi, bigInbox } from "./mock";
 
 test.use({ contextOptions: { reducedMotion: "no-preference" } });
 
-test("opening a mail and switching tabs take no page snapshot; closing a mail does", async ({ page }) => {
+test("opening a mail and switching tabs take no page snapshot; closing a mail does", async ({ page, browserName }) => {
+  test.skip(process.platform === "win32" && browserName === "webkit", "Windows WebKit can stall view transitions (#172)");
   await mockApi(page, bigInbox(60));
   await page.addInitScript(() => {
     (window as unknown as { vt: number }).vt = 0;

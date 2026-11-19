@@ -20,8 +20,9 @@ web-push, GitHub Actions (tests, 5-minute mail sync, Android build).
 - `npm test`: unit tests (node:test via tsx, `--conditions=react-server`)
 - `npx playwright test --project=phone --project=desktop`: builds, then runs the browser tests on the
   built app. `CI=1` skips the build and uses the last one; `PW_DEV=1` uses the dev server.
-  (`/e2e` shows the inbox with fake mail; `DELT_E2E=1`). The `iphone` (WebKit) project hangs
-  on this Windows machine when animations are on; CI on Linux is the judge for it.
+  (`/e2e` shows the inbox with fake mail; `DELT_E2E=1`). Windows WebKit skips the affected
+  view transition tests (#172). The rest of the iPhone project runs locally, and Linux CI
+  runs the view transition tests.
 - Long suites: run in the background, keep working, fix failures at the end.
 
 ## Folder map
