@@ -7,6 +7,7 @@ import { BUCKETS, F, cleanSender, cleanSubject, dueInBucket, dueLevel, pileLabel
 import { calendarLink } from "@/lib/insights";
 import { Empty, Skeleton } from "./list-states";
 import DeadlineShare from "./deadline-share";
+import DeadlineCalendar from "./deadline-calendar";
 import type { Patch } from "./use-mail-actions";
 
 type Props = {
@@ -19,14 +20,21 @@ type Props = {
 
 export default function DeadlinesList({ loaded, buckets, now, onOpen, onPatch }: Props) {
   const [showDone, setShowDone] = useState(false);
+  const [calendar, setCalendar] = useState(false);
   return (
     <main className="page">
       <div className="pagehead">
         <h1>Deadlines</h1>
         <p className="muted">Due dates found in your mail.</p>
       </div>
+      <div className="seg deadline-view" role="group" aria-label="Deadlines view">
+        <button className={calendar ? "" : "on"} aria-pressed={!calendar} onClick={() => setCalendar(false)}>List</button>
+        <button className={calendar ? "on" : ""} aria-pressed={calendar} onClick={() => setCalendar(true)}>Calendar</button>
+      </div>
       {!loaded ? (
         <Skeleton />
+      ) : calendar ? (
+        <DeadlineCalendar mails={BUCKETS.filter((bucket) => bucket !== "Done").flatMap((bucket) => buckets[bucket])} now={now} onOpen={onOpen} />
       ) : BUCKETS.every((b) => buckets[b].length === 0) ? (
         <Empty title="No deadlines" hint="When a mail mentions a due date, it shows up here." />
       ) : (
@@ -78,7 +86,7 @@ export default function DeadlinesList({ loaded, buckets, now, onOpen, onPatch }:
           </section>
         ))
       )}
-      {loaded && BUCKETS.some((b) => b !== "Done" && buckets[b].length > 0) && <p className="foot muted"><span className="finish">Nothing else is due</span></p>}
+      {!calendar && loaded && BUCKETS.some((b) => b !== "Done" && buckets[b].length > 0) && <p className="foot muted"><span className="finish">Nothing else is due</span></p>}
     </main>
   );
 }
