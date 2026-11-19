@@ -18,7 +18,7 @@ const box = (page: Page, sel: string) => page.locator(sel).first().evaluate((e) 
 for (const look of LOOKS) {
   test(`${look}: landscape tablets use two panes and portrait tablets use one (#233)`, async ({ page }, info) => {
     test.skip(info.project.name !== "desktop");
-    await open(page, look, { width: 768, height: 560 });
+    await open(page, look, { width: 768, height: 560 }, smallInbox());
     const list = await box(page, ".shell");
     const overview = await box(page, ".mv-empty");
     expect(overview.left).toBeCloseTo(list.right, 0);
