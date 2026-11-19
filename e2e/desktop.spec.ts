@@ -16,6 +16,25 @@ async function open(page: Page, look: string, size: { width: number; height: num
 const box = (page: Page, sel: string) => page.locator(sel).first().evaluate((e) => e.getBoundingClientRect().toJSON() as DOMRect);
 
 for (const look of LOOKS) {
+  test(`${look}: landscape tablets use two panes and portrait tablets use one (#233)`, async ({ page }, info) => {
+    test.skip(info.project.name !== "desktop");
+    await open(page, look, { width: 768, height: 560 }, smallInbox());
+    const list = await box(page, ".shell");
+    const overview = await box(page, ".mv-empty");
+    expect(overview.left).toBeCloseTo(list.right, 0);
+    expect(overview.width).toBeGreaterThan(400);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(768);
+    await page.locator('li.row[data-mail="cat1"] .row-main').click();
+    await expect(page.locator(".mailview.pane")).toBeVisible();
+    await expect.poll(async () => (await box(page, ".mailview")).left).toBeCloseTo(list.right, 0);
+    await page.setViewportSize({ width: 768, height: 900 });
+    await expect(page.locator(".mailview")).toBeVisible();
+    await expect(page.locator(".mailview.pane")).toHaveCount(0);
+    await expect.poll(async () => (await box(page, ".mailview")).left).toBe(0);
+  });
+}
+
+for (const look of LOOKS) {
   for (const size of SIZES) {
     test(`${look} ${size.width}×${size.height}: one top bar across the window, list and pane under it`, async ({ page }, info) => {
       test.skip(info.project.name !== "desktop");
