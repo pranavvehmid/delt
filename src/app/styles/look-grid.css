@@ -130,7 +130,7 @@
 
 /* deadlines: the same tower; the date reads like a race number */
 :root[data-look="grid"] .due-row { background: var(--surface); }
-:root[data-look="grid"] .due-row .row-main { grid-template-columns: 28px minmax(0, 1fr); padding-left: 12px; }
+:root[data-look="grid"] .due-row .row-main { padding-left: 12px; }
 :root[data-look="grid"] .datebox b { font: 800 28px/1 var(--font); font-stretch: 125%; }
 :root[data-look="grid"] .datebox small { font-weight: 600; }
 :root[data-look="grid"] .datebox:is(.lv-over, .lv-soon) b { color: var(--due-soon); }
