@@ -104,6 +104,7 @@ and that every name here still exists).
 - `src/app/settings.tsx`: the Settings panel; `settings-push.tsx` (notifications) and `settings-ai.tsx` (AI sorting, your own Gemini key).
 - `src/app/share-summary.tsx`: review, edit and share a mail summary as text.
 - `src/app/deadline-share.tsx` and `src/app/shared-deadline/`: share and read a deadline card. `src/lib/shared-deadline.ts` limits the link to the shared fields.
+- `src/app/command-palette.tsx`: keyboard commands for navigation, sender search, moving mail and Settings.
 
 **Server and shared helpers (`src/lib/`)**
 - Sorting: `rules.ts`, `classify.ts` (the AI check), `topics.ts` (learning from moves by topic), `profile.ts` (batch, branch and year from the Google name).
