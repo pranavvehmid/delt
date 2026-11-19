@@ -107,6 +107,7 @@ export const MailRow = memo(function MailRow({ m, now, pos = 0, on, current = fa
               <span className="from ell">
                 <Marked text={sender} query={query} />
               </span>
+              {!glyph && <span className="row-pile" aria-hidden="true">{pileLabel(m.priority)}</span>}
               {glyph && <span className="time">{timeOfDay(m.received_at)}</span>}
             </span>
             <span className="subj ell">
@@ -115,8 +116,8 @@ export const MailRow = memo(function MailRow({ m, now, pos = 0, on, current = fa
             <span className="sum ell" id={`sum-${m.id}`}>
               {m.summary || m.snippet}
             </span>
+            {(glyph || m.is_done || m.deadline) && (
             <span className="meta">
-              {!glyph && <span className="row-pile" aria-hidden="true">{pileLabel(m.priority)}</span>}
               {glyph && (
                 <span className={`tag p-${m.priority}`}>
                   <i className="tagdot" />
@@ -126,6 +127,7 @@ export const MailRow = memo(function MailRow({ m, now, pos = 0, on, current = fa
               {m.deadline && !m.is_done && <span className={`due lv-${dueLevel(m.deadline, now)}`}>{dueLabel(m.deadline, now)}</span>}
               {m.is_done && <span className="donemark">✓ Done</span>}
             </span>
+            )}
           </span>
           {grid && (
             <span className="gap" aria-hidden="true">

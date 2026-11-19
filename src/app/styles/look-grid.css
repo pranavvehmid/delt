@@ -118,7 +118,7 @@
 :root[data-look="grid"] .sum { font-family: var(--font); font-weight: 400; }
 :root[data-look="grid"] .row.unread .subj { font-weight: 600; }
 :root[data-look="grid"] .meta { margin-top: 4px; }
-:root[data-look="grid"] .row-pile { color: rgb(var(--ink) / var(--a2)); letter-spacing: 0.055em; text-transform: uppercase; }
+:root[data-look="grid"] .row-pile { margin-inline-start: 8px; color: rgb(var(--ink) / var(--a2)); letter-spacing: 0.055em; text-transform: uppercase; }
 :root[data-look="grid"] .gap { display: block; align-self: start; padding-top: 2px; text-align: right; white-space: nowrap; font: 600 12.5px/1.25 var(--font); letter-spacing: 0.04em; font-variant-numeric: tabular-nums; color: rgb(var(--ink) / var(--a2)); }
 :root[data-look="grid"] .row[data-pos="1"] .gap { color: rgb(var(--ink)); }
 /* A06: the leader's position sits in an accent block (F1's tower marks P1 this way); red text on carbon was 3.7:1 */
