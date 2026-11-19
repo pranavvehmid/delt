@@ -8,7 +8,7 @@
    - Flat carbon panels (#15151E), white text, F1 grey (#949498), F1 red used sparingly:
      the header block, the leader, what's selected. No textures, kerbs or chequered flags.
    - One shape: a panel with a rounded top-right corner, as on F1's graphics and site.
-   - The list is a timing tower: hairline rows, position, a thin pile-colour bar like a team
+   - The list is a timing tower: hairline rows, a thin pile-colour bar like a team
      colour, a three-letter code, and when the mail arrived.
    - Flags as piles: red Urgent, yellow Priority, green Later, blue Noise.
    - "Driver colours": the accent picks a team colour. Always dark; Extra dark is pure black.
@@ -53,7 +53,7 @@
 
 /* type: one family, upright; the wide cut is for titles, numbers and codes */
 :root[data-look="grid"] body { background: var(--bg); letter-spacing: 0; font-stretch: 100%; }
-:root[data-look="grid"] :is(.mast button, .sheet-head h2, .pos, .code, .datebox b, .att-kind) { font-stretch: 125%; }
+:root[data-look="grid"] :is(.mast button, .sheet-head h2, .code, .datebox b, .att-kind) { font-stretch: 125%; }
 
 /* the F1 corner: panels are square except the top right */
 :root[data-look="grid"] :is(.searchbar, .pillbtn, .menu, .sheet, .look-card, .mv-frame, .mv-due, .mv-sum, .mv-err, .att, .att-thumb, .toast, .day, .due-day, .banner, .cta, .seg) { border-radius: 0 var(--corner) 0 0 !important; }
@@ -101,12 +101,10 @@
 :root[data-look="grid"] .row { --w: 400; }
 :root[data-look="grid"] .row-slide { background: var(--surface); transition: background-color 0.15s; }
 :root[data-look="grid"] .row-slide:hover { background: var(--surface2); }
-/* position | team-colour bar + code + subject | gap */
-:root[data-look="grid"] .row-main { grid-template-columns: 28px minmax(0, 1fr) auto; column-gap: 12px; padding: 12px 12px 12px 8px; }
+/* team-colour bar + code + subject | receipt age */
+:root[data-look="grid"] .row-main { grid-template-columns: minmax(0, 1fr) auto; column-gap: 12px; padding: 12px 12px 12px 8px; }
 :root[data-look="grid"] .row-main:focus-visible { outline-offset: -3px; }
 :root[data-look="grid"] .when { display: none; }
-:root[data-look="grid"] .pos { display: block; align-self: start; padding-top: 1px; text-align: center; font: 800 16px/1.25 var(--font); font-stretch: 125%; font-variant-numeric: tabular-nums; color: rgb(var(--ink) / var(--a2)); }
-:root[data-look="grid"] .row.unread .pos { color: rgb(var(--ink)); }
 :root[data-look="grid"] .line1 { display: flex; align-items: baseline; gap: 0; }
 :root[data-look="grid"] .code { display: inline-flex; align-items: center; flex: none; margin-right: 8px; font: 700 14px/1.25 var(--font); font-stretch: 125%; letter-spacing: 0.04em; color: rgb(var(--ink) / var(--a2)); }
 :root[data-look="grid"] .row.unread .code { color: rgb(var(--ink)); }
@@ -120,9 +118,6 @@
 :root[data-look="grid"] .meta { margin-top: 4px; }
 :root[data-look="grid"] .row-pile { margin-inline-start: 8px; color: rgb(var(--ink) / var(--a2)); letter-spacing: 0.055em; text-transform: uppercase; }
 :root[data-look="grid"] .gap { display: block; align-self: start; padding-top: 2px; text-align: right; white-space: nowrap; font: 600 12.5px/1.25 var(--font); letter-spacing: 0.04em; font-variant-numeric: tabular-nums; color: rgb(var(--ink) / var(--a2)); }
-:root[data-look="grid"] .row[data-pos="1"] .gap { color: rgb(var(--ink)); }
-/* A06: the first row's position sits in an accent block (F1's tower marks P1 this way); red text on carbon was 3.7:1 */
-:root[data-look="grid"] .row[data-pos="1"] .pos { padding: 2px 0; background: var(--accent); color: var(--on-accent); }
 :root[data-look="grid"] .row-acts.hover-only { background: linear-gradient(90deg, transparent, var(--surface2) 24%); padding-right: 12px; }
 :root[data-look="grid"] .swipe-bg { font: 800 12.5px/1 var(--font); letter-spacing: 0.08em; text-transform: uppercase; }
 :root[data-look="grid"] .swipe-bg.r { background: var(--flag-green); color: #03140b; }
@@ -135,7 +130,7 @@
 
 /* deadlines: the same tower; the date reads like a race number */
 :root[data-look="grid"] .due-row { background: var(--surface); }
-:root[data-look="grid"] .due-row .row-main { padding-left: 12px; }
+:root[data-look="grid"] .due-row .row-main { grid-template-columns: 28px minmax(0, 1fr); padding-left: 12px; }
 :root[data-look="grid"] .datebox b { font: 800 28px/1 var(--font); font-stretch: 125%; }
 :root[data-look="grid"] .datebox small { font-weight: 600; }
 :root[data-look="grid"] .datebox:is(.lv-over, .lv-soon) b { color: var(--due-soon); }
@@ -219,7 +214,7 @@
   background: linear-gradient(90deg, transparent calc(100% - 16px), var(--c) calc(100% - 16px));
   animation: f1-sweep 0.32s var(--f1) both; animation-delay: calc(var(--i, 0) * 35ms + 90ms);
 }
-:root[data-look="grid"].grid-intro .rows > li[data-grid-intro] :is(.pos, .line1, .subj, .sum, .meta, .gap) { animation: f1-rise 0.36s var(--f1) both; animation-delay: calc(var(--i, 0) * 35ms + 160ms); }
+:root[data-look="grid"].grid-intro .rows > li[data-grid-intro] :is(.line1, .subj, .sum, .meta, .gap) { animation: f1-rise 0.36s var(--f1) both; animation-delay: calc(var(--i, 0) * 35ms + 160ms); }
 @keyframes f1-wipe { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
 @keyframes f1-sweep { from { transform: translateX(-100%); } 80% { opacity: 1; } to { transform: translateX(0); opacity: 0; } }
 @keyframes f1-rise { from { transform: translateY(60%); clip-path: inset(0 0 60% 0); } to { transform: none; clip-path: inset(0 0 0 0); } }

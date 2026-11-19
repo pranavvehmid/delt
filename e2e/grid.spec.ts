@@ -6,7 +6,7 @@ test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => localStorage.setItem("delt-prefs", JSON.stringify({ look: "grid", mode: "dark", accent: "auto", size: "normal", density: "comfortable" })));
   await mockApi(page, smallInbox());
   await page.goto("/e2e");
-  await expect(page.locator("li.row .pos").first()).toBeVisible();
+  await expect(page.locator("li.row .gap").first()).toBeVisible();
 });
 
 test("nothing is italic, slanted or textured (#73)", async ({ page }) => {
@@ -28,7 +28,6 @@ test("nothing is italic, slanted or textured (#73)", async ({ page }) => {
 
 test("the inbox is a timing tower: rows show receipt age and sit flush, each has a pile-colour bar (#74)", async ({ page }) => {
   const rows = page.locator(".day.needs li.row");
-  await expect(rows.first().locator(".pos")).toHaveText("1");
   await expect(rows.first().locator(".gap")).toHaveText(/ago$/);
   await expect(rows.nth(1).locator(".gap")).toHaveText(/ago$/);
   // flush rows: each starts where the one above ends
@@ -72,7 +71,7 @@ test.describe("motion (#75)", () => {
   test("rows enter like F1's grid graphics: sweep, wipe, rise, 35ms apart, once", async ({ page }) => {
     await page.evaluate(() => localStorage.removeItem("delt-grid-intro-day"));
     await page.reload();
-    await expect(page.locator("li.row .pos").first()).toBeVisible();
+    await expect(page.locator("li.row .gap").first()).toBeVisible();
     const anims = await page.evaluate(() =>
       document.getAnimations().map((a) => {
         const t = a.effect!.getComputedTiming(), el = (a.effect as KeyframeEffect).target as Element;
@@ -92,7 +91,7 @@ test.describe("motion (#75)", () => {
     const after = await page.evaluate(() => document.getAnimations().map((a) => (a as CSSAnimation).animationName).filter((n) => n?.startsWith("f1-")));
     expect(after.filter((n) => n !== "f1-bar")).toEqual([]);
     await page.reload();
-    await expect(page.locator("li.row .pos").first()).toBeVisible();
+    await expect(page.locator("li.row .gap").first()).toBeVisible();
     await expect(page.locator("html")).not.toHaveClass(/grid-intro/);
   });
 });
@@ -103,14 +102,10 @@ test("with reduce motion, Grid doesn't animate", async ({ page }) => {
   expect(long).toBe(0);
 });
 
-test("A06: the leader's position number is readable (4.5:1 or more)", async ({ page }) => {
-  const ratio = await page.locator('.row[data-pos="1"] .pos').evaluate((el) => {
-    const parse = (s: string) => s.match(/[\d.]+/g)!.map(Number);
-    const lin = (c: number) => ((c /= 255) <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4);
-    const lum = (c: number[]) => 0.2126 * lin(c[0]) + 0.7152 * lin(c[1]) + 0.0722 * lin(c[2]);
-    const s = getComputedStyle(el);
-    const [a, b] = [lum(parse(s.color)), lum(parse(s.backgroundColor))];
-    return (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
-  });
-  expect(ratio).toBeGreaterThanOrEqual(4.5);
+test("filtering preserves each row's displayed priority and has no ranking column (#198)", async ({ page }) => {
+  const mail = page.locator('li.row[data-mail="cat1"]');
+  await expect(mail.locator(".row-pile")).toHaveText("Urgent");
+  await page.getByRole("navigation", { name: "Filter by pile" }).getByRole("button", { name: /^Urgent/ }).click();
+  await expect(mail.locator(".row-pile")).toHaveText("Urgent");
+  await expect(page.locator("li.row .pos")).toHaveCount(0);
 });

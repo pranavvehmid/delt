@@ -13,7 +13,7 @@ async function open(page: Page, look: (typeof LOOKS)[number]) {
   await page.goto("/e2e");
   await expect(page.locator("li.row").first()).toBeVisible();
   // rows draw only the parts their look shows (#61); wait until they're the right look's rows
-  const part = { minimal: ".when", glyph: ".avatar", grid: ".pos" }[look];
+  const part = { minimal: ".when", glyph: ".avatar", grid: ".gap" }[look];
   await expect(page.locator(`li.row ${part}`).first()).toBeVisible();
   await page.evaluate(() => document.fonts.ready);
   // rows drawn a moment later (#60) slide in; measure where they end up
@@ -58,7 +58,7 @@ for (const look of LOOKS) {
         range.selectNodeContents(textOf(from));
         const f = range.getBoundingClientRect().left;
         range.selectNodeContents(textOf(subj));
-        return { f, s: range.getBoundingClientRect().left, unread: r.classList.contains("unread"), id: r.getAttribute("data-mail") + " pos=" + !!r.querySelector(".pos") + " " + r.className };
+        return { f, s: range.getBoundingClientRect().left, unread: r.classList.contains("unread"), id: r.getAttribute("data-mail") + " " + r.className };
       }),
     );
     for (const e of edges) near(e.s, e.f, `subject / sender (${e.unread ? "unread" : "read"})`, 1.5);
