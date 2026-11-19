@@ -105,9 +105,12 @@ test("the open mail's Back arrow lines up with the mail text (#67)", async ({ pa
   await page.locator('li.row[data-mail="cat1"] .row-main').click();
   await expect(page.locator("#mv-title")).toBeVisible();
   // the chevron is drawn from x=8 of its 24-unit box
-  const arrow = await page.locator(".mv-back svg").evaluate((s) => { const b = s.getBoundingClientRect(); return b.left + (b.width * 8) / 24; });
-  const title = await box(page, "#mv-title");
-  near(arrow, title.left, "Back arrow / mail title", 2);
+  const back = page.locator(".mv-back svg");
+  await expect.poll(() => back.evaluate((icon) => {
+    const title = document.querySelector("#mv-title")!.getBoundingClientRect();
+    const arrow = icon.getBoundingClientRect();
+    return Math.abs(arrow.left + (arrow.width * 8) / 24 - title.left);
+  }), { message: "Back arrow / mail title" }).toBeLessThanOrEqual(2);
 });
 
 test("the sign-in wordmark starts on the text's left edge (#67)", async ({ page }) => {

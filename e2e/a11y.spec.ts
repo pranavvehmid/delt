@@ -51,7 +51,7 @@ test.describe("keyboard only", () => {
   test.skip(({ isMobile }) => !!isMobile, "keyboard tests run on the desktop layout");
 
   test("open a mail with Enter, act on it, close with Esc, and land back on the same row", async ({ page }) => {
-    await page.setViewportSize({ width: 900, height: 860 }); // full-screen mail; wide screens use a pane (#48)
+    await page.setViewportSize({ width: 900, height: 960 }); // portrait tablets use the full-screen mail dialog (#233)
     const api = await mockApi(page, smallInbox());
     await page.goto("/e2e");
     const first = page.locator('li.row[data-mail="cat1"] .row-main');
@@ -60,6 +60,7 @@ test.describe("keyboard only", () => {
     await page.keyboard.press("Enter");
     const dialog = page.getByRole("dialog", { name: "CAT-1 exam schedule released" });
     await expect(dialog).toBeVisible();
+    await expect(dialog).toHaveAttribute("aria-modal", "true");
     await expect(page.locator("#mv-title")).toBeFocused();
 
     // mark done and move pile from the keyboard
