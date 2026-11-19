@@ -26,13 +26,11 @@ test("nothing is italic, slanted or textured (#73)", async ({ page }) => {
   expect(found).toEqual([]);
 });
 
-test("the inbox is a timing tower: P1 leads, rows sit flush, each has a pile-colour bar (#74)", async ({ page }) => {
+test("the inbox is a timing tower: rows show receipt age and sit flush, each has a pile-colour bar (#74)", async ({ page }) => {
   const rows = page.locator(".day.needs li.row");
-  await expect(rows.first().locator(".gap")).toHaveText("LEADER");
   await expect(rows.first().locator(".pos")).toHaveText("1");
-  await expect(rows.nth(1).locator(".gap")).toHaveText(/^\+\d+[MHD]/);
-  // only P1 says LEADER
-  await expect(page.locator(".gap", { hasText: "LEADER" })).toHaveCount(1);
+  await expect(rows.first().locator(".gap")).toHaveText(/ago$/);
+  await expect(rows.nth(1).locator(".gap")).toHaveText(/ago$/);
   // flush rows: each starts where the one above ends
   const gaps = await page.locator(".day .rows").evaluateAll((lists) =>
     lists.flatMap((ul) => [...ul.children].slice(1).map((li) => li.getBoundingClientRect().top - li.previousElementSibling!.getBoundingClientRect().bottom)),

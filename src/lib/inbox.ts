@@ -282,26 +282,24 @@ export function senderCode(name: string | null): string {
   return (main.replace(/[^A-Za-z]/g, "").slice(0, 3) || "???").toUpperCase();
 }
 
-/** The timing-tower gap: the newest mail leads, others show how far behind it they arrived. */
-/** #74: the timing tower's gap column. P1 is always the LEADER; every other mail shows how long it
- *  has been waiting, like a gap in a race (+45M, +2H 20M, +1D). */
-export function gapText(receivedAt: string, now: number, leader = false): string {
-  if (leader) return "LEADER";
-  const d = Math.max(0, now - Date.parse(receivedAt));
-  if (d < 60_000) return "+0M";
-  const m = Math.floor(d / 60_000), h = Math.floor(m / 60), days = Math.floor(h / 24);
-  if (days >= 1) return `+${days}D${h % 24 ? ` ${h % 24}H` : ""}`;
-  if (h >= 1) return `+${h}H${m % 60 ? ` ${m % 60}M` : ""}`;
-  return `+${m}M`;
+/** Grid shows how long ago each message arrived, including the first one. */
+export function mailAge(receivedAt: string, now: number): string {
+  const elapsed = now - Date.parse(receivedAt);
+  if (!Number.isFinite(elapsed)) return "";
+  if (elapsed < 60_000) return "Just now";
+  const m = Math.floor(elapsed / 60_000), h = Math.floor(m / 60), days = Math.floor(h / 24);
+  if (days >= 1) return `${days}d${h % 24 ? ` ${h % 24}h` : ""} ago`;
+  if (h >= 1) return `${h}h${m % 60 ? ` ${m % 60}m` : ""} ago`;
+  return `${m}m ago`;
 }
 
 // ---------- #165: rows redraw only when the time they show changes ----------
 /** Everything a row shows that depends on the clock, as one string: the time or day it came in,
- *  the deadline's words and colour, and (Grid only) the gap. Equal strings mean the row would look
+ *  the deadline's words and colour, and (Grid only) the age. Equal strings mean the row would look
  *  the same, so the 30-second tick can skip it. */
-export function rowClock(m: Pick<Mail, "received_at" | "deadline" | "is_done">, now: number, grid: boolean, leader: boolean): string {
+export function rowClock(m: Pick<Mail, "received_at" | "deadline" | "is_done">, now: number, grid: boolean): string {
   const due = m.deadline && !m.is_done ? `${dueText(m.deadline, now)}/${dueLevel(m.deadline, now)}` : "";
-  return [shortTime(m.received_at, now), due, grid ? gapText(m.received_at, now, leader) : ""].join("|");
+  return [shortTime(m.received_at, now), due, grid ? mailAge(m.received_at, now) : ""].join("|");
 }
 
 type RowProps = { m: Pick<Mail, "received_at" | "deadline" | "is_done">; now: number; pos?: number; look?: string };
@@ -310,8 +308,8 @@ type RowProps = { m: Pick<Mail, "received_at" | "deadline" | "is_done">; now: nu
 export function sameRow<P extends RowProps>(a: P, b: P): boolean {
   for (const k of new Set([...Object.keys(a), ...Object.keys(b)]) as Set<keyof P>) if (k !== "now" && a[k] !== b[k]) return false;
   if (a.now === b.now) return true;
-  const grid = b.look === "grid", leader = b.pos === 1;
-  return rowClock(b.m, a.now, grid, leader) === rowClock(b.m, b.now, grid, leader);
+  const grid = b.look === "grid";
+  return rowClock(b.m, a.now, grid) === rowClock(b.m, b.now, grid);
 }
 
 // ---------- #23: what needs you, above everything else ----------
