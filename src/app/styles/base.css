@@ -486,7 +486,7 @@ body { min-height: 100dvh; }
 .sync.warn { color: var(--due-soon); }
 
 /* #48: reading pane on wide screens. The list keeps a fixed column on the left. */
-@media (min-width: 1000px) {
+@media (min-width: 1000px), (min-width: 768px) and (orientation: landscape) {
   .shell.reading { max-width: 460px; margin: 0; }
   .mailview.pane { left: 460px; border-left: 1px solid var(--line); view-transition-name: mail; }
   .shell.reading li.row.current .row-slide { background: var(--surface); box-shadow: -10px 0 0 var(--surface), -13px 0 0 var(--accent); }
@@ -550,7 +550,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 /* the back button says Back */
 .iconbtn.mv-back { display: inline-flex; align-items: center; width: auto; gap: 4px; padding: 0 12px 0 8px; border-radius: 99px; font-size: 14px; font-weight: 600; }
 /* toasts sit under the list when the reading pane is open */
-@media (min-width: 1000px) { .shell.reading ~ .toast, body:has(.shell.reading) .toast { left: 230px; } }
+@media (min-width: 1000px), (min-width: 768px) and (orientation: landscape) { .shell.reading ~ .toast, body:has(.shell.reading) .toast { left: 230px; } }
 
 /* #62: every control on a touch screen is at least 44 x 44 px to tap. Small words and
    chips keep their look; an invisible ::after widens what a finger can hit. */
@@ -613,7 +613,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
    - Settings links sit closer (their 44px touch area stays, invisibly)
    - Appearance: every choice of options is a full-width control under its label, like Theme */
 .mv-empty { display: none; }
-@media (min-width: 1000px) {
+@media (min-width: 1000px), (min-width: 768px) and (orientation: landscape) {
   .mv-empty { position: fixed; top: 0; right: 0; bottom: 0; left: 460px; border-left: 1px solid var(--line); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: 32px; text-align: center; }
   .mv-empty .muted { max-width: 280px; font-size: 14px; }
 }
@@ -629,7 +629,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
    - the list column scales with the window; the reading pane fills the rest under the bar
    - on short laptop windows the spacing tightens so more mail fits
    Phones and narrow windows keep the phone layout. */
-@media (min-width: 1000px) {
+@media (min-width: 1000px), (min-width: 768px) and (orientation: landscape) {
   :root { --list: clamp(380px, 32vw, 520px); --top: 64px; }
   .shell.reading { max-width: none; width: var(--list); margin: 0; padding-top: var(--top); }
   .shell.reading .appbar {
@@ -644,7 +644,8 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   .mv-empty { top: var(--top); left: var(--list); }
   .shell.reading ~ .toast, body:has(.shell.reading) .toast { left: calc(var(--list) / 2); }
 }
-@media (min-width: 1000px) and (max-height: 800px) {
+@media (min-width: 1000px) and (max-height: 800px),
+       (min-width: 768px) and (orientation: landscape) and (max-height: 800px) {
   .shell.reading .chips { margin-top: 8px; }
   .shell.reading .dayhead { padding-top: 16px; }
   .mailview.pane .mv-page { padding-top: 8px; }
@@ -658,10 +659,11 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 
 /* A04: on a laptop the list column is 380–520px; the pile filters wrap onto a second line
    instead of scrolling out of sight (the phone keeps its scrolling row) */
-@media (min-width: 1000px) {
+@media (min-width: 1000px), (min-width: 768px) and (orientation: landscape) {
   .shell.reading .chips { flex-wrap: wrap; overflow: visible; row-gap: 8px; }
 }
-@media (min-width: 1000px) and (max-height: 800px) {
+@media (min-width: 1000px) and (max-height: 800px),
+       (min-width: 768px) and (orientation: landscape) and (max-height: 800px) {
   .shell.reading .page { padding-top: 0; }
   .shell.reading .chips { margin-top: 12px; }
   .shell.reading .day { margin-top: 0; }
@@ -670,7 +672,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 
 /* A05: the laptop pane with no mail open shows today at a glance; A18: reading content sits on a
    fixed 40px gutter from the pane's left edge instead of floating in the middle */
-@media (min-width: 1000px) {
+@media (min-width: 1000px), (min-width: 768px) and (orientation: landscape) {
   .mv-empty.overview { display: block; overflow-y: auto; text-align: left; padding: 0; }
   .ov-page { max-width: 720px; padding: 40px; }
   .ov-title { margin: 0; font: 700 34px/1.1 var(--head); letter-spacing: -0.02em; }
@@ -690,6 +692,18 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   .mailview.pane .mv-page { margin: 0; max-width: 800px; padding-left: 40px; padding-right: 40px; }
   /* the Back arrow sits 14px inside its button: 26px puts the arrow itself on the 40px text edge */
   .mailview.pane .mv-bar { padding-left: 26px; padding-right: max(40px, calc(100% - 760px)); } /* the actions end on the content's right edge (800px page minus its 40px padding) */
+}
+
+/* Landscape tablets keep the two panes with smaller gutters and controls. */
+@media (min-width: 768px) and (orientation: landscape) and (width < 1000px) {
+  :root { --list: clamp(300px, 36vw, 360px); }
+  .shell.reading .appbar { gap: 8px; padding-inline: 16px; }
+  .shell.reading .appbar .mast { gap: 8px; margin-inline: 8px; }
+  .shell.reading .appbar .searchbar { min-width: 0; }
+  .ov-page, .mailview.pane .mv-page { padding-inline: 24px; }
+  .ov-stats { gap: 8px; }
+  .ov-stats div { padding: 12px; }
+  .mailview.pane .mv-bar { padding-left: 10px; padding-right: 24px; }
 }
 
 /* #192: in a narrow deadline list (laptop column, phones) the Calendar and Done buttons go on a line

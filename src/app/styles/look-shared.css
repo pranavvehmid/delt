@@ -223,12 +223,12 @@
 
 /* #76: in the laptop top bar the section names are 18px, under the 24px "large text" line, so the
    one not selected needs the normal 4.5:1 floor */
-@media (min-width: 1000px) {
+@media (min-width: 1000px), (min-width: 768px) and (orientation: landscape) {
   :root:is([data-look="minimal"], [data-look="grid"]) .shell.reading .appbar .mast button:not(.on) { color: rgb(var(--ink) / var(--floor)); }
 }
 
 /* A03: in the laptop bar the titles are 18px; the count sits at the top of the word, not below it */
-@media (min-width: 1000px) {
+@media (min-width: 1000px), (min-width: 768px) and (orientation: landscape) {
   :root[data-look="minimal"] .shell.reading .appbar .mast sup { top: 0; }
 }
 /* A12: a segmented choice starts and ends on the content edge like everything else; a hairline frames it */
