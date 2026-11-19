@@ -413,7 +413,7 @@ test("the account menu keeps Delete my data apart, last (#53)", async ({ page })
   await page.goto("/e2e");
   await page.getByRole("button", { name: "Account" }).click();
   const items = await page.locator("#acct-menu .menu-item").allTextContents();
-  expect(items.map((x) => x.trim())).toEqual(["Settings", "Sorting rules", "Open Gmail ↗", "Sign out", "Delete my data"]);
+  expect(items.map((x) => x.trim())).toEqual(["Settings", "Sorting rules", "Commands", "Open Gmail ↗", "Sign out", "Delete my data"]);
   await expect(page.locator("#acct-menu .menu-sep")).toHaveCount(2);
 });
 
