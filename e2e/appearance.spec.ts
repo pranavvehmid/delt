@@ -92,6 +92,34 @@ test("the panel closes with Done, Esc, or a tap outside", async ({ page }) => {
   await expect(panel).toHaveCount(0);
 });
 
+test("High contrast uses solid surfaces and visible controls in either theme (#274)", async ({ page }) => {
+  await mockApi(page, smallInbox());
+  await page.goto("/e2e");
+  const subject = page.locator('li.row[data-mail="fee"] .subj');
+  await expect(subject).toBeVisible();
+  const panel = await openPanel(page);
+  await panel.getByRole("radio", { name: /^High contrast/ }).click();
+  await expect(html(page)).toHaveAttribute("data-contrast", "high");
+  await expect(page.locator("body")).toHaveCSS("background-color", "rgb(255, 255, 255)");
+  await expect(subject).toHaveCSS("color", "rgb(0, 0, 0)");
+  await expect(panel).toHaveCSS("border-top-width", "2px");
+  await expect(panel.getByRole("radiogroup", { name: "Accent colour" })).toHaveCount(0);
+  await panel.getByRole("radio", { name: "Dark", exact: true }).click();
+  await panel.getByRole("button", { name: "Done" }).click();
+  await page.reload();
+  await expect(html(page)).toHaveAttribute("data-contrast", "high");
+  await expect(page.locator("body")).toHaveCSS("background-color", "rgb(0, 0, 0)");
+  await expect(subject).toHaveCSS("color", "rgb(255, 255, 255)");
+  await expect(page.locator('li.row[data-mail="fee"] .sum')).toHaveCSS("color", "rgb(255, 255, 255)");
+  await expect(page.locator('li.row[data-mail="notice"] .subj')).toHaveCSS("color", "rgb(255, 255, 255)");
+  await expect(page.locator('meta[name="theme-color"]').first()).toHaveAttribute("content", "#000000");
+  expect(await noSideScroll(page)).toBe(true);
+  const reopened = await openPanel(page);
+  await expect(reopened.getByRole("radio", { name: /^High contrast/ })).toHaveAttribute("aria-checked", "true");
+  await reopened.getByRole("radio", { name: /^Minimal/ }).click();
+  await expect(html(page)).toHaveAttribute("data-contrast", "normal");
+});
+
 test("Extra dark: the mail itself is shown dark, with a switch back to original colours (#26)", async ({ page }) => {
   await page.addInitScript(() => localStorage.setItem("delt-prefs", JSON.stringify({ look: "minimal", mode: "black", accent: "auto", size: "normal", density: "comfortable" })));
   await mockApi(page, smallInbox());

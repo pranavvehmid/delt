@@ -257,7 +257,7 @@ Label `audit-2026-11-07`. Severity: 1 critical, 28 major, 79 minor.
 - #271 DELT inside Gmail
 - #272 Turn a mail into a task
 - #273 Campus venues link to a map
-- #274 High-contrast theme
+- #274 High-contrast theme in Appearance, with light and dark palettes and stronger control outlines.
 - #275 Reading options: font and spacing. Appearance saves mail font, text size and line spacing on this device.
 - #276 App in Hindi, Tamil and Telugu
 - #277 Write your own sorting rules

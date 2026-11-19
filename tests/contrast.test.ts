@@ -9,7 +9,7 @@ const files = [...readFileSync("src/app/app.css", "utf8").matchAll(/@import "\.\
 const css = files.map((f) => readFileSync(`src/app/${f}`, "utf8")).join("\n");
 
 test("the styles are split into one file per look, in cascade order", () => {
-  assert.deepEqual(files, ["styles/base.css", "styles/look-shared.css", "styles/look-minimal.css", "styles/look-glyph.css", "styles/themes.css", "styles/look-grid.css"]);
+  assert.deepEqual(files, ["styles/base.css", "styles/look-shared.css", "styles/look-minimal.css", "styles/look-glyph.css", "styles/themes.css", "styles/look-grid.css", "styles/look-contrast.css"]);
   assert.ok(!css.includes(":not([data-look"), "say which looks a rule is for, not which it isn't");
   assert.ok(!/data-look/.test(readFileSync("src/app/styles/base.css", "utf8")), "base.css has no look-specific rules");
 });
@@ -36,6 +36,20 @@ function vars(sel: string) {
   return Object.fromEntries([...body.matchAll(/--([\w-]+):\s*([^;]+);/g)].map((m) => [m[1], m[2].trim()]));
 }
 const M = ':root:is([data-look="minimal"], [data-look="grid"])';
+
+test("high-contrast text and status colours pass enhanced contrast on their surfaces", () => {
+  const selector = ':root[data-contrast="high"]';
+  const high = vars(`${selector}[data-theme]`);
+  for (const palette of [high, { ...high, ...vars(`${selector}[data-theme="dark"]`) }]) {
+    const background = hex(palette.bg);
+    const ink = palette.ink.split(/\s+/).map(Number) as RGB;
+    assert.equal(palette.floor, "1");
+    assert.equal(palette["floor-lg"], "1");
+    for (const colour of [ink, hex(palette.accent), hex(palette["due-soon"])]) {
+      assert.ok(ratio(colour, background) >= 7);
+    }
+  }
+});
 const light = vars(M);
 const dark = { ...light, ...vars(`${M}[data-theme="dark"]`) };
 const black = { ...dark, ...vars(`${M}[data-tone="black"]`) };

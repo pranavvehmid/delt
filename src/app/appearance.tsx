@@ -35,6 +35,7 @@ const LOOKS = [
   { key: "minimal", name: "Minimal", note: "Black and white" },
   { key: "glyph", name: "Glyph", note: "Purple and gold" },
   { key: "grid", name: "Grid", note: "F1-inspired" },
+  { key: "contrast", name: "High contrast", note: "Strong outlines" },
 ] as const;
 
 const READING_OPTIONS = [
@@ -90,6 +91,7 @@ export default function Appearance() {
     // each look has its own colours; Grid is always dark
     if (!LOOK_ACCENTS[next.look].includes(next.accent)) next.accent = "auto";
     if (next.look === "grid" && (next.mode === "light" || next.mode === "auto")) next.mode = "dark";
+    if (next.look === "contrast" && next.mode === "black") next.mode = "dark";
     setP(next);
     try {
       localStorage.setItem(KEY, JSON.stringify(next));
@@ -105,7 +107,7 @@ export default function Appearance() {
     label,
   }: {
     k: K;
-    items: [Prefs[K], string][];
+    items: readonly (readonly [Prefs[K], string])[];
     label: string;
   }) => (
     <div className="ap-row">
@@ -191,33 +193,31 @@ export default function Appearance() {
                     : [
                         ["light", "Light"],
                         ["dark", "Dark"],
-                        ["black", "Extra dark"],
+                        ...(p.look === "contrast" ? [] : [["black", "Extra dark"]] as const),
                         ["auto", "Auto"],
                       ]
                 }
               />
 
-              <div className="ap-row">
-                <span className="ap-lbl">{p.look === "grid" ? "Driver colour" : "Accent"}</span>
-                <div
-                  className="swatches"
-                  role="radiogroup"
-                  aria-label="Accent colour"
-                >
-                  {(p.look === "grid" ? GRID_ACCENTS : ACCENTS).map((a) => (
-                    <button
-                      key={a.key}
-                      role="radio"
-                      aria-checked={p.accent === a.key}
-                      aria-label={a.label}
-                      title={a.label}
-                      className={`swatch ${p.accent === a.key ? "on" : ""}`}
-                      style={{ background: a.color }}
-                      onClick={() => set("accent", a.key)}
-                    />
-                  ))}
+              {p.look !== "contrast" && (
+                <div className="ap-row">
+                  <span className="ap-lbl">{p.look === "grid" ? "Driver colour" : "Accent"}</span>
+                  <div className="swatches" role="radiogroup" aria-label="Accent colour">
+                    {(p.look === "grid" ? GRID_ACCENTS : ACCENTS).map((a) => (
+                      <button
+                        key={a.key}
+                        role="radio"
+                        aria-checked={p.accent === a.key}
+                        aria-label={a.label}
+                        title={a.label}
+                        className={`swatch ${p.accent === a.key ? "on" : ""}`}
+                        style={{ background: a.color }}
+                        onClick={() => set("accent", a.key)}
+                      />
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
 
               <Seg
                 k="size"

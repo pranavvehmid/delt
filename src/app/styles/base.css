@@ -473,7 +473,6 @@ body { min-height: 100dvh; }
 .lp-grid i { height: 9px; background: #1f1f27; box-shadow: inset 3px 0 0 #ff3b30; border-radius: 0; }
 .lp-grid i:nth-child(2) { box-shadow: inset 3px 0 0 #ffd200; width: 82%; }
 .lp-grid i:nth-child(3) { box-shadow: inset 3px 0 0 #3d8bff; width: 64%; }
-.looks { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .ap-row:has(.swatch:nth-child(7)) { flex-direction: column; align-items: stretch; gap: 8px; padding: 12px 0; }
 .ap-row:has(.swatch:nth-child(7)) .swatches { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 8px; }
 .ap-row:has(.swatch:nth-child(7)) .swatch { width: auto; }
