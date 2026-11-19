@@ -98,3 +98,4 @@ Deadlines ─ from mail only: Overdue · Today · Tomorrow · This week · Later
 - `src/lib/notify-plan.ts` + `src/lib/notify.ts` + `public/sw.js`: phone notifications for urgent mail and deadlines due within a day.
 - `src/lib/rules.ts`, `classify.ts`, `sync.ts`, `gmail.ts`: sorting and Gmail.
 - `src/lib/campus-venues.ts`: recognized Vellore locations and map links.
+- `src/app/share-summary.tsx`: review, edit and share a mail summary as text.

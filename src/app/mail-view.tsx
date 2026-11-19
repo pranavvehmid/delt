@@ -7,6 +7,7 @@ import type { EmailRow, Priority } from "@/lib/supabase";
 import type { FullMessage } from "@/lib/gmail";
 import MailFrame from "./mail-frame";
 import MailAttachments from "./mail-attachments";
+import ShareSummary from "./share-summary";
 import { listedFiles } from "@/lib/attachments";
 import { F, PILES, cleanSender, cleanSubject, dueLevel, dueText, pileLabel, senderDomain, wrongPileLink } from "@/lib/inbox";
 import { calendarLink } from "@/lib/insights";
@@ -186,6 +187,7 @@ export default function MailView({
 
           {row?.summary && (
             <p className="mv-sum">
+              <ShareSummary key={id} subject={subject} summary={row.summary} deadline={row.deadline} />
               <span className="muted lbl">Summary</span>
               {row.summary}
             </p>
