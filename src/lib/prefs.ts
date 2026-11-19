@@ -2,7 +2,7 @@
 // Saved per device in localStorage and applied as data-* attributes on <html>.
 
 export type Prefs = {
-  look: "minimal" | "glyph" | "grid";
+  look: "minimal" | "glyph" | "grid" | "contrast";
   mode: "light" | "dark" | "black" | "auto";
   accent: "auto" | "purple" | "blue" | "green" | "red" | "gold" | "papaya" | "teal" | "navy" | "racing" | "sky" | "pink";
   size: "normal" | "large";
@@ -13,7 +13,7 @@ export type Prefs = {
 };
 
 export const OPTIONS = {
-  look: ["minimal", "glyph", "grid"],
+  look: ["minimal", "glyph", "grid", "contrast"],
   mode: ["light", "dark", "black", "auto"],
   accent: ["auto", "purple", "blue", "green", "red", "gold", "papaya", "teal", "navy", "racing", "sky", "pink"],
   size: ["normal", "large"],
@@ -28,6 +28,7 @@ export const LOOK_ACCENTS: Record<Prefs["look"], readonly Prefs["accent"][]> = {
   minimal: ["auto", "purple", "blue", "green", "red", "gold"],
   glyph: ["auto", "purple", "blue", "green", "red", "gold"],
   grid: ["auto", "papaya", "teal", "navy", "racing", "sky", "pink", "gold"],
+  contrast: ["auto"],
 };
 
 export const DEFAULTS: Prefs = {
@@ -61,12 +62,14 @@ export const resolveMode = (mode: Prefs["mode"], systemDark: boolean): "light" |
   mode === "auto" ? (systemDark ? "dark" : "light") : mode === "black" ? "dark" : mode;
 
 /** The attributes set on <html>. Grid is always dark (Extra dark makes it pure black);
- *  an accent the look doesn't offer falls back to the look's own default. */
+ * High contrast uses Minimal's layout with its own palette and outlines. */
 export function toDataset(p: Prefs, systemDark: boolean) {
   const theme = p.look === "grid" ? "dark" : resolveMode(p.mode, systemDark);
   const accent = LOOK_ACCENTS[p.look].includes(p.accent) ? p.accent : "auto";
+  const contrast = p.look === "contrast";
   return {
-    look: p.look, theme, tone: p.mode === "black" ? "black" : "normal", accent, size: p.size, density: p.density,
+    look: contrast ? "minimal" : p.look, contrast: contrast ? "high" : "normal", theme,
+    tone: p.mode === "black" && !contrast ? "black" : "normal", accent, size: p.size, density: p.density,
     mailFont: p.mailFont, mailSize: p.mailSize, mailSpacing: p.mailSpacing,
   };
 }
@@ -83,15 +86,16 @@ try{raw=localStorage.getItem("delt-prefs");var v=raw?JSON.parse(raw):null;if(v&&
 if(!raw){var lk=localStorage.getItem("delt-look"),lt=localStorage.getItem("delt-theme");if(lk)p={look:lk==="glyph"?"glyph":"minimal"};if(lt==="dark"||lt==="light")p.mode=lt}}catch(e){}
 var m=ok(p.mode,["light","dark","black","auto"],"light"),tone=m==="black"?"black":"normal";if(m==="black")m="dark";
 if(m==="auto")m=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";
-var look=ok(p.look,["minimal","glyph","grid"],"minimal");if(look==="grid")m="dark";
-r.dataset.look=look;r.dataset.theme=m;r.dataset.tone=tone;
-r.dataset.accent=ok(p.accent,look==="grid"?["auto","papaya","teal","navy","racing","sky","pink","gold"]:["auto","purple","blue","green","red","gold"],"auto");
+var look=ok(p.look,["minimal","glyph","grid","contrast"],"minimal"),high=look==="contrast";if(look==="grid")m="dark";
+if(high)tone="normal";
+r.dataset.look=high?"minimal":look;r.dataset.contrast=high?"high":"normal";r.dataset.theme=m;r.dataset.tone=tone;
+r.dataset.accent=ok(p.accent,high?["auto"]:look==="grid"?["auto","papaya","teal","navy","racing","sky","pink","gold"]:["auto","purple","blue","green","red","gold"],"auto");
 r.dataset.size=ok(p.size,["normal","large"],"normal");
 r.dataset.density=ok(p.density,["comfortable","compact"],"comfortable");
 r.dataset.mailFont=ok(p.mailFont,["default","opendyslexic"],"default");
 r.dataset.mailSize=ok(p.mailSize,["default","larger","largest"],"default");
 r.dataset.mailSpacing=ok(p.mailSpacing,["default","relaxed","wide"],"default");
-try{var bg={minimal:{light:"#fafaf9",dark:"#161412"},glyph:{light:"#fff8e8",dark:"#17112b"},grid:{light:"#0b0b0e",dark:"#0b0b0e"}}[look][m];if(tone==="black")bg="#000000";
+try{var bg={minimal:{light:"#fafaf9",dark:"#161412"},glyph:{light:"#fff8e8",dark:"#17112b"},grid:{light:"#0b0b0e",dark:"#0b0b0e"},contrast:{light:"#ffffff",dark:"#000000"}}[look][m];if(tone==="black")bg="#000000";
 function bar(){var ms=document.querySelectorAll('meta[name="theme-color"]');for(var i=0;i<ms.length;i++){ms[i].setAttribute("content",bg);ms[i].removeAttribute("media")}}
 bar();if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",bar)}catch(e){}
 })()`;
