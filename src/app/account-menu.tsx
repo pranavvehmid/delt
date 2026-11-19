@@ -5,9 +5,9 @@ import { useEffect, useRef, useState } from "react";
 import { initials } from "@/lib/inbox";
 import { clearOffline } from "@/lib/offline";
 
-type Props = { name: string; email: string; signOutAction: () => Promise<void>; onSettings: (section?: "data" | "rules") => void };
+type Props = { name: string; email: string; signOutAction: () => Promise<void>; onSettings: (section?: "data" | "rules") => void; onCommands: () => void };
 
-export default function AccountMenu({ name, email, signOutAction, onSettings }: Props) {
+export default function AccountMenu({ name, email, signOutAction, onSettings, onCommands }: Props) {
   const [menu, setMenu] = useState(false);
   const acct = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -49,6 +49,9 @@ export default function AccountMenu({ name, email, signOutAction, onSettings }: 
           </button>
           <button className="menu-item" onClick={() => settings("rules")}>
             Sorting rules
+          </button>
+          <button className="menu-item" aria-keyshortcuts="Control+K Meta+K" onClick={() => { setMenu(false); onCommands(); }}>
+            Commands
           </button>
           <a className="menu-item" href={`https://mail.google.com/mail/?authuser=${encodeURIComponent(email)}`} target="_blank" rel="noreferrer">
             Open Gmail ↗
