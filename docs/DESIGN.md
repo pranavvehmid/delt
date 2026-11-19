@@ -105,6 +105,7 @@ and that every name here still exists).
 - `src/app/share-summary.tsx`: review, edit and share a mail summary as text.
 - `src/app/deadline-share.tsx` and `src/app/shared-deadline/`: share and read a deadline card. `src/lib/shared-deadline.ts` limits the link to the shared fields.
 - `src/app/command-palette.tsx`: keyboard commands for navigation, sender search, moving mail and Settings.
+- `src/app/deadline-calendar.tsx` and `src/lib/deadline-calendar.ts`: week and month views of active deadlines in Indian Standard Time.
 
 **Server and shared helpers (`src/lib/`)**
 - Sorting: `rules.ts`, `classify.ts` (the AI check), `topics.ts` (learning from moves by topic), `profile.ts` (batch, branch and year from the Google name).
