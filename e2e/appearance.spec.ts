@@ -215,6 +215,7 @@ test("the DELT logo is the same Minimal wordmark in every look and theme", async
 
 test.describe("with animations on", () => {
   test.use({ contextOptions: { reducedMotion: "no-preference" } });
+  test.skip(({ browserName }) => process.platform === "win32" && browserName === "webkit", "Windows WebKit can stall view transitions (#172)");
   test("a second change during an animation doesn't raise an error (skipped transition)", async ({ page }) => {
     await mockApi(page, smallInbox());
     const errors: string[] = [];
