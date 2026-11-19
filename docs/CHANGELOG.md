@@ -2,7 +2,13 @@
 
 Newest first. Commit SHAs in brackets.
 
-## 2026-11-07 (fix round 1, 46 issues; not deployed yet)
+## 2026-11-19
+- Grid pairs wide display type with a handwritten overview title accent and keeps the
+  navigation within a 320px viewport. Grid and Minimal use written priority labels (#100).
+- Grid's first eight rows animate once per local day and respect reduced motion (#221).
+- Released from the previous production commit plus the Grid changes [b75b68c].
+
+## 2026-11-07 (fix round 1, 46 issues)
 - Privacy: signed-in pages no longer cached in browser tabs (#80); AI gets only sender domains from past moves, no register number (#81, #87); attachments never kept on disk (#129); no raw server errors in the browser (#133).
 - Sync and data: every student synced past 1,000 (#82); timeouts on Google/Gemini (#84); daily batched purge (#90, #125); six-week first sync (#89); labels named DELT/… and labelled in bulk (#108, #109); Gmail failures retried and reported (#110, #111); label race fixed (#107).
 - Sorting: date ranges end on their last date (#86); AI deadlines and Urgent upgrades checked against the mail (#103, #104); unsure low-pile mail AI-checked (#85); entities and placeholder text parts (#116, #117); summaries tidied (#142); one rule list (#114).

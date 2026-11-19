@@ -1,10 +1,12 @@
 # Project state
 
-Updated 2026-11-07.
+Updated 2026-11-19.
 
 ## Live
-- Production (delt-mu.vercel.app) runs code up to 436117a (#70). Everything below from #71 on
-  is pushed to `main` and passes CI, but is **not deployed yet** (waiting for the user's go-ahead).
+- Production runs `b75b68c`, the Grid refresh and issues #100 and #221 on top of the previous
+  live commit `414de98`. The same Grid changes are on `main` through PR #307.
+- The later changes from `main` need a separate release after checking the production Supabase
+  schema, including `users.name` and the later-sync lock.
 - Android app: `app-latest` release, signed with the `delt` key; Digital Asset Links verified (`linked: true`).
 
 ## Finished (pushed, CI green)
@@ -19,15 +21,16 @@ Updated 2026-11-07.
 - #77 smoother screen changes (no page snapshot on open/tab switch, chunked rendering, 12 first rows).
 
 - Audit A03–A19 fixed (2026-11-07); A07 partial.
-- Fix round 1 (2026-11-07): 46 issues from the full audit closed, each with a test (list in `docs/AUDIT.md`). 168 issues open.
+- Fix round 1 (2026-11-07): 46 issues from the full audit closed, each with a test (list in `docs/AUDIT.md`).
 
 ## Half-done
 - A07/#77: Grid's first mail open of a session is 103–137ms at 4x slowdown; repeat opens 53–88ms.
 - #78: Android app sometimes shows Chrome's address bar. Server side verified; app now shows a note
   when it opens as a plain tab. Needs a check on the user's phone.
-- F1 theme: the user says the reference should be F1's Instagram and TV graphics (grid intro,
-  pre-race video, script first name + bold surname), not the website. Blocked on reference
-  screenshots/clips in `docs/f1-reference/`. See `docs/AUDIT.md`.
+- Grid: the first typography and spacing pass used the supplied pre-race intro.
+  Additional Grid audits, including the explanation of timing labels (#199), are open.
+- Personal Gmail: PR #308 specifies the External OAuth pilot and proposes weights for VIT
+  and personal mail. The pilot and sorting changes have yet to be implemented.
 
 ## Broken / known
 - WebKit browser tests with animations on hang on this Windows machine only (CI passes).
