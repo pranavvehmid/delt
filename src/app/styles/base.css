@@ -133,6 +133,9 @@ svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width:
 .lp-glyph i:first-child { background: #f5c842; width: 48%; }
 .ap-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 52px; border-bottom: 1px solid var(--line); }
 .ap-lbl { font-size: 16px; font-weight: 500; }
+.mail-reading-options { border: 0; margin: 20px 0 0; min-width: 0; padding: 0; }
+.mail-reading-options legend { font-weight: 700; padding: 0; }
+.mail-reading-options select { min-height: 44px; max-width: 60%; padding: 4px 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--text); font: inherit; }
 .seg { display: inline-flex; padding: 4px; border-radius: 12px; background: var(--surface); }
 .seg button { height: 32px; padding: 0 12px; border-radius: 9px; font-size: 14px; font-weight: 500; color: var(--muted); transition: background-color 0.2s, color 0.2s; }
 .seg button.on { background: var(--bg); color: var(--text); font-weight: 600; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15); }
