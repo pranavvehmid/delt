@@ -12,9 +12,9 @@ test("view a deadline in week and month calendars and open its source mail (#246
   await page.getByRole("navigation", { name: "Sections" }).getByRole("button", { name: /^Deadlines/ }).click();
   await page.getByRole("group", { name: "Deadlines view" }).getByRole("button", { name: "Calendar" }).click();
   const calendar = page.getByRole("region", { name: "Deadline calendar" });
-  const dueDay = calendar.getByRole("button", { name: /11 November 2026, 1 deadline/i });
+  const dueDay = calendar.getByRole("button", { name: /11 November,? 2026, 1 deadline/i });
   await dueDay.click();
-  await expect(calendar.getByRole("region", { name: /11 November 2026/ }).getByText("Fees")).toBeVisible();
+  await expect(calendar.getByRole("region", { name: /11 November,? 2026/ }).getByText("Fees")).toBeVisible();
   await calendar.getByRole("button", { name: "Month", exact: true }).click();
   await expect(calendar.getByRole("heading", { name: "November 2026", exact: true })).toBeVisible();
   await calendar.getByRole("button", { name: "Next month" }).click();
