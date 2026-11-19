@@ -104,13 +104,13 @@
 :root[data-look="glyph"] :is(.mv-frame, .mv-sum, .mv-due, .mv-err) { border-radius: 16px; }
 
 /* #76: in the laptop top bar, Glyph's section pills sit centred at the bar's control height */
-@media (min-width: 1000px) {
+@media (min-width: 1000px), (min-width: 768px) and (orientation: landscape) {
   :root[data-look="glyph"] .shell.reading .appbar .mast { align-self: center; align-items: center; }
   :root[data-look="glyph"] .shell.reading .appbar .mast button { height: 40px; padding: 0 16px; font-size: 16px !important; }
 }
 /* A04: in the laptop list column the five pile chips fit one line: counts drop out (day headings and
    "Unread only" carry them) and the padding tightens; wrapping in base.css stays as the fallback */
-@media (min-width: 1000px) {
+@media (min-width: 1000px), (min-width: 768px) and (orientation: landscape) {
   :root[data-look="glyph"] .shell.reading .fchip { padding: 0 8px; }
   :root[data-look="glyph"] .shell.reading .fchip .n { display: none; }
 }

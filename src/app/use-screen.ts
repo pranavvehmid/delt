@@ -70,7 +70,7 @@ export function restoreScroll(tab: Route["tab"]) {
 export function useWide() {
   const [wide, setWide] = useState(false);
   useEffect(() => {
-    const mq = window.matchMedia("(min-width: 1000px)");
+    const mq = window.matchMedia("(min-width: 1000px), (min-width: 768px) and (orientation: landscape)");
     const on = () => setWide(mq.matches);
     on();
     mq.addEventListener("change", on);
