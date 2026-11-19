@@ -146,6 +146,14 @@ export default function MailView({
             </span>
           </div>
 
+          {!!msg?.venues?.length && (
+            <ul className="mv-venues" aria-label="VIT Vellore venues on Google Maps">
+              {msg.venues.map(({ name, url }) => (
+                <li key={name}><a className="link" href={url} target="_blank" rel="noreferrer">{name}</a></li>
+              ))}
+            </ul>
+          )}
+
           {row && (
             <div className="mv-pile" role="radiogroup" aria-label="Pile">
               <span className="muted lbl">Pile</span>

@@ -2,7 +2,8 @@ import { NextResponse, type NextRequest } from "next/server";
 import { auth } from "@/auth";
 import { GMAIL_DOWN, serverError } from "@/lib/api-error";
 import { db } from "@/lib/supabase";
-import { AccessRevoked, getAccessToken, getFullMessage } from "@/lib/gmail";
+import { AccessRevoked, getAccessToken, getFullMessage, htmlToText } from "@/lib/gmail";
+import { campusVenues } from "@/lib/campus-venues";
 import { markRevoked } from "@/lib/sync";
 import { limited } from "@/lib/rate-limit";
 
@@ -26,6 +27,9 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
   try {
     const token = await getAccessToken(user.refresh_token);
     const msg = await getFullMessage(token, id);
+    const locationText = [msg.subject, msg.text?.slice(0, 24_000), htmlToText(msg.html?.slice(0, 48_000) ?? "")].join("\n");
+    const venues = campusVenues(email, locationText);
+    if (venues.length) msg.venues = venues;
     return NextResponse.json(msg, { headers: { "Cache-Control": "private, no-store" } });
   } catch (e) {
     if (e instanceof AccessRevoked) {
