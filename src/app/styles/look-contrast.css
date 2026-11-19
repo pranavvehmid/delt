@@ -3,7 +3,7 @@
 .lp-contrast i:nth-child(2) { width: 85%; }
 .lp-contrast i:nth-child(3) { width: 65%; }
 
-:root[data-contrast="high"] {
+:root[data-contrast="high"][data-theme] {
   --ink: 0 0 0;
   --bg: #fff;
   --surface: var(--bg);

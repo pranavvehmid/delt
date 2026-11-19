@@ -110,6 +110,8 @@ test("High contrast uses solid surfaces and visible controls in either theme (#2
   await expect(html(page)).toHaveAttribute("data-contrast", "high");
   await expect(page.locator("body")).toHaveCSS("background-color", "rgb(0, 0, 0)");
   await expect(subject).toHaveCSS("color", "rgb(255, 255, 255)");
+  await expect(page.locator('li.row[data-mail="fee"] .sum')).toHaveCSS("color", "rgb(255, 255, 255)");
+  await expect(page.locator('li.row[data-mail="notice"] .subj')).toHaveCSS("color", "rgb(255, 255, 255)");
   await expect(page.locator('meta[name="theme-color"]').first()).toHaveAttribute("content", "#000000");
   expect(await noSideScroll(page)).toBe(true);
   const reopened = await openPanel(page);

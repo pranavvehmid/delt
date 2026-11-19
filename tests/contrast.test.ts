@@ -39,7 +39,7 @@ const M = ':root:is([data-look="minimal"], [data-look="grid"])';
 
 test("high-contrast text and status colours pass enhanced contrast on their surfaces", () => {
   const selector = ':root[data-contrast="high"]';
-  const high = vars(selector);
+  const high = vars(`${selector}[data-theme]`);
   for (const palette of [high, { ...high, ...vars(`${selector}[data-theme="dark"]`) }]) {
     const background = hex(palette.bg);
     const ink = palette.ink.split(/\s+/).map(Number) as RGB;
