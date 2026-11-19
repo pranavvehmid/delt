@@ -93,3 +93,16 @@ Android shows DELT full screen only after it verifies the app and the site belon
 3. On the phone: update Chrome, then Settings → Apps → DELT → Storage → Clear storage, and open DELT again. A failed check from an older build can be remembered.
 4. During Google sign-in the bar is expected: those pages are Google's, not DELT's.
 DELT shows a note when the app opens as a plain tab (`openedAsTab` in `src/lib/app-update.ts`).
+
+## External Gmail launch (issue #79)
+
+The current OAuth client is Internal. Before admitting personal Gmail users, set up an External pilot and test sign-in, sync, label changes, reauthorization and account deletion on dedicated accounts. Keep the VIT client working during the pilot. Tokens are tied to the OAuth client that issued them, so replacing the production client requires a reauthorization plan.
+
+DELT currently reads message content, updates labels and changes read state. Google lists both `gmail.modify` and `gmail.readonly` as restricted. The narrower `gmail.labels` scope manages label definitions and does not authorize applying them to messages. A read-only product could request `gmail.readonly`, but would lose Gmail label and read-state updates and still require restricted-scope verification. DELT's backend processes and stores Gmail data, so plan for the Google-approved security assessment and its recurring renewal. Get assessment quotes before committing to pricing.
+
+- Configure a production External OAuth project, verified domains, the application home page and privacy policy. Inventory the data each feature reads, stores and sends to optional AI before submission.
+- Use an approved test-user list for the pilot. Track the number of permitted pilot accounts and recorded consent grants against the limit shown in the Google Auth Platform dashboard. An active DELT account count is a separate metric because deleting an account does not necessarily undo its contribution to an OAuth cap.
+- Submit the minimum scopes required by the product, with a walkthrough of consent, data use and deletion. Confirm verification, assessment and VIT administrator access before expanding the audience.
+- Keep account-level isolation and explicit AI consent in the pilot sign-off. Preserve the existing VIT route until the new one passes the same account isolation and revocation checks.
+
+See [Gmail API scopes](https://developers.google.com/workspace/gmail/api/auth/scopes), [modify message authorization](https://developers.google.com/workspace/gmail/api/reference/rest/v1/users.messages/modify) and [restricted scope verification](https://developers.google.com/identity/protocols/oauth2/production-readiness/restricted-scope-verification).
