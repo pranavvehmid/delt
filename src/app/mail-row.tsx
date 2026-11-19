@@ -11,7 +11,7 @@ export type RowActions = { open: (m: EmailRow) => void; read: (m: EmailRow) => v
 // memo: a row re-renders only when its own mail, position or settings change (#20), or when the
 // 30-second clock changes a time, deadline or gap it shows (#165, sameRow)
 // #61: a row renders only what the current look shows (Glyph: avatar, pile tag, unread dot;
-// Minimal: time column; Grid: position, sender code, gap), the swipe background only while
+// Minimal: time column; Grid: sender code and receipt age), the swipe background only while
 // swiping, and the hover buttons only on devices with a mouse.
 export const MailRow = memo(function MailRow({ m, now, pos = 0, on, current = false, query = "", look = "minimal", hover = false }: { m: EmailRow; now: number; pos?: number; on: RowActions; current?: boolean; query?: string; look?: Look; hover?: boolean }) {
   const glyph = look === "glyph", grid = look === "grid";
@@ -85,11 +85,6 @@ export const MailRow = memo(function MailRow({ m, now, pos = 0, on, current = fa
           {glyph && (
             <span className={`avatar p-${m.priority}`} aria-hidden="true">
               {initials(sender)}
-            </span>
-          )}
-          {grid && (
-            <span className="pos" aria-hidden="true">
-              {pos}
             </span>
           )}
           {look === "minimal" && (
