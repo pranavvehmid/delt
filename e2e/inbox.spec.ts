@@ -478,8 +478,9 @@ for (const look of ["minimal", "glyph", "grid"] as const) {
     await page.goto("/e2e");
     await expect(page.locator("li.row").first()).toBeVisible();
     const counts = await page.locator("li.row").evaluateAll((rows) => rows.map((r) => r.querySelectorAll("*").length + 1));
-    // a phone has no hover buttons; a desktop adds 7 for them
-    const limit = { minimal: 12, grid: 13, glyph: 16 }[look] + (info.project.name === "phone" ? 0 : 7);
+    // Minimal and Grid include one text node wrapper for the visible priority.
+    // A phone has no hover buttons; a desktop adds seven elements for them.
+    const limit = { minimal: 13, grid: 14, glyph: 16 }[look] + (info.project.name === "phone" ? 0 : 7);
     expect(Math.max(...counts)).toBeLessThanOrEqual(limit);
   });
 }

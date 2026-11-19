@@ -117,14 +117,27 @@ export default function InboxApp({ email, name, signOutAction, signInAction }: P
     if (firstTab.current) return void (firstTab.current = false);
     restoreScroll(route.tab);
   }, [route.tab]);
-  // #75, #77: the list's entrance plays once, when the first mail arrives; after that new rows,
-  // filters and tab switches draw straight away (re-running it on every change cost frames)
+  // #221: play the Grid entrance once per local day, when there is mail to show.
+  const gridIntroPlayed = useRef(false);
   const hasMail = shown.length > 0;
   useEffect(() => {
-    if (!hasMail) return;
-    const t = setTimeout(() => document.documentElement.classList.add("settled"), 1600);
-    return () => clearTimeout(t);
-  }, [hasMail]);
+    if (look !== "grid" || route.tab !== "inbox" || !hasMail || gridIntroPlayed.current ||
+        window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const day = new Date().toDateString();
+    try {
+      if (localStorage.getItem("delt-grid-intro-day") === day) return;
+      localStorage.setItem("delt-grid-intro-day", day);
+    } catch {}
+    gridIntroPlayed.current = true;
+    const root = document.documentElement;
+    root.classList.add("grid-intro");
+    const stop = () => root.classList.remove("grid-intro");
+    const timer = setTimeout(stop, 850);
+    return () => {
+      clearTimeout(timer);
+      stop();
+    };
+  }, [hasMail, look, route.tab]);
   // Grid look: each row's place in the list (P1 is the leader)
   const posOf = useMemo(() => new Map([...pinned, ...rest].map((m, i) => [m.id, i + 1])), [pinned, rest]);
   const buckets = useMemo(() => deadlineBuckets(mergeMore(all, due), now), [all, due, now]);

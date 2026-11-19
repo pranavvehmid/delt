@@ -38,8 +38,13 @@ const mono = localFont({
     { path: "./fonts/mono/mono-700-normal.woff2", weight: "700", style: "normal" },
   ],
 });
-// Grid (F1-inspired, #73): Saira, one variable file with weight 100–900 and width 50–125%. Its squared,
-// wide capitals are the closest free match to F1's own broadcast face; headings use it at 125% width.
+// Grid pairs wide Saira display type with a handwritten accent on the overview.
+const signature = localFont({
+  variable: "--font-signature",
+  preload: false,
+  display: "swap",
+  src: [{ path: "./fonts/caveat/caveat-700.woff2", weight: "700", style: "normal" }],
+});
 const race = localFont({
   variable: "--font-race",
   preload: false,
@@ -67,7 +72,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" suppressHydrationWarning className={`${plex.variable} ${dot.variable} ${grotesk.variable} ${mono.variable} ${race.variable}`}>
+    <html lang="en" suppressHydrationWarning className={`${plex.variable} ${dot.variable} ${grotesk.variable} ${mono.variable} ${race.variable} ${signature.variable}`}>
       <body className="antialiased">
         {/* Apply saved appearance (look, theme, accent, size, spacing) before first paint. */}
         <script

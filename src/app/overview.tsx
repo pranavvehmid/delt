@@ -11,7 +11,7 @@ export default function Overview({ unread, needs, dueThisWeek, next, now, onOpen
   return (
     <section className="mv-empty overview" aria-labelledby="ov-title">
       <div className="ov-page">
-        <h2 id="ov-title" className="ov-title">Today</h2>
+        <h2 id="ov-title" className="ov-title"><span className="ov-signature" aria-hidden="true">Your inbox</span>Today</h2>
         <dl className="ov-stats">
           <div>
             <dt>Unread</dt>
